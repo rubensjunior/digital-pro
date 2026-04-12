@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RKS Digital PRO</title>
+    <!-- Modern Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="drag-region"></div>
+    <div class="app-container">
+      <header class="app-header">
+        <h1>🚀 RKS Digital PRO</h1>
+        <p class="subtitle">Para infoprodutores profissionais!</p>
+      </header>
+
+      <main class="app-content">
+        <div class="card">
+          <h2>System Information</h2>
+          <div class="sys-info">
+            <div class="info-item">
+              <span class="label">Node.js</span>
+              <span class="value" id="node-version">Loading...</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Chromium</span>
+              <span class="value" id="chrome-version">Loading...</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Electron</span>
+              <span class="value" id="electron-version">Loading...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card actions">
+          <h2>Secure IPC Example</h2>
+          <p>Test the safe context bridge connection.</p>
+          <button id="ping-btn" class="btn primary">Ping main process</button>
+          <p id="ping-response" class="response-text"></p>
+        </div>
+      </main>
+      
+      <footer class="app-footer">
+        <p>Ready to build amazing desktop apps.</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/renderer.ts"></script>
+  </body>
+</html>
