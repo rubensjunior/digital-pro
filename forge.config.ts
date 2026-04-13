@@ -6,14 +6,22 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { PublisherGithub } from '@electron-forge/publisher-github';
 
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    icon: './src/images/logotipo',
+    extraResource: [
+      './src/images'
+    ]
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      setupIcon: './src/images/logotipo.ico',
+      iconUrl: 'https://raw.githubusercontent.com/rubensjunior/digital-pro/main/src/images/logotipo.ico'
+    }),
     new MakerZIP({}, ['darwin']),
     new MakerRpm({}),
     new MakerDeb({}),
@@ -53,6 +61,16 @@ const config: ForgeConfig = {
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
+  ],
+  publishers: [
+    new PublisherGithub({
+      repository: {
+        owner: 'rubensjunior',
+        name: 'digital-pro'
+      },
+      prerelease: false,
+      draft: true
+    })
   ],
 };
 

@@ -1,179 +1,145 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
 :root {
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --bg-color: #0f172a;
-  --surface: #1e293b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border: #334155;
-  --drag-region: 30px;
+  --drag-region: 32px;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  min-height: 100vh;
+/* Electron Custom Titlebar */
+.titlebar {
   display: flex;
-  flex-direction: column;
-  overflow: hidden; /* App like behavior */
-}
-
-.drag-region {
-  /* Provides a region to drag the frameless window if titleBarStyle is hidden */
-  -webkit-app-region: drag;
-  position: fixed;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--drag-region);
+  background-color: transparent;
+  user-select: none;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: var(--drag-region);
   z-index: 1000;
 }
 
-.app-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: calc(var(--drag-region) + 20px) 20px 20px 20px;
-}
-
-.app-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  animation: fadeInDown 0.5s ease-out;
-}
-
-.app-header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #60a5fa, #a78bfa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 0.5rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 1.1rem;
-}
-
-.app-content {
+.titlebar-drag-region {
+  -webkit-app-region: drag;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 600px;
-  margin: 0 auto;
-  width: 100%;
+  height: 100%;
 }
 
-.card {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  animation: fadeInUp 0.6s ease-out forwards;
-  opacity: 0;
-}
-
-.card:nth-child(1) { animation-delay: 0.1s; }
-.card:nth-child(2) { animation-delay: 0.2s; }
-
-.card h2 {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-  color: var(--text-main);
-  font-weight: 600;
-}
-
-.sys-info {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.info-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.label {
-  color: var(--text-muted);
+.window-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #64748b;
+  pointer-events: none;
   font-weight: 500;
+  transition: color 0.3s ease;
+}
+.dark .window-title {
+  color: #94a3b8;
 }
 
-.value {
-  font-family: monospace;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  color: #fbbf24;
-}
-
-.btn {
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  margin-top: 1rem;
+.window-controls {
+  display: flex;
+  height: 100%;
   -webkit-app-region: no-drag;
 }
 
-.btn.primary {
-  background-color: var(--primary);
+.control-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  width: 46px;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.dark .control-btn {
+  color: #94a3b8;
+}
+
+.control-btn svg {
+  width: 10px;
+  height: 10px;
+}
+
+.control-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #0f172a;
+}
+.dark .control-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.control-btn.close:hover, .dark .control-btn.close:hover {
+  background-color: #e81123;
   color: white;
 }
 
-.btn.primary:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+/* App Container */
+.app-container {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
-.btn.primary:active {
-  transform: translateY(0);
+/* Animations that Tailwind v4 doesn't have out of the box */
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
 }
 
-.response-text {
-  margin-top: 1rem;
-  min-height: 1.5rem;
-  color: #10b981;
-  font-family: monospace;
-  font-size: 1.1rem;
+.animate-blob {
+  animation: blob 7s infinite;
 }
 
-.app-footer {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  padding-top: 2rem;
-  opacity: 0.7;
+.animation-delay-2000 {
+  animation-delay: 2s;
 }
 
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-20px); }
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
+}
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+.animate-gradient-x {
+  animation: gradient-x 6s ease-in-out infinite;
 }
