@@ -291,9 +291,7 @@ const handleLogin = async () => {
 };
 
 const configurarNavegacaoAoSucesso = () => {
-  // Para fins de demonstração, como o /dashboard ainda não foi criado.
-  alert('Login realizado com sucesso! Acesso concedido à conta.');
-  // router.push('/dashboard');
+  router.push('/dashboard');
 };
 
 const handleSendOtp = async () => {
