@@ -90,3 +90,16 @@ typings/
 
 # Electron-Forge
 out/
+
+# Supabase local secrets (never commit)
+supabase/.env
+supabase/seed.sql
+.supabase/
+
+# Extra env variants
+.env.local
+.env.*.local
+.env.production
+
+# OS
+Thumbs.db
