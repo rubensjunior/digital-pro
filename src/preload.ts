@@ -15,9 +15,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ─── Brain Vault — Ideias ─────────────────────────────────────────────────
   ideias: {
     getAll: () => ipcRenderer.invoke('ideias:getAll'),
+    getHistorico: (id: string) => ipcRenderer.invoke('ideias:getHistorico', id),
     create: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:create', payload),
     update: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:update', payload),
     delete: (id: string) => ipcRenderer.invoke('ideias:delete', id),
     updateStatus: (id: string, status: string) => ipcRenderer.invoke('ideias:updateStatus', { id, status }),
+    updateAcesso: (id: string) => ipcRenderer.invoke('ideias:updateAcesso', id),
+    toggleFavorita: (id: string, is_favorita: number) => ipcRenderer.invoke('ideias:toggleFavorita', { id, is_favorita }),
+    toggleArquivada: (id: string, is_arquivada: number) => ipcRenderer.invoke('ideias:toggleArquivada', { id, is_arquivada }),
   },
 });

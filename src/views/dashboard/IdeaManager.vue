@@ -63,6 +63,21 @@
         <option value="1">⭐ Baixo</option>
       </select>
 
+      <select v-model="filtro.ordenacao" class="bv-select">
+        <option value="nova">Mais recentes</option>
+        <option value="recente">Últimas acessadas</option>
+      </select>
+
+      <label class="bv-toggle-label">
+        <input type="checkbox" v-model="filtro.apenasFavoritas" />
+        ⭐ Só Favoritas
+      </label>
+
+      <label class="bv-toggle-label">
+        <input type="checkbox" v-model="filtro.emArquivo" />
+        🗃️ Ver Arquivo
+      </label>
+
       <!-- View toggle -->
       <div class="bv-view-toggle">
         <button :class="['bv-toggle-btn', { active: view === 'lista' }]" @click="view = 'lista'" title="Lista">
@@ -104,7 +119,12 @@
         @click="abrirDrawer(ideia)"
       >
         <div class="bv-card-left">
-          <div class="bv-card-tipo-badge" :data-tipo="ideia.tipo">{{ ideia.tipo }}</div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="bv-fav-star" :class="{ 'is-fav': ideia.is_favorita }" @click.stop="handleToggleFavorita(ideia)">
+              {{ ideia.is_favorita ? '⭐' : '☆' }}
+            </span>
+            <div class="bv-card-tipo-badge" :data-tipo="ideia.tipo">{{ ideia.tipo }}</div>
+          </div>
           <div class="bv-card-nome">{{ ideia.nome }}</div>
           <div v-if="ideia.descricao" class="bv-card-desc">{{ ideia.descricao }}</div>
           <div class="bv-card-tags">
@@ -146,7 +166,12 @@
           @dragstart="onDragStart($event, ideia.id)"
           @click="abrirDrawer(ideia)"
         >
-          <div class="bv-kanban-card-tipo">{{ ideia.tipo }}</div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <div class="bv-kanban-card-tipo">{{ ideia.tipo }}</div>
+            <span class="bv-fav-star" :class="{ 'is-fav': ideia.is_favorita }" @click.stop="handleToggleFavorita(ideia)">
+              {{ ideia.is_favorita ? '⭐' : '☆' }}
+            </span>
+          </div>
           <div class="bv-kanban-card-nome">{{ ideia.nome }}</div>
           <div v-if="ideia.descricao" class="bv-kanban-card-desc">{{ ideia.descricao }}</div>
           <div class="bv-kanban-card-footer">
@@ -314,15 +339,22 @@
       <div v-if="drawerIdeia" class="bv-drawer-overlay" @click.self="fecharDrawer">
         <div class="bv-drawer">
           <div class="bv-drawer-header">
-            <div>
-              <div class="bv-card-tipo-badge" :data-tipo="drawerIdeia.tipo">{{ drawerIdeia.tipo }}</div>
-              <h2 class="bv-drawer-title">{{ drawerIdeia.nome }}</h2>
+            <div style="display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; width: 100%;">
+              <div style="flex: 1;">
+                <div class="bv-card-tipo-badge" :data-tipo="drawerIdeia.tipo">{{ drawerIdeia.tipo }}</div>
+                <h2 class="bv-drawer-title">{{ drawerIdeia.nome }}</h2>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="bv-modal-close" style="font-size: 16px;" @click="handleToggleFavorita(drawerIdeia)">
+                  {{ drawerIdeia.is_favorita ? '⭐' : '☆' }}
+                </button>
+                <button class="bv-modal-close" @click="fecharDrawer">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-            <button class="bv-modal-close" @click="fecharDrawer">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
           </div>
 
           <div class="bv-drawer-body">
@@ -379,10 +411,29 @@
               </div>
             </div>
 
+            <!-- Histórico -->
+            <div v-if="historicoIdeia.length > 0" class="bv-drawer-section">
+              <div class="bv-drawer-section-title">Histórico de Alterações</div>
+              <div class="bv-historico-list">
+                <div v-for="h in historicoIdeia" :key="h.id" class="bv-historico-item">
+                  <div class="bv-historico-date">{{ formatDate(h.created_at) }}</div>
+                  <div class="bv-historico-acao">
+                    <strong>{{ h.acao }}</strong>
+                    <span v-if="h.detalhes" class="bv-historico-detalhes"> — {{ h.detalhes }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="bv-drawer-date">Criada em {{ formatDate(drawerIdeia.created_at) }}</div>
+            <div class="bv-drawer-date" v-if="drawerIdeia.last_accessed_at">Último acesso: {{ formatDate(drawerIdeia.last_accessed_at) }}</div>
           </div>
 
           <div class="bv-drawer-footer">
+            <button class="bv-btn-ghost" @click="handleToggleArquivar(drawerIdeia)" type="button">
+              {{ drawerIdeia.is_arquivada ? 'Desarquivar' : 'Arquivar' }}
+            </button>
+            <button class="bv-btn-ghost" @click="handleDuplicar(drawerIdeia)" type="button">Duplicar</button>
             <button class="bv-btn-danger" @click="confirmarDelete(drawerIdeia.id)" type="button">Excluir</button>
             <button class="bv-btn-primary" @click="abrirEdicao(drawerIdeia)" type="button">Editar</button>
           </div>
@@ -414,7 +465,11 @@ import { useIdeias } from '../../composables/useIdeias';
 import type { Ideia, IdeiaStatus, IdeiaTipo } from '../../types/ideia';
 
 // ─── Composable ───────────────────────────────────────────────────────────────
-const { ideias, loading, porStatus, fetchIdeias, createIdeia, updateIdeia, deleteIdeia, updateStatus } = useIdeias();
+const { 
+  ideias, loading, fetchIdeias, createIdeia, 
+  updateIdeia, deleteIdeia, updateStatus, getHistorico,
+  updateAcesso, toggleFavorita, toggleArquivada, duplicarIdeia 
+} = useIdeias();
 
 onMounted(fetchIdeias);
 
@@ -448,17 +503,42 @@ const TAG_GROUPS = [
 const view = ref<'lista' | 'kanban'>('lista');
 
 // ─── Filtros ──────────────────────────────────────────────────────────────────
-const filtro = reactive({ busca: '', tipo: '', status: '', score: '' });
+const filtro = reactive({ busca: '', tipo: '', status: '', score: '', apenasFavoritas: false, emArquivo: false, ordenacao: 'nova' });
 
 const ideiasFilradas = computed(() => {
-  return ideias.value.filter(i => {
+  let list = ideias.value.filter(i => {
+    // Se "emArquivo" for true, mostrar SÓ as arquivadas, senão mostrar SÓ as ativas
+    if (filtro.emArquivo && !i.is_arquivada) return false;
+    if (!filtro.emArquivo && i.is_arquivada) return false;
+
+    if (filtro.apenasFavoritas && !i.is_favorita) return false;
+
     const buscaOk = !filtro.busca || i.nome.toLowerCase().includes(filtro.busca.toLowerCase());
     const tipoOk  = !filtro.tipo   || i.tipo   === filtro.tipo;
     const stOk    = !filtro.status || i.status  === filtro.status;
     const scoreOk = !filtro.score  || i.score   >= Number(filtro.score);
     return buscaOk && tipoOk && stOk && scoreOk;
   });
+
+  if (filtro.ordenacao === 'recente' && !filtro.emArquivo) {
+    list = list.sort((a, b) => {
+      const aTime = a.last_accessed_at ? new Date(a.last_accessed_at).getTime() : 0;
+      const bTime = b.last_accessed_at ? new Date(b.last_accessed_at).getTime() : 0;
+      return bTime - aTime;
+    });
+  }
+
+  return list;
 });
+
+// Kanban status arrays
+const porStatus = computed(() => ({
+  bruta:     ideiasFilradas.value.filter(i => i.status === 'bruta'),
+  em_teste:  ideiasFilradas.value.filter(i => i.status === 'em_teste'),
+  validada:  ideiasFilradas.value.filter(i => i.status === 'validada'),
+  nao_validada: ideiasFilradas.value.filter(i => i.status === 'nao_validada'),
+  escalada:  ideiasFilradas.value.filter(i => i.status === 'escalada'),
+}));
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const modalAberto = ref(false);
@@ -606,9 +686,12 @@ function removeTag(key: string, tag: string) {
 
 // ─── Drawer ───────────────────────────────────────────────────────────────────
 const drawerIdeia = ref<Ideia | null>(null);
+const historicoIdeia = ref<any[]>([]);
 
-function abrirDrawer(ideia: Ideia) {
+async function abrirDrawer(ideia: Ideia) {
   drawerIdeia.value = ideia;
+  historicoIdeia.value = await getHistorico(ideia.id);
+  await updateAcesso(ideia.id);
 }
 
 function fecharDrawer() {
@@ -619,6 +702,34 @@ async function mudarStatus(id: string, status: string) {
   await updateStatus(id, status as IdeiaStatus);
   if (drawerIdeia.value?.id === id) {
     drawerIdeia.value = { ...drawerIdeia.value, status: status as IdeiaStatus };
+    historicoIdeia.value = await getHistorico(id);
+  }
+}
+
+async function handleToggleFavorita(ideia: Ideia) {
+  const novoEstado = !ideia.is_favorita;
+  await toggleFavorita(ideia.id, novoEstado);
+  if (drawerIdeia.value?.id === ideia.id) {
+    drawerIdeia.value = { ...drawerIdeia.value, is_favorita: novoEstado };
+  }
+  showToast(novoEstado ? 'Favoritada!' : 'Removida dos favoritos.');
+}
+
+async function handleToggleArquivar(ideia: Ideia) {
+  const novoEstado = !ideia.is_arquivada;
+  await toggleArquivada(ideia.id, novoEstado);
+  if (drawerIdeia.value?.id === ideia.id) {
+    drawerIdeia.value = { ...drawerIdeia.value, is_arquivada: novoEstado };
+  }
+  showToast(novoEstado ? 'Ideia arquivada.' : 'Ideia desarquivada.');
+  if (novoEstado) fecharDrawer();
+}
+
+async function handleDuplicar(ideia: Ideia) {
+  const copia = await duplicarIdeia(ideia);
+  if (copia) {
+    showToast('Ideia duplicada com sucesso!');
+    fecharDrawer();
   }
 }
 
@@ -1759,5 +1870,88 @@ function formatDate(iso: string): string {
   display: flex;
   gap: 8px;
   justify-content: center;
+}
+/* ═══════════════════════════════════════════════════════════════ TOGGLE LABEL */
+.bv-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
+
+.bv-toggle-label:hover {
+  border-color: var(--accent);
+}
+
+.bv-toggle-label input {
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════ STARS (FAV) */
+.bv-fav-star {
+  font-size: 16px;
+  cursor: pointer;
+  color: #cbd5e1;
+  transition: transform 0.15s, color 0.15s;
+  user-select: none;
+}
+.bv-fav-star.is-fav {
+  color: #f59e0b;
+}
+.bv-fav-star:hover {
+  transform: scale(1.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════ HISTORICO */
+.bv-historico-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.bv-historico-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.bv-historico-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.bv-historico-date {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.bv-historico-acao {
+  font-size: 13px;
+  color: #1e293b;
+}
+
+.bv-historico-acao strong {
+  font-weight: 600;
+}
+
+.bv-historico-detalhes {
+  color: #64748b;
+  font-style: italic;
 }
 </style>

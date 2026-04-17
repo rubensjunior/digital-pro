@@ -30,17 +30,31 @@ export interface Ideia {
   tags_dor: string[];
   tags_desejo: string[];
   tags_mecanismo: string[];
+  is_arquivada: boolean;
+  is_favorita: boolean;
+  last_accessed_at?: string;
   created_at: string;
   updated_at: string;
 }
 
+export interface IdeiaHistorico {
+  id: string;
+  ideia_id: string;
+  acao: string;
+  detalhes?: string;
+  created_at: string;
+}
+
 // Payload para criação (sem campos gerados automaticamente)
-export type CreateIdeiaPayload = Omit<Ideia, 'id' | 'created_at' | 'updated_at'>;
+export type CreateIdeiaPayload = Omit<Ideia, 'id' | 'created_at' | 'updated_at' | 'last_accessed_at' | 'is_arquivada' | 'is_favorita'> & {
+  is_arquivada?: boolean;
+  is_favorita?: boolean;
+};
 
 // Payload para atualização (todos opcionais exceto id)
 export type UpdateIdeiaPayload = Partial<Omit<Ideia, 'id' | 'created_at'>> & { id: string };
 
-// ─── Raw row do SQLite (tags como JSON string) ────────────────────────────────
+// ─── Raw row do SQLite (tags como JSON string e boolean como integer) ─────────
 export interface IdeiaRaw {
   id: string;
   nome: string;
@@ -57,6 +71,9 @@ export interface IdeiaRaw {
   tags_dor: string;
   tags_desejo: string;
   tags_mecanismo: string;
+  is_arquivada: number;
+  is_favorita: number;
+  last_accessed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -77,6 +94,9 @@ export function parseIdeia(raw: IdeiaRaw): Ideia {
     tags_dor: safeParseJSON(raw.tags_dor),
     tags_desejo: safeParseJSON(raw.tags_desejo),
     tags_mecanismo: safeParseJSON(raw.tags_mecanismo),
+    is_arquivada: Boolean(raw.is_arquivada),
+    is_favorita: Boolean(raw.is_favorita),
+    last_accessed_at: raw.last_accessed_at ?? undefined,
   };
 }
 
