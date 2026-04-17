@@ -10,6 +10,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     node: () => process.versions.node,
     chrome: () => process.versions.chrome,
     electron: () => process.versions.electron,
-  }
-  // Add other safe functions here
+  },
+
+  // ─── Brain Vault — Ideias ─────────────────────────────────────────────────
+  ideias: {
+    getAll: () => ipcRenderer.invoke('ideias:getAll'),
+    create: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:create', payload),
+    update: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:update', payload),
+    delete: (id: string) => ipcRenderer.invoke('ideias:delete', id),
+    updateStatus: (id: string, status: string) => ipcRenderer.invoke('ideias:updateStatus', { id, status }),
+  },
 });

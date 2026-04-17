@@ -11,6 +11,8 @@ import { PublisherGithub } from '@electron-forge/publisher-github';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    // Módulos nativos (.node) não funcionam dentro do asar — precisam ficar desempacotados
+    asarUnpack: ['**/node_modules/better-sqlite3/**'],
     icon: './src/images/logotipo',
     extraResource: [
       './src/images'

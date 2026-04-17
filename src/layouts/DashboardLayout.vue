@@ -31,7 +31,10 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
               d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
           </svg>
-          <span class="nav-label">Gerenciador de Ideias</span>
+          <span class="nav-label-group">
+            <span class="nav-label">Brain Vault</span>
+            <span class="nav-label-desc">Gerenciador de ideias</span>
+          </span>
         </router-link>
       </nav>
 
@@ -302,7 +305,7 @@ const handleLogout = async () => {
 
 .nav-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 10px 10px;
   border-radius: 10px;
@@ -329,10 +332,38 @@ const handleLogout = async () => {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.nav-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
 .nav-label {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-label-desc {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.nav-item-active .nav-label-desc {
+  color: rgba(255,255,255,0.55);
+}
+
+.nav-item:hover .nav-label-desc {
+  color: #94a3b8;
 }
 
 /* Footer */

@@ -22,7 +22,15 @@ declare global {
         node: () => string;
         chrome: () => string;
         electron: () => string;
-      }
+      };
+      // ─── Brain Vault ───────────────────────────────────────────────────
+      ideias: {
+        getAll: () => Promise<import('./types/ideia').IdeiaRaw[]>;
+        create: (payload: Record<string, unknown>) => Promise<import('./types/ideia').IdeiaRaw>;
+        update: (payload: Record<string, unknown>) => Promise<import('./types/ideia').IdeiaRaw>;
+        delete: (id: string) => Promise<boolean>;
+        updateStatus: (id: string, status: string) => Promise<boolean>;
+      };
     };
   }
 }
