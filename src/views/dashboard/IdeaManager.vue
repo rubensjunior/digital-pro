@@ -27,6 +27,44 @@
       </button>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════ METRICS -->
+    <div v-if="!loading && ideiasFilradas.length > 0" class="bv-metrics-grid">
+      <div class="bv-metric-card">
+        <div class="bv-metric-header">
+          <span class="bv-metric-title">Total de Ideias</span>
+          <span class="bv-metric-icon">💡</span>
+        </div>
+        <div class="bv-metric-value">{{ ideiasFilradas.length }}</div>
+        <div class="bv-metric-trend">🧠 Banco de ideias</div>
+      </div>
+      <div class="bv-metric-card">
+        <div class="bv-metric-header">
+          <span class="bv-metric-title">Validadas / Escaladas</span>
+          <span class="bv-metric-icon">🎯</span>
+        </div>
+        <div class="bv-metric-value">{{ porStatus.validada.length + porStatus.escalada.length }}</div>
+        <div class="bv-metric-trend" :class="taxaSucesso >= 20 ? 'bv-trend-up' : 'bv-trend-flat'">
+          {{ taxaSucesso }}% de taxa de sucesso
+        </div>
+      </div>
+      <div class="bv-metric-card">
+        <div class="bv-metric-header">
+          <span class="bv-metric-title">Alto Potencial</span>
+          <span class="bv-metric-icon">🔥</span>
+        </div>
+        <div class="bv-metric-value">{{ deAltoPotencial }}</div>
+        <div class="bv-metric-trend bv-trend-star">⭐ Score 3 ou 4</div>
+      </div>
+      <div class="bv-metric-card">
+        <div class="bv-metric-header">
+          <span class="bv-metric-title">Em Teste</span>
+          <span class="bv-metric-icon">🧪</span>
+        </div>
+        <div class="bv-metric-value">{{ porStatus.em_teste.length }}</div>
+        <div class="bv-metric-trend bv-trend-test">Em validação atual</div>
+      </div>
+    </div>
+
     <!-- ═══════════════════════════════════════════════════════════ TOOLBAR -->
     <div class="bv-toolbar">
       <div class="bv-search-wrap">
@@ -113,9 +151,11 @@
     <!-- ══════════════════════════════════════════════════════════ LISTA -->
     <div v-else-if="view === 'lista'" class="bv-list">
       <div
-        v-for="ideia in ideiasFilradas"
+        v-for="ideia in listaHierarquica"
         :key="ideia.id"
         class="bv-card"
+        :class="{ 'bv-card-sub': (ideia as any).depth > 0 }"
+        :style="(ideia as any).depth > 0 ? { marginLeft: ((ideia as any).depth * 28) + 'px' } : {}"
         @click="abrirDrawer(ideia)"
       >
         <div class="bv-card-left">
@@ -124,6 +164,9 @@
               {{ ideia.is_favorita ? '⭐' : '☆' }}
             </span>
             <div class="bv-card-tipo-badge" :data-tipo="ideia.tipo">{{ ideia.tipo }}</div>
+            <div v-if="(ideia as any).relationship_type && (ideia as any).depth > 0" class="bv-card-rel-badge">
+              {{ (ideia as any).relationship_type }}
+            </div>
           </div>
           <div class="bv-card-nome">{{ ideia.nome }}</div>
           <div v-if="ideia.descricao" class="bv-card-desc">{{ ideia.descricao }}</div>
@@ -320,6 +363,28 @@
                 </div>
               </div>
             </div>
+
+            <!-- ABA 4 — Ecossistema -->
+            <div v-show="tabAtiva === 3" class="bv-tab-pane">
+              <div class="bv-field">
+                <label class="bv-label">Ideia Principal (Opcional)</label>
+                <select v-model="form.parent_id" class="bv-input bv-select-field">
+                  <option value="">Nenhuma (Esta é uma ideia principal)</option>
+                  <option v-for="i in opcoesPaiDisponiveis" :key="i.id" :value="i.id">
+                    {{ i.nome }}
+                  </option>
+                </select>
+                <span class="bv-drawer-text" style="font-size: 11px;">A qual ideia macro esta ideia pertence?</span>
+              </div>
+              <div class="bv-field" v-if="form.parent_id">
+                <label class="bv-label">Tipo de Relação *</label>
+                <select v-model="form.relationship_type" class="bv-input bv-select-field">
+                  <option value="">Selecione o tipo de relação</option>
+                  <option v-for="rel in RELATIONSHIP_TYPES" :key="rel" :value="rel">{{ rel }}</option>
+                </select>
+              </div>
+            </div>
+
           </div>
 
             <div class="bv-modal-footer">
@@ -379,6 +444,50 @@
                   type="button"
                 >{{ s.label }}</button>
               </div>
+            </div>
+
+            <!-- Ecossistema -->
+            <div class="bv-drawer-section" v-if="ecosistemaArvore.length > 1 || ideiasFilhas.length > 0">
+              <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
+              <div class="bv-eco-tree">
+                <div
+                  v-for="no in ecosistemaArvore"
+                  :key="no.id"
+                  class="bv-eco-node"
+                  :class="{
+                    'bv-eco-node-root':    no.depth === 0 && !no.isCurrent,
+                    'bv-eco-node-current': no.isCurrent,
+                    'bv-eco-node-child':   no.depth > 0 && !no.isCurrent,
+                  }"
+                  :style="{ paddingLeft: (no.depth * 20 + 12) + 'px' }"
+                  @click="!no.isCurrent && abrirDrawer(no)"
+                >
+                  <!-- Linha de conexão vertical para filhos -->
+                  <span v-if="no.depth > 0" class="bv-eco-connector">↳</span>
+                  <!-- Ícone do nó -->
+                  <span class="bv-eco-dot" :class="{
+                    'bv-eco-dot-root':    no.depth === 0,
+                    'bv-eco-dot-current': no.isCurrent,
+                  }"></span>
+                  <div class="bv-eco-info">
+                    <div v-if="no.relationship_type && no.depth > 0" class="bv-eco-rel">{{ no.relationship_type }}</div>
+                    <div class="bv-eco-nome">{{ no.nome }}<span v-if="no.isCurrent" class="bv-eco-current-badge"> · atual</span></div>
+                    <div class="bv-eco-meta">
+                      <span class="bv-eco-tipo">{{ no.tipo }}</span>
+                      <span class="bv-status-badge bv-status-sm" :data-status="no.status">{{ statusLabel(no.status) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="bv-btn-ghost bv-btn-sm" style="margin-top: 10px; justify-content: center; width: 100%;" @click="cadastrarDerivada">
+                + Nova Ideia Derivada
+              </button>
+            </div>
+            <div class="bv-drawer-section" v-else>
+              <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
+              <button class="bv-btn-ghost" style="justify-content: center;" @click="cadastrarDerivada">
+                + Criar Ideia Derivada
+              </button>
             </div>
 
             <!-- Campos descritivos -->
@@ -475,8 +584,9 @@ onMounted(fetchIdeias);
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const TIPOS: IdeiaTipo[] = ['Produto', 'Promessa', 'Ângulo', 'Headline', 'Hook', 'Big Idea', 'VSL', 'Funil', 'Lançamento', 'Outro'];
-const TABS = ['Identificação', 'Descrição', 'Tags'];
+const TABS = ['Identificação', 'Descrição', 'Tags', 'Ecossistema'];
 const SCORE_LABELS = ['Baixo', 'Médio', 'Alto', 'Muito alto'];
+const RELATIONSHIP_TYPES = ['Complementa', 'Feature de', 'Upsell de', 'Downsell de', 'Order bump de', 'Extensão de', 'Versão de', 'Subproduto de', 'Outro'];
 const STATUS_OPTIONS = [
   { value: 'bruta' as IdeiaStatus,    label: 'Bruta' },
   { value: 'em_teste' as IdeiaStatus, label: 'Em Teste' },
@@ -531,6 +641,58 @@ const ideiasFilradas = computed(() => {
   return list;
 });
 
+const opcoesPaiDisponiveis = computed(() => {
+  if (!editando.value) return ideias.value;
+  
+  // Coleta todos os descendentes da ideia sendo editada (para não criar ciclos)
+  const getDescendentes = (id: string): Set<string> => {
+    const result = new Set<string>();
+    const filhos = ideias.value.filter(i => i.parent_id === id);
+    for (const filho of filhos) {
+      result.add(filho.id);
+      getDescendentes(filho.id).forEach(d => result.add(d));
+    }
+    return result;
+  };
+  
+  const descendentes = getDescendentes(editando.value);
+  return ideias.value.filter(i => i.id !== editando.value && !descendentes.has(i.id));
+});
+
+const listaHierarquica = computed(() => {
+  const todas = ideiasFilradas.value;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const arr: any[] = [];
+  const addedIds = new Set<string>();
+
+  const idSet = new Set(todas.map(i => i.id));
+
+  // Função recursiva para inserir um nó e todos os seus filhos em profundidade
+  const inserir = (ideia: typeof todas[0], depth: number) => {
+    if (addedIds.has(ideia.id)) return; // previne loops
+    addedIds.add(ideia.id);
+    arr.push({ ...ideia, depth });
+    const filhos = todas.filter(i => i.parent_id === ideia.id);
+    for (const filho of filhos) {
+      inserir(filho, depth + 1);
+    }
+  };
+
+  // Começa pelas raizes (sem pai, ou cujo pai não está no conjunto filtrado)
+  const raizes = todas.filter(i => !i.parent_id || !idSet.has(i.parent_id));
+  for (const raiz of raizes) {
+    inserir(raiz, 0);
+  }
+
+  // Itens órfãos (loop circular acidental) são exibidos no final sem indentação
+  const orphans = todas.filter(i => !addedIds.has(i.id));
+  for (const orphan of orphans) {
+    arr.push({ ...orphan, depth: 0 });
+  }
+
+  return arr;
+});
+
 // Kanban status arrays
 const porStatus = computed(() => ({
   bruta:     ideiasFilradas.value.filter(i => i.status === 'bruta'),
@@ -539,6 +701,18 @@ const porStatus = computed(() => ({
   nao_validada: ideiasFilradas.value.filter(i => i.status === 'nao_validada'),
   escalada:  ideiasFilradas.value.filter(i => i.status === 'escalada'),
 }));
+
+const taxaSucesso = computed(() => {
+  if (ideiasFilradas.value.length === 0) return 0;
+  const sucesso = porStatus.value.validada.length + porStatus.value.escalada.length;
+  const testadas = ideiasFilradas.value.filter(i => i.status !== 'bruta').length;
+  if (testadas === 0) return 0;
+  return Math.round((sucesso / testadas) * 100);
+});
+
+const deAltoPotencial = computed(() => {
+  return ideiasFilradas.value.filter(i => i.score >= 3).length;
+});
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const modalAberto = ref(false);
@@ -560,6 +734,8 @@ const formVazio = () => ({
   tags_dor: [] as string[],
   tags_desejo: [] as string[],
   tags_mecanismo: [] as string[],
+  parent_id: '',
+  relationship_type: '',
 });
 
 const form = reactive(formVazio());
@@ -601,6 +777,8 @@ function abrirEdicao(ideia: Ideia) {
     tags_dor: [...ideia.tags_dor],
     tags_desejo: [...ideia.tags_desejo],
     tags_mecanismo: [...ideia.tags_mecanismo],
+    parent_id: ideia.parent_id ?? '',
+    relationship_type: ideia.relationship_type ?? '',
   });
   formErros.nome = false;
   formErros.tipo = false;
@@ -640,6 +818,8 @@ async function salvar(fechar: boolean = true) {
     tags_dor: [...form.tags_dor],
     tags_desejo: [...form.tags_desejo],
     tags_mecanismo: [...form.tags_mecanismo],
+    parent_id: form.parent_id || null,
+    relationship_type: form.relationship_type || null,
   };
 
   if (editando.value) {
@@ -687,6 +867,56 @@ function removeTag(key: string, tag: string) {
 // ─── Drawer ───────────────────────────────────────────────────────────────────
 const drawerIdeia = ref<Ideia | null>(null);
 const historicoIdeia = ref<any[]>([]);
+
+const ideiaPai = computed(() => {
+  if (!drawerIdeia.value?.parent_id) return null;
+  return ideias.value.find(i => i.id === drawerIdeia.value?.parent_id) || null;
+});
+
+const ideiasFilhas = computed(() => {
+  if (!drawerIdeia.value) return [];
+  return ideias.value.filter(i => i.parent_id === drawerIdeia.value?.id);
+});
+
+// Árvore completa do ecossistema: sobe até a raiz e desce recursivamente
+const ecosistemaArvore = computed(() => {
+  if (!drawerIdeia.value) return [];
+
+  // Sobe até a raiz (ideia sem pai)
+  const encontrarRaiz = (ideia: Ideia): Ideia => {
+    if (!ideia.parent_id) return ideia;
+    const pai = ideias.value.find(i => i.id === ideia.parent_id);
+    return pai ? encontrarRaiz(pai) : ideia;
+  };
+
+  const raiz = encontrarRaiz(drawerIdeia.value);
+  const currentId = drawerIdeia.value.id;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const arr: Array<Ideia & { depth: number; isCurrent: boolean }> = [];
+  const visitados = new Set<string>();
+
+  const inserir = (ideia: Ideia, depth: number) => {
+    if (visitados.has(ideia.id)) return; // evita ciclos
+    visitados.add(ideia.id);
+    arr.push({ ...ideia, depth, isCurrent: ideia.id === currentId });
+    const filhos = ideias.value
+      .filter(i => i.parent_id === ideia.id)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    for (const filho of filhos) {
+      inserir(filho, depth + 1);
+    }
+  };
+
+  inserir(raiz, 0);
+  return arr;
+});
+
+function cadastrarDerivada() {
+  if (!drawerIdeia.value) return;
+  abrirModal();
+  form.parent_id = drawerIdeia.value.id;
+  tabAtiva.value = 3;
+}
 
 async function abrirDrawer(ideia: Ideia) {
   drawerIdeia.value = ideia;
@@ -940,6 +1170,78 @@ function formatDate(iso: string): string {
   background: rgba(239, 68, 68, 0.2);
 }
 
+/* ═══════════════════════════════════════════════════════════════ METRICS */
+.bv-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 0;
+}
+
+.bv-metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.bv-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bv-metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bv-metric-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.bv-metric-icon {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.bv-metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.bv-metric-trend {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.bv-trend-up { color: #10b981; }
+.bv-trend-flat { color: #8b5cf6; }
+.bv-trend-star { color: #f59e0b; }
+.bv-trend-test { color: #3b82f6; }
+
+@media (max-width: 1024px) {
+  .bv-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .bv-metrics-grid { grid-template-columns: 1fr; }
+}
+
 /* ═══════════════════════════════════════════════════════════════ TOOLBAR */
 .bv-toolbar {
   display: flex;
@@ -1152,6 +1454,36 @@ function formatDate(iso: string): string {
 .bv-card-date {
   font-size: 11px;
   color: var(--text-secondary);
+}
+
+.bv-card-sub {
+  margin-left: 32px;
+  position: relative;
+  background: #f8fafc;
+  border-left: 3px solid var(--accent);
+}
+
+.bv-card-sub::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  width: 14px;
+  height: 2px;
+  background: var(--border);
+}
+
+.bv-card-rel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ═══════════════════════════════════════════════════════════════ TIPO BADGE */
@@ -1954,4 +2286,155 @@ function formatDate(iso: string): string {
   color: #64748b;
   font-style: italic;
 }
+
+/* ═══════════════════════════════════════════════════════════════ ECOSSISTEMA TREE */
+.bv-tree { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; position: relative; gap: 2px; }
+.bv-tree-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 6px; cursor: pointer; transition: background 0.15s; position: relative; }
+.bv-tree-item:hover { background: #f1f5f9; }
+.bv-tree-current { background: #f8fafc; cursor: default; }
+.bv-tree-current:hover { background: #f8fafc; }
+.bv-tree-icon { font-family: monospace; font-size: 14px; color: #94a3b8; width: 16px; text-align: center; line-height: 1.2; margin-top: 1px; flex-shrink: 0; }
+.bv-tree-current .bv-tree-icon { color: var(--accent); }
+.bv-tree-content { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
+.bv-tree-rel { font-size: 10px; color: #8b5cf6; font-weight: 700; text-transform: uppercase; line-height: 1; margin-bottom: 1px; }
+.bv-tree-nome { font-size: 13px; color: var(--text-primary); font-weight: 600; line-height: 1.3; }
+.bv-tree-child { margin-left: 20px; }
+.bv-tree-line { position: absolute; left: 15px; top: -10px; bottom: 50%; width: 1px; background: var(--border); }
+.bv-btn-sm { font-size: 12px; padding: 6px 12px; border-radius: 8px; }
+
+/* ═══════════════════════════════════════════════════════ ECOSSISTEMA FULL TREE */
+.bv-eco-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 0;
+  overflow: hidden;
+}
+
+.bv-eco-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-right: 12px;
+  border-radius: 0;
+  transition: background 0.15s;
+  position: relative;
+  cursor: pointer;
+}
+
+.bv-eco-node:hover {
+  background: rgba(139, 92, 246, 0.06);
+}
+
+/* Nó raiz */
+.bv-eco-node-root {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+/* Nó atual — destaque visual */
+.bv-eco-node-current {
+  background: rgba(139, 92, 246, 0.08);
+  cursor: default;
+  border-left: 3px solid var(--accent);
+}
+
+.bv-eco-node-current:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* Conector ↳ para nós filhos */
+.bv-eco-connector {
+  font-size: 14px;
+  color: #94a3b8;
+  flex-shrink: 0;
+  line-height: 1.4;
+  margin-top: 1px;
+}
+
+/* Bolinha indicadora */
+.bv-eco-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex-shrink: 0;
+  margin-top: 5px;
+  transition: background 0.15s;
+}
+
+.bv-eco-dot-root {
+  background: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.bv-eco-dot-current {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+.bv-eco-node:hover .bv-eco-dot:not(.bv-eco-dot-root):not(.bv-eco-dot-current) {
+  background: #8b5cf6;
+}
+
+/* Conteúdo do nó */
+.bv-eco-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bv-eco-rel {
+  font-size: 10px;
+  color: #8b5cf6;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.bv-eco-nome {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bv-eco-current-badge {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+.bv-eco-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bv-eco-tipo {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Badge de status pequeno para o ecossistema */
+.bv-status-sm {
+  font-size: 9px !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+}
+
 </style>

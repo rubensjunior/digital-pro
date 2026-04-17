@@ -42,6 +42,8 @@ function initDatabase() {
       tags_dor       TEXT NOT NULL DEFAULT '[]',
       tags_desejo    TEXT NOT NULL DEFAULT '[]',
       tags_mecanismo TEXT NOT NULL DEFAULT '[]',
+      parent_id      TEXT,
+      relationship_type TEXT,
       created_at     TEXT DEFAULT (datetime('now')),
       updated_at     TEXT DEFAULT (datetime('now'))
     );
@@ -51,6 +53,10 @@ function initDatabase() {
   try { db.exec('ALTER TABLE ideias ADD COLUMN is_arquivada INTEGER NOT NULL DEFAULT 0;'); } catch (e) { /* ignore */ }
   try { db.exec('ALTER TABLE ideias ADD COLUMN is_favorita INTEGER NOT NULL DEFAULT 0;'); } catch (e) { /* ignore */ }
   try { db.exec('ALTER TABLE ideias ADD COLUMN last_accessed_at TEXT;'); } catch (e) { /* ignore */ }
+
+  // Evolução 3: Hierarquia de Ideias
+  try { db.exec('ALTER TABLE ideias ADD COLUMN parent_id TEXT;'); } catch (e) { /* ignore */ }
+  try { db.exec('ALTER TABLE ideias ADD COLUMN relationship_type TEXT;'); } catch (e) { /* ignore */ }
 
   // Evolução 2: Tabela de histórico
   db.exec(`
@@ -114,6 +120,8 @@ function registerIdeiaHandlers() {
         tags_mecanismo: JSON.stringify(payload.tags_mecanismo ?? []),
         is_arquivada: payload.is_arquivada ? 1 : 0,
         is_favorita: payload.is_favorita ? 1 : 0,
+        parent_id: payload.parent_id ?? null,
+        relationship_type: payload.relationship_type ?? null,
         last_accessed_at: now,
         created_at: now,
         updated_at: now,
@@ -124,13 +132,13 @@ function registerIdeiaHandlers() {
           id, nome, tipo, status, score,
           descricao, contexto, problema, transformacao, publico_alvo,
           tags_avatar, tags_nicho, tags_dor, tags_desejo, tags_mecanismo,
-          is_arquivada, is_favorita, last_accessed_at,
+          is_arquivada, is_favorita, parent_id, relationship_type, last_accessed_at,
           created_at, updated_at
         ) VALUES (
           @id, @nome, @tipo, @status, @score,
           @descricao, @contexto, @problema, @transformacao, @publico_alvo,
           @tags_avatar, @tags_nicho, @tags_dor, @tags_desejo, @tags_mecanismo,
-          @is_arquivada, @is_favorita, @last_accessed_at,
+          @is_arquivada, @is_favorita, @parent_id, @relationship_type, @last_accessed_at,
           @created_at, @updated_at
         )
       `).run(row);

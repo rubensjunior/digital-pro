@@ -14,6 +14,17 @@ export type IdeiaTipo =
   | 'Lançamento'
   | 'Outro';
 
+export type IdeiaRelationshipType = 
+  | 'Complementa' 
+  | 'Feature de' 
+  | 'Upsell de' 
+  | 'Downsell de' 
+  | 'Order bump de' 
+  | 'Extensão de' 
+  | 'Versão de' 
+  | 'Subproduto de' 
+  | 'Outro';
+
 export interface Ideia {
   id: string;
   nome: string;
@@ -32,6 +43,8 @@ export interface Ideia {
   tags_mecanismo: string[];
   is_arquivada: boolean;
   is_favorita: boolean;
+  parent_id?: string | null;
+  relationship_type?: IdeiaRelationshipType | string | null;
   last_accessed_at?: string;
   created_at: string;
   updated_at: string;
@@ -73,6 +86,8 @@ export interface IdeiaRaw {
   tags_mecanismo: string;
   is_arquivada: number;
   is_favorita: number;
+  parent_id: string | null;
+  relationship_type: string | null;
   last_accessed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -96,6 +111,8 @@ export function parseIdeia(raw: IdeiaRaw): Ideia {
     tags_mecanismo: safeParseJSON(raw.tags_mecanismo),
     is_arquivada: Boolean(raw.is_arquivada),
     is_favorita: Boolean(raw.is_favorita),
+    parent_id: raw.parent_id || null,
+    relationship_type: raw.relationship_type || null,
     last_accessed_at: raw.last_accessed_at ?? undefined,
   };
 }
