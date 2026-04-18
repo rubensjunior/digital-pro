@@ -6,6 +6,7 @@ import PendingPayment from '../views/PendingPayment.vue';
 import DashboardLayout from '../layouts/DashboardLayout.vue';
 import Dashboard from '../views/dashboard/Dashboard.vue';
 import IdeaManager from '../views/dashboard/IdeaManager.vue';
+import IdeaNetworkView from '../views/dashboard/IdeaNetworkView.vue';
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -65,6 +66,7 @@ const router = createRouter({
       children: [
         { path: '', component: Dashboard },
         { path: 'ideas', component: IdeaManager },
+        { path: 'ideas/network/:rootId', component: IdeaNetworkView },
       ],
     },
   ],

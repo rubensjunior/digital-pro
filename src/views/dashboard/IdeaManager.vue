@@ -185,6 +185,8 @@
       </div>
     </div>
 
+
+
     <!-- ══════════════════════════════════════════════════════════ KANBAN -->
     <div v-else class="bv-kanban">
       <div
@@ -462,9 +464,7 @@
                   :style="{ paddingLeft: (no.depth * 20 + 12) + 'px' }"
                   @click="!no.isCurrent && abrirDrawer(no)"
                 >
-                  <!-- Linha de conexão vertical para filhos -->
                   <span v-if="no.depth > 0" class="bv-eco-connector">↳</span>
-                  <!-- Ícone do nó -->
                   <span class="bv-eco-dot" :class="{
                     'bv-eco-dot-root':    no.depth === 0,
                     'bv-eco-dot-current': no.isCurrent,
@@ -479,15 +479,25 @@
                   </div>
                 </div>
               </div>
-              <button class="bv-btn-ghost bv-btn-sm" style="margin-top: 10px; justify-content: center; width: 100%;" @click="cadastrarDerivada">
-                + Nova Ideia Derivada
-              </button>
+              <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button class="bv-btn-ghost bv-btn-sm" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
+                  + Nova Derivada
+                </button>
+                <button class="bv-btn-neural bv-btn-sm" style="flex: 1; justify-content: center;" @click="abrirRedeNeural(drawerIdeia)">
+                  🕸️ Ver Rede Neural
+                </button>
+              </div>
             </div>
             <div class="bv-drawer-section" v-else>
               <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
-              <button class="bv-btn-ghost" style="justify-content: center;" @click="cadastrarDerivada">
-                + Criar Ideia Derivada
-              </button>
+              <div style="display: flex; gap: 8px;">
+                <button class="bv-btn-ghost" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
+                  + Criar Ideia Derivada
+                </button>
+                <button class="bv-btn-neural" style="flex: 1; justify-content: center;" @click="abrirRedeNeural(drawerIdeia)">
+                  🕸️ Rede Neural
+                </button>
+              </div>
             </div>
 
             <!-- Campos descritivos -->
@@ -569,8 +579,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, reactive, nextTick, watch } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
+import { useRouter, useRoute } from 'vue-router';
 import type { Ideia, IdeiaStatus, IdeiaTipo } from '../../types/ideia';
 
 // ─── Composable ───────────────────────────────────────────────────────────────
@@ -580,7 +591,17 @@ const {
   updateAcesso, toggleFavorita, toggleArquivada, duplicarIdeia 
 } = useIdeias();
 
-onMounted(fetchIdeias);
+const router = useRouter();
+const route  = useRoute();
+
+onMounted(async () => {
+  await fetchIdeias();
+  // Se voltou da rede neural com ?openDrawer=id, abre o drawer daquela ideia
+  if (route.query.openDrawer) {
+    const ideia = ideias.value.find(i => i.id === route.query.openDrawer);
+    if (ideia) abrirDrawer(ideia);
+  }
+});
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const TIPOS: IdeiaTipo[] = ['Produto', 'Promessa', 'Ângulo', 'Headline', 'Hook', 'Big Idea', 'VSL', 'Funil', 'Lançamento', 'Outro'];
@@ -982,6 +1003,17 @@ async function executarDelete() {
   drawerIdeia.value = null;
 }
 
+// ─── Rede Neural ──────────────────────────────────────────────────────────────
+function encontrarRaizEcossistema(ideia: Ideia): string {
+  if (!ideia.parent_id) return ideia.id;
+  const pai = ideias.value.find(i => i.id === ideia.parent_id);
+  return pai ? encontrarRaizEcossistema(pai) : ideia.id;
+}
+
+function abrirRedeNeural(ideia: Ideia) {
+  router.push(`/dashboard/ideas/network/${encontrarRaizEcossistema(ideia)}`);
+}
+
 // ─── Drag & Drop (Kanban) ─────────────────────────────────────────────────────
 const draggedId = ref<string | null>(null);
 
@@ -1168,6 +1200,28 @@ function formatDate(iso: string): string {
 
 .bv-btn-danger:hover {
   background: rgba(239, 68, 68, 0.2);
+}
+
+.bv-btn-neural {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bv-btn-neural:hover {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: rgba(139, 92, 246, 0.55);
+  color: #c4b5fd;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
 }
 
 /* ═══════════════════════════════════════════════════════════════ METRICS */

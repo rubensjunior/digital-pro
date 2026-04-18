@@ -524,6 +524,8 @@ const handleLogout = async () => {
 .page-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 28px;
+  position: relative; /* ancora o absolute do IdeaNetworkView */
 }
 </style>
