@@ -158,6 +158,17 @@
         :style="(ideia as any).depth > 0 ? { marginLeft: ((ideia as any).depth * 28) + 'px' } : {}"
         @click="abrirDrawer(ideia)"
       >
+        <template v-if="(ideia as any).depth > 0">
+          <div 
+            v-for="(isAncestorLast, i) in (ideia as any).lineage.slice(1, -1)" 
+            v-show="!isAncestorLast"
+            :key="'anc-' + i"
+            class="bv-tree-vline" 
+            :style="{ left: (((i + 1) - (ideia as any).depth) * 28 - 14) + 'px' }"
+          ></div>
+          <div class="bv-tree-elbow"></div>
+          <div v-if="!(ideia as any).isLast" class="bv-tree-vline-continue"></div>
+        </template>
         <div class="bv-card-left">
           <div style="display: flex; gap: 8px; align-items: center;">
             <span class="bv-fav-star" :class="{ 'is-fav': ideia.is_favorita }" @click.stop="handleToggleFavorita(ideia)">
@@ -173,6 +184,14 @@
           <div class="bv-card-tags">
             <span v-for="t in allTags(ideia).slice(0, 4)" :key="t" class="bv-tag">{{ t }}</span>
             <span v-if="allTags(ideia).length > 4" class="bv-tag bv-tag-more">+{{ allTags(ideia).length - 4 }}</span>
+            <button 
+              v-if="(ideia as any).derivadasCount > 0"
+              class="bv-tag bv-tag-expand"
+              @click.stop="toggleExpand(ideia.id)"
+              title="Ver/Ocultar ideias derivadas"
+            >
+              {{ expandedIdeas.includes(ideia.id) ? '▴ Ocultar' : ('▾ ' + (ideia as any).derivadasCount + ' derivada' + ((ideia as any).derivadasCount > 1 ? 's' : '')) }}
+            </button>
           </div>
         </div>
         <div class="bv-card-right">
@@ -437,6 +456,10 @@
                 Documentação
                 <span v-if="notas.length + links.length + arquivos.length > 0" class="bv-drawer-tab-badge">{{ notas.length + links.length + arquivos.length }}</span>
               </button>
+              <button class="bv-drawer-tab bv-drawer-tab-neural" @click="abrirRedeNeural(drawerIdeia)">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Rede Neural
+              </button>
             </div>
 
             <!-- ══════════════════════════ ABA: INFORMAÇÕES -->
@@ -500,9 +523,6 @@
                   <button class="bv-btn-ghost bv-btn-sm" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
                     + Nova Derivada
                   </button>
-                  <button class="bv-btn-neural bv-btn-sm" style="flex: 1; justify-content: center;" @click="abrirRedeNeural(drawerIdeia)">
-                    🕸️ Ver Rede Neural
-                  </button>
                 </div>
               </div>
               <div class="bv-drawer-section" v-else>
@@ -510,9 +530,6 @@
                 <div style="display: flex; gap: 8px;">
                   <button class="bv-btn-ghost" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
                     + Criar Ideia Derivada
-                  </button>
-                  <button class="bv-btn-neural" style="flex: 1; justify-content: center;" @click="abrirRedeNeural(drawerIdeia)">
-                    🕸️ Rede Neural
                   </button>
                 </div>
               </div>
@@ -802,10 +819,29 @@ const view = ref<'lista' | 'kanban'>('lista');
 const filtro = reactive({ busca: '', tipo: '', status: '', score: '', apenasFavoritas: false, emArquivo: false, ordenacao: 'nova' });
 
 const ideiasFilradas = computed(() => {
+  const archMap = new Map<string, boolean>();
+  const isArchived = (id: string): boolean => {
+    if (archMap.has(id)) return archMap.get(id)!;
+    const i = ideias.value.find(x => x.id === id);
+    if (!i) return false;
+    if (i.is_arquivada) {
+      archMap.set(id, true);
+      return true;
+    }
+    if (i.parent_id) {
+      const res = isArchived(i.parent_id);
+      archMap.set(id, res);
+      return res;
+    }
+    archMap.set(id, false);
+    return false;
+  };
+
   let list = ideias.value.filter(i => {
+    const arquivada = isArchived(i.id);
     // Se "emArquivo" for true, mostrar SÓ as arquivadas, senão mostrar SÓ as ativas
-    if (filtro.emArquivo && !i.is_arquivada) return false;
-    if (!filtro.emArquivo && i.is_arquivada) return false;
+    if (filtro.emArquivo && !arquivada) return false;
+    if (!filtro.emArquivo && arquivada) return false;
 
     if (filtro.apenasFavoritas && !i.is_favorita) return false;
 
@@ -845,6 +881,16 @@ const opcoesPaiDisponiveis = computed(() => {
   return ideias.value.filter(i => i.id !== editando.value && !descendentes.has(i.id));
 });
 
+const expandedIdeas = ref<string[]>([]);
+const toggleExpand = (id: string) => {
+  const idx = expandedIdeas.value.indexOf(id);
+  if (idx > -1) {
+    expandedIdeas.value.splice(idx, 1);
+  } else {
+    expandedIdeas.value.push(id);
+  }
+};
+
 const listaHierarquica = computed(() => {
   const todas = ideiasFilradas.value;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -853,28 +899,25 @@ const listaHierarquica = computed(() => {
 
   const idSet = new Set(todas.map(i => i.id));
 
-  // Função recursiva para inserir um nó e todos os seus filhos em profundidade
-  const inserir = (ideia: typeof todas[0], depth: number) => {
-    if (addedIds.has(ideia.id)) return; // previne loops
+  const inserir = (ideia: typeof todas[0], depth: number, isLast: boolean, lineage: boolean[]) => {
+    if (addedIds.has(ideia.id)) return;
     addedIds.add(ideia.id);
-    arr.push({ ...ideia, depth });
     const filhos = todas.filter(i => i.parent_id === ideia.id);
-    for (const filho of filhos) {
-      inserir(filho, depth + 1);
+    arr.push({ ...ideia, depth, derivadasCount: filhos.length, isLast, lineage });
+    
+    if (expandedIdeas.value.includes(ideia.id)) {
+      filhos.forEach((filho, idx) => {
+        const isLastChild = idx === filhos.length - 1;
+        inserir(filho, depth + 1, isLastChild, [...lineage, isLastChild]);
+      });
     }
   };
 
-  // Começa pelas raizes (sem pai, ou cujo pai não está no conjunto filtrado)
   const raizes = todas.filter(i => !i.parent_id || !idSet.has(i.parent_id));
-  for (const raiz of raizes) {
-    inserir(raiz, 0);
-  }
-
-  // Itens órfãos (loop circular acidental) são exibidos no final sem indentação
-  const orphans = todas.filter(i => !addedIds.has(i.id));
-  for (const orphan of orphans) {
-    arr.push({ ...orphan, depth: 0 });
-  }
+  raizes.forEach((raiz, idx) => {
+    const isLastChild = idx === raizes.length - 1;
+    inserir(raiz, 0, isLastChild, [isLastChild]);
+  });
 
   return arr;
 });
@@ -1865,20 +1908,24 @@ function formatDate(iso: string): string {
 }
 
 .bv-card-sub {
-  margin-left: 32px;
   position: relative;
-  background: #f8fafc;
-  border-left: 3px solid var(--accent);
+  background: #ffffff;
+  padding: 11px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
-.bv-card-sub::before {
-  content: "";
-  position: absolute;
-  left: -20px;
-  top: 50%;
-  width: 14px;
-  height: 2px;
-  background: var(--border);
+.bv-card-sub:hover {
+  background: #f8fafc;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.bv-card-sub .bv-card-nome {
+  font-size: 13.5px;
+}
+
+.bv-card-sub .bv-card-desc {
+  font-size: 12px;
 }
 
 .bv-card-rel-badge {
@@ -2568,6 +2615,23 @@ function formatDate(iso: string): string {
   border-bottom-color: #3b82f6;
 }
 
+.bv-drawer-tab-neural {
+  margin-left: auto; /* Empurra para o lado direito */
+  color: #a855f7;
+  font-weight: 700;
+  border-bottom: 2.5px solid transparent;
+}
+
+.bv-drawer-tab-neural:hover {
+  color: #9333ea;
+  border-bottom-color: #9333ea;
+}
+
+.bv-drawer-tab-neural svg {
+  color: #a855f7;
+}
+
+
 .bv-drawer-tab-badge {
   display: inline-flex;
   align-items: center;
@@ -2633,7 +2697,7 @@ function formatDate(iso: string): string {
 
 .bv-drawer-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
   padding: 16px 20px;
   border-top: 1px solid #e2e8f0;
@@ -3338,6 +3402,50 @@ function formatDate(iso: string): string {
 .bv-upload-progress span {
   font-size: 11.5px;
   color: #64748b;
+}
+
+/* Tree Guidelines */
+.bv-tree-vline {
+  position: absolute;
+  top: -8px; 
+  height: calc(100% + 8px); 
+  border-left: 2px solid rgba(148, 163, 184, 0.4);
+  z-index: 0;
+  pointer-events: none;
+}
+.bv-tree-elbow {
+  position: absolute;
+  left: -14px;
+  top: -12px; 
+  height: calc(50% + 12px);
+  width: 14px;
+  border-left: 2px solid rgba(148, 163, 184, 0.4);
+  border-bottom: 2px solid rgba(148, 163, 184, 0.4);
+  border-bottom-left-radius: 6px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.bv-tree-vline-continue {
+  position: absolute;
+  left: -14px;
+  top: calc(50% - 6px); 
+  height: calc(50% + 14px); 
+  border-left: 2px solid rgba(148, 163, 184, 0.4);
+  pointer-events: none;
+}
+
+/* Expansion Badge */
+.bv-tag-expand {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border-color: rgba(139, 92, 246, 0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+.bv-tag-expand:hover {
+  background: rgba(139, 92, 246, 0.18);
+  color: #7c3aed;
 }
 
 </style>

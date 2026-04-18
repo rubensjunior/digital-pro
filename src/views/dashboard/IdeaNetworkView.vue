@@ -638,9 +638,9 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 <style scoped>
 /* ══════════════════════════════════════════════════════════ PAGE */
 .nn-page {
-  /* Preenche exatamente o espaço do page-content (que tem padding: 28px) */
+  /* Preenche exatamente o espaço do page-content */
   position: absolute;
-  inset: -28px;
+  inset: 0;
   display: flex;
   flex-direction: column;
   background: #0d1117;
