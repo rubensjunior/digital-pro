@@ -124,3 +124,34 @@ function safeParseJSON(value: string): string[] {
     return [];
   }
 }
+
+// ─── Documentação Complementar ───────────────────────────────────────────────
+
+export interface IdeiaNote {
+  id: string;
+  ideia_id: string;
+  titulo?: string;
+  conteudo: string;
+  cor: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IdeiaLink {
+  id: string;
+  ideia_id: string;
+  url: string;
+  titulo?: string;
+  descricao?: string;
+  created_at: string;
+}
+
+export interface IdeiaArquivo {
+  id: string;
+  ideia_id: string;
+  nome_original: string;
+  caminho: string;
+  tipo_mime?: string;
+  tamanho?: number;
+  created_at: string;
+}

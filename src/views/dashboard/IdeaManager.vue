@@ -425,128 +425,269 @@
           </div>
 
           <div class="bv-drawer-body">
-            <!-- Status + Score -->
-            <div class="bv-drawer-row">
-              <span class="bv-status-badge" :data-status="drawerIdeia.status">{{ statusLabel(drawerIdeia.status) }}</span>
-              <div class="bv-stars">
-                <span v-for="n in 4" :key="n" :class="n <= drawerIdeia.score ? 'bv-star-on' : 'bv-star-off'">★</span>
-              </div>
+
+            <!-- ═══════════════════════════ TABS DO DRAWER -->
+            <div class="bv-drawer-tabs">
+              <button :class="['bv-drawer-tab', { active: drawerTab === 'geral' }]" @click="drawerTab = 'geral'">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Informações
+              </button>
+              <button :class="['bv-drawer-tab', { active: drawerTab === 'doc' }]" @click="drawerTab = 'doc'">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Documentação
+                <span v-if="notas.length + links.length + arquivos.length > 0" class="bv-drawer-tab-badge">{{ notas.length + links.length + arquivos.length }}</span>
+              </button>
             </div>
 
-            <!-- Mudar status rápido -->
-            <div class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Mover para</div>
-              <div class="bv-status-group">
-                <button
-                  v-for="s in STATUS_OPTIONS"
-                  :key="s.value"
-                  :class="['bv-status-opt', { active: drawerIdeia.status === s.value }]"
-                  :data-status="s.value"
-                  @click="mudarStatus(drawerIdeia.id, s.value)"
-                  type="button"
-                >{{ s.label }}</button>
-              </div>
-            </div>
+            <!-- ══════════════════════════ ABA: INFORMAÇÕES -->
+            <div v-show="drawerTab === 'geral'" class="bv-drawer-tab-pane">
 
-            <!-- Ecossistema -->
-            <div class="bv-drawer-section" v-if="ecosistemaArvore.length > 1 || ideiasFilhas.length > 0">
-              <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
-              <div class="bv-eco-tree">
-                <div
-                  v-for="no in ecosistemaArvore"
-                  :key="no.id"
-                  class="bv-eco-node"
-                  :class="{
-                    'bv-eco-node-root':    no.depth === 0 && !no.isCurrent,
-                    'bv-eco-node-current': no.isCurrent,
-                    'bv-eco-node-child':   no.depth > 0 && !no.isCurrent,
-                  }"
-                  :style="{ paddingLeft: (no.depth * 20 + 12) + 'px' }"
-                  @click="!no.isCurrent && abrirDrawer(no)"
-                >
-                  <span v-if="no.depth > 0" class="bv-eco-connector">↳</span>
-                  <span class="bv-eco-dot" :class="{
-                    'bv-eco-dot-root':    no.depth === 0,
-                    'bv-eco-dot-current': no.isCurrent,
-                  }"></span>
-                  <div class="bv-eco-info">
-                    <div v-if="no.relationship_type && no.depth > 0" class="bv-eco-rel">{{ no.relationship_type }}</div>
-                    <div class="bv-eco-nome">{{ no.nome }}<span v-if="no.isCurrent" class="bv-eco-current-badge"> · atual</span></div>
-                    <div class="bv-eco-meta">
-                      <span class="bv-eco-tipo">{{ no.tipo }}</span>
-                      <span class="bv-status-badge bv-status-sm" :data-status="no.status">{{ statusLabel(no.status) }}</span>
+              <!-- Status + Score -->
+              <div class="bv-drawer-row">
+                <span class="bv-status-badge" :data-status="drawerIdeia.status">{{ statusLabel(drawerIdeia.status) }}</span>
+                <div class="bv-stars">
+                  <span v-for="n in 4" :key="n" :class="n <= drawerIdeia.score ? 'bv-star-on' : 'bv-star-off'">★</span>
+                </div>
+              </div>
+
+              <!-- Mudar status rápido -->
+              <div class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Mover para</div>
+                <div class="bv-status-group">
+                  <button
+                    v-for="s in STATUS_OPTIONS"
+                    :key="s.value"
+                    :class="['bv-status-opt', { active: drawerIdeia.status === s.value }]"
+                    :data-status="s.value"
+                    @click="mudarStatus(drawerIdeia.id, s.value)"
+                    type="button"
+                  >{{ s.label }}</button>
+                </div>
+              </div>
+
+              <!-- Ecossistema -->
+              <div class="bv-drawer-section" v-if="ecosistemaArvore.length > 1 || ideiasFilhas.length > 0">
+                <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
+                <div class="bv-eco-tree">
+                  <div
+                    v-for="no in ecosistemaArvore"
+                    :key="no.id"
+                    class="bv-eco-node"
+                    :class="{
+                      'bv-eco-node-root':    no.depth === 0 && !no.isCurrent,
+                      'bv-eco-node-current': no.isCurrent,
+                      'bv-eco-node-child':   no.depth > 0 && !no.isCurrent,
+                    }"
+                    :style="{ paddingLeft: (no.depth * 20 + 12) + 'px' }"
+                    @click="!no.isCurrent && abrirDrawer(no)"
+                  >
+                    <span v-if="no.depth > 0" class="bv-eco-connector">↳</span>
+                    <span class="bv-eco-dot" :class="{
+                      'bv-eco-dot-root':    no.depth === 0,
+                      'bv-eco-dot-current': no.isCurrent,
+                    }"></span>
+                    <div class="bv-eco-info">
+                      <div v-if="no.relationship_type && no.depth > 0" class="bv-eco-rel">{{ no.relationship_type }}</div>
+                      <div class="bv-eco-nome">{{ no.nome }}<span v-if="no.isCurrent" class="bv-eco-current-badge"> · atual</span></div>
+                      <div class="bv-eco-meta">
+                        <span class="bv-eco-tipo">{{ no.tipo }}</span>
+                        <span class="bv-status-badge bv-status-sm" :data-status="no.status">{{ statusLabel(no.status) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                  <button class="bv-btn-ghost bv-btn-sm" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
+                    + Nova Derivada
+                  </button>
+                  <button class="bv-btn-neural bv-btn-sm" style="flex: 1; justify-content: center;" @click="abrirRedeNeural(drawerIdeia)">
+                    🕸️ Ver Rede Neural
+                  </button>
+                </div>
+              </div>
+              <div class="bv-drawer-section" v-else>
+                <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="bv-btn-ghost" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
+                    + Criar Ideia Derivada
+                  </button>
+                  <button class="bv-btn-neural" style="flex: 1; justify-content: center;" @click="abrirRedeNeural(drawerIdeia)">
+                    🕸️ Rede Neural
+                  </button>
+                </div>
+              </div>
+
+              <!-- Campos descritivos -->
+              <div v-if="drawerIdeia.descricao" class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Descrição</div>
+                <p class="bv-drawer-text">{{ drawerIdeia.descricao }}</p>
+              </div>
+              <div v-if="drawerIdeia.contexto" class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Contexto</div>
+                <p class="bv-drawer-text">{{ drawerIdeia.contexto }}</p>
+              </div>
+              <div v-if="drawerIdeia.problema" class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Problema que resolve</div>
+                <p class="bv-drawer-text">{{ drawerIdeia.problema }}</p>
+              </div>
+              <div v-if="drawerIdeia.transformacao" class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Transformação prometida</div>
+                <p class="bv-drawer-text">{{ drawerIdeia.transformacao }}</p>
+              </div>
+              <div v-if="drawerIdeia.publico_alvo" class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Público-alvo</div>
+                <p class="bv-drawer-text">{{ drawerIdeia.publico_alvo }}</p>
+              </div>
+
+              <!-- Tags -->
+              <div v-if="allTags(drawerIdeia).length > 0" class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Tags</div>
+                <div class="bv-drawer-tags">
+                  <span v-for="t in allTags(drawerIdeia)" :key="t" class="bv-tag">{{ t }}</span>
+                </div>
+              </div>
+
+              <!-- Histórico -->
+              <div v-if="historicoIdeia.length > 0" class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Histórico de Alterações</div>
+                <div class="bv-historico-list">
+                  <div v-for="h in historicoIdeia" :key="h.id" class="bv-historico-item">
+                    <div class="bv-historico-date">{{ formatDate(h.created_at) }}</div>
+                    <div class="bv-historico-acao">
+                      <strong>{{ h.acao }}</strong>
+                      <span v-if="h.detalhes" class="bv-historico-detalhes"> — {{ h.detalhes }}</span>
                     </div>
                   </div>
                 </div>
               </div>
-              <div style="display: flex; gap: 8px; margin-top: 10px;">
-                <button class="bv-btn-ghost bv-btn-sm" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
-                  + Nova Derivada
-                </button>
-                <button class="bv-btn-neural bv-btn-sm" style="flex: 1; justify-content: center;" @click="abrirRedeNeural(drawerIdeia)">
-                  🕸️ Ver Rede Neural
-                </button>
-              </div>
-            </div>
-            <div class="bv-drawer-section" v-else>
-              <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
-              <div style="display: flex; gap: 8px;">
-                <button class="bv-btn-ghost" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
-                  + Criar Ideia Derivada
-                </button>
-                <button class="bv-btn-neural" style="flex: 1; justify-content: center;" @click="abrirRedeNeural(drawerIdeia)">
-                  🕸️ Rede Neural
-                </button>
-              </div>
-            </div>
 
-            <!-- Campos descritivos -->
-            <div v-if="drawerIdeia.descricao" class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Descrição</div>
-              <p class="bv-drawer-text">{{ drawerIdeia.descricao }}</p>
-            </div>
-            <div v-if="drawerIdeia.contexto" class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Contexto</div>
-              <p class="bv-drawer-text">{{ drawerIdeia.contexto }}</p>
-            </div>
-            <div v-if="drawerIdeia.problema" class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Problema que resolve</div>
-              <p class="bv-drawer-text">{{ drawerIdeia.problema }}</p>
-            </div>
-            <div v-if="drawerIdeia.transformacao" class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Transformação prometida</div>
-              <p class="bv-drawer-text">{{ drawerIdeia.transformacao }}</p>
-            </div>
-            <div v-if="drawerIdeia.publico_alvo" class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Público-alvo</div>
-              <p class="bv-drawer-text">{{ drawerIdeia.publico_alvo }}</p>
-            </div>
+              <div class="bv-drawer-date">Criada em {{ formatDate(drawerIdeia.created_at) }}</div>
+              <div class="bv-drawer-date" v-if="drawerIdeia.last_accessed_at">Último acesso: {{ formatDate(drawerIdeia.last_accessed_at) }}</div>
 
-            <!-- Tags -->
-            <div v-if="allTags(drawerIdeia).length > 0" class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Tags</div>
-              <div class="bv-drawer-tags">
-                <span v-for="t in allTags(drawerIdeia)" :key="t" class="bv-tag">{{ t }}</span>
+            </div><!-- /aba geral -->
+
+            <!-- ══════════════════════════ ABA: DOCUMENTAÇÃO -->
+            <div v-show="drawerTab === 'doc'" class="bv-drawer-tab-pane">
+
+              <!-- SUB-ABAS -->
+              <div class="bv-doc-tabs">
+                <button :class="['bv-doc-tab', { active: docTab === 'notas' }]"   @click="docTab = 'notas'">📝 Notas ({{ notas.length }})</button>
+                <button :class="['bv-doc-tab', { active: docTab === 'links' }]"   @click="docTab = 'links'">🔗 Links ({{ links.length }})</button>
+                <button :class="['bv-doc-tab', { active: docTab === 'arquivos' }]" @click="docTab = 'arquivos'">📁 Arquivos ({{ arquivos.length }})</button>
               </div>
-            </div>
 
-            <!-- Histórico -->
-            <div v-if="historicoIdeia.length > 0" class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Histórico de Alterações</div>
-              <div class="bv-historico-list">
-                <div v-for="h in historicoIdeia" :key="h.id" class="bv-historico-item">
-                  <div class="bv-historico-date">{{ formatDate(h.created_at) }}</div>
-                  <div class="bv-historico-acao">
-                    <strong>{{ h.acao }}</strong>
-                    <span v-if="h.detalhes" class="bv-historico-detalhes"> — {{ h.detalhes }}</span>
+              <!-- NOTAS -->
+              <div v-show="docTab === 'notas'" class="bv-doc-pane">
+                <div class="bv-notas-grid">
+                  <div
+                    v-for="nota in notas"
+                    :key="nota.id"
+                    class="bv-nota-card"
+                    :style="{ background: nota.cor }"
+                  >
+                    <div v-if="editingNoteId !== nota.id" class="bv-nota-view" @dblclick="startEditNote(nota)">
+                      <div v-if="nota.titulo" class="bv-nota-titulo">{{ nota.titulo }}</div>
+                      <div class="bv-nota-conteudo">{{ nota.conteudo }}</div>
+                      <div class="bv-nota-actions">
+                        <button class="bv-nota-btn" @click="startEditNote(nota)" title="Editar">✏️</button>
+                        <button class="bv-nota-btn" @click="deleteNota(nota.id)" title="Excluir">🗑️</button>
+                      </div>
+                    </div>
+                    <div v-else class="bv-nota-edit-form">
+                      <input v-model="noteEditForm.titulo" class="bv-nota-input" placeholder="Título (opcional)" />
+                      <textarea v-model="noteEditForm.conteudo" class="bv-nota-textarea" rows="3" placeholder="Conteúdo..."/>
+                      <div class="bv-nota-edit-footer">
+                        <div class="bv-cor-group">
+                          <button v-for="c in NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: noteEditForm.cor === c}" @click="noteEditForm.cor = c" type="button"/>
+                        </div>
+                        <div style="display:flex;gap:4px">
+                          <button class="bv-nota-save-btn" @click="saveEditNote(nota.id)" type="button">Salvar</button>
+                          <button class="bv-nota-cancel-btn" @click="editingNoteId = null" type="button">✕</button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+
+                  <!-- Card de nova nota -->
+                  <div v-if="addingNote" class="bv-nota-card bv-nota-card-new" :style="{ background: newNoteForm.cor }">
+                    <input v-model="newNoteForm.titulo" class="bv-nota-input" placeholder="Título (opcional)" />
+                    <textarea v-model="newNoteForm.conteudo" class="bv-nota-textarea" rows="3" placeholder="Escreva sua nota..."/>
+                    <div class="bv-nota-edit-footer">
+                      <div class="bv-cor-group">
+                        <button v-for="c in NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: newNoteForm.cor === c}" @click="newNoteForm.cor = c" type="button"/>
+                      </div>
+                      <div style="display:flex;gap:4px">
+                        <button class="bv-nota-save-btn" @click="saveNewNote" type="button">Salvar</button>
+                        <button class="bv-nota-cancel-btn" @click="addingNote = false" type="button">✕</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Botão + Nota -->
+                  <button v-if="!addingNote" class="bv-nota-add-btn" @click="openAddNote" type="button">
+                    <span>+</span> Nova Nota
+                  </button>
                 </div>
               </div>
-            </div>
 
-            <div class="bv-drawer-date">Criada em {{ formatDate(drawerIdeia.created_at) }}</div>
-            <div class="bv-drawer-date" v-if="drawerIdeia.last_accessed_at">Último acesso: {{ formatDate(drawerIdeia.last_accessed_at) }}</div>
-          </div>
+              <!-- LINKS -->
+              <div v-show="docTab === 'links'" class="bv-doc-pane">
+                <div class="bv-links-list">
+                  <div v-for="link in links" :key="link.id" class="bv-link-item">
+                    <div class="bv-link-icon">🔗</div>
+                    <div class="bv-link-info">
+                      <a class="bv-link-url" :href="link.url" @click.prevent="openExternalLink(link.url)">{{ link.titulo || link.url }}</a>
+                      <div v-if="link.titulo" class="bv-link-sub">{{ link.url }}</div>
+                      <div v-if="link.descricao" class="bv-link-desc">{{ link.descricao }}</div>
+                    </div>
+                    <button class="bv-link-del" @click="deleteLink(link.id)" title="Remover">🗑️</button>
+                  </div>
+
+                  <!-- Form novo link -->
+                  <div v-if="addingLink" class="bv-link-form">
+                    <input v-model="newLinkForm.url" class="bv-doc-input" placeholder="URL *" type="url" />
+                    <input v-model="newLinkForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" type="text" />
+                    <input v-model="newLinkForm.descricao" class="bv-doc-input" placeholder="Descrição breve (opcional)" type="text" />
+                    <span v-if="linkErro" class="bv-doc-error">{{ linkErro }}</span>
+                    <div style="display:flex;gap:6px;margin-top:4px">
+                      <button class="bv-nota-save-btn" @click="saveNewLink" type="button">Salvar</button>
+                      <button class="bv-nota-cancel-btn" @click="addingLink = false; linkErro = ''" type="button">Cancelar</button>
+                    </div>
+                  </div>
+
+                  <div v-if="links.length === 0 && !addingLink" class="bv-doc-empty">Nenhum link adicionado</div>
+                </div>
+                <button v-if="!addingLink" class="bv-doc-add-btn" @click="addingLink = true" type="button">+ Novo Link</button>
+              </div>
+
+              <!-- ARQUIVOS -->
+              <div v-show="docTab === 'arquivos'" class="bv-doc-pane">
+                <input ref="fileInputRef" type="file" style="display:none" @change="onFileSelected" multiple />
+                <div class="bv-files-list">
+                  <div v-for="arq in arquivos" :key="arq.id" class="bv-file-item">
+                    <div class="bv-file-icon">{{ fileIcon(arq.tipo_mime) }}</div>
+                    <div class="bv-file-info">
+                      <div class="bv-file-nome">{{ arq.nome_original }}</div>
+                      <div class="bv-file-meta">{{ formatBytes(arq.tamanho) }}</div>
+                    </div>
+                    <div class="bv-file-actions">
+                      <button class="bv-file-btn" @click="openArquivo(arq.id)" title="Abrir">📂</button>
+                      <button class="bv-file-btn" @click="deleteArquivo(arq.id)" title="Excluir">🗑️</button>
+                    </div>
+                  </div>
+                  <div v-if="arquivos.length === 0 && !uploadando" class="bv-doc-empty">Nenhum arquivo anexado</div>
+                  <div v-if="uploadando" class="bv-upload-progress">
+                    <div class="bv-upload-bar"><div class="bv-upload-fill" :style="{width: uploadProgress + '%'}"></div></div>
+                    <span>Enviando... {{ uploadProgress }}%</span>
+                  </div>
+                </div>
+                <button class="bv-doc-add-btn" @click="fileInputRef?.click()" type="button" :disabled="uploadando">+ Anexar Arquivo</button>
+              </div>
+
+            </div><!-- /aba doc -->
+
+          </div><!-- /bv-drawer-body -->
+
 
           <div class="bv-drawer-footer">
             <button class="bv-btn-ghost" @click="handleToggleArquivar(drawerIdeia)" type="button">
@@ -579,10 +720,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
-import type { Ideia, IdeiaStatus, IdeiaTipo } from '../../types/ideia';
+import type { Ideia, IdeiaStatus, IdeiaTipo, IdeiaNote, IdeiaLink, IdeiaArquivo } from '../../types/ideia';
+
+// Tipos globais do Electron (preload)
+declare const window: Window & {
+  electronAPI: {
+    notas: {
+      getAll: (id: string) => Promise<IdeiaNote[]>;
+      create: (p: Record<string, unknown>) => Promise<IdeiaNote>;
+      update: (p: Record<string, unknown>) => Promise<IdeiaNote>;
+      delete: (id: string) => Promise<boolean>;
+    };
+    links: {
+      getAll: (id: string) => Promise<IdeiaLink[]>;
+      create: (p: Record<string, unknown>) => Promise<IdeiaLink>;
+      delete: (id: string) => Promise<boolean>;
+    };
+    arquivos: {
+      getAll: (id: string) => Promise<IdeiaArquivo[]>;
+      save: (ideia_id: string, nome: string, base64: string, tipo: string, tamanho: number) => Promise<IdeiaArquivo>;
+      delete: (id: string) => Promise<boolean>;
+      open: (id: string) => Promise<boolean>;
+    };
+  };
+};
 
 // ─── Composable ───────────────────────────────────────────────────────────────
 const { 
@@ -606,6 +770,7 @@ onMounted(async () => {
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const TIPOS: IdeiaTipo[] = ['Produto', 'Promessa', 'Ângulo', 'Headline', 'Hook', 'Big Idea', 'VSL', 'Funil', 'Lançamento', 'Outro'];
 const TABS = ['Identificação', 'Descrição', 'Tags', 'Ecossistema'];
+const NOTE_COLORS = ['#fef9c3', '#fce7f3', '#dbeafe', '#dcfce7', '#ffe4e6', '#ede9fe', '#f1f5f9'];
 const SCORE_LABELS = ['Baixo', 'Médio', 'Alto', 'Muito alto'];
 const RELATIONSHIP_TYPES = ['Complementa', 'Feature de', 'Upsell de', 'Downsell de', 'Order bump de', 'Extensão de', 'Versão de', 'Subproduto de', 'Outro'];
 const STATUS_OPTIONS = [
@@ -887,6 +1052,7 @@ function removeTag(key: string, tag: string) {
 
 // ─── Drawer ───────────────────────────────────────────────────────────────────
 const drawerIdeia = ref<Ideia | null>(null);
+const drawerTab   = ref<'geral' | 'doc'>('geral');
 const historicoIdeia = ref<any[]>([]);
 
 const ideiaPai = computed(() => {
@@ -940,13 +1106,201 @@ function cadastrarDerivada() {
 }
 
 async function abrirDrawer(ideia: Ideia) {
+  drawerTab.value = 'geral'; // sempre abre na aba Informações
   drawerIdeia.value = ideia;
   historicoIdeia.value = await getHistorico(ideia.id);
   await updateAcesso(ideia.id);
+  // Carrega documentação
+  await carregarDocumentacao(ideia.id);
 }
 
 function fecharDrawer() {
   drawerIdeia.value = null;
+  drawerTab.value   = 'geral';
+  // Limpa estado de documentação
+  notas.value = [];
+  links.value = [];
+  arquivos.value = [];
+  addingNote.value = false;
+  addingLink.value = false;
+  editingNoteId.value = null;
+}
+
+// ─── Documentação — Estado ────────────────────────────────────────────────────
+const docTab = ref<'notas' | 'links' | 'arquivos'>('notas');
+const notas    = ref<IdeiaNote[]>([]);
+const links    = ref<IdeiaLink[]>([]);
+const arquivos = ref<IdeiaArquivo[]>([]);
+
+// Notas
+const addingNote   = ref(false);
+const editingNoteId = ref<string | null>(null);
+const newNoteForm   = reactive({ titulo: '', conteudo: '', cor: '#fef9c3' });
+const noteEditForm  = reactive({ titulo: '', conteudo: '', cor: '#fef9c3' });
+
+// Links
+const addingLink  = ref(false);
+const linkErro    = ref('');
+const newLinkForm = reactive({ url: '', titulo: '', descricao: '' });
+
+// Arquivos
+const fileInputRef   = ref<HTMLInputElement | null>(null);
+const uploadando     = ref(false);
+const uploadProgress = ref(0);
+
+async function carregarDocumentacao(ideia_id: string) {
+  const api = (window as any).electronAPI;
+  const [n, l, a] = await Promise.all([
+    api.notas.getAll(ideia_id),
+    api.links.getAll(ideia_id),
+    api.arquivos.getAll(ideia_id),
+  ]);
+  notas.value    = n ?? [];
+  links.value    = l ?? [];
+  arquivos.value = a ?? [];
+}
+
+// ── Notas ─────────────────────────────────────────────────────────────────────
+function openAddNote() {
+  Object.assign(newNoteForm, { titulo: '', conteudo: '', cor: '#fef9c3' });
+  addingNote.value = true;
+}
+
+async function saveNewNote() {
+  if (!newNoteForm.conteudo.trim() || !drawerIdeia.value) return;
+  const api = (window as any).electronAPI;
+  const nota = await api.notas.create({
+    ideia_id: drawerIdeia.value.id,
+    titulo:   newNoteForm.titulo.trim() || null,
+    conteudo: newNoteForm.conteudo.trim(),
+    cor: newNoteForm.cor,
+  });
+  notas.value.unshift(nota);
+  addingNote.value = false;
+  showToast('Nota salva!');
+}
+
+function startEditNote(nota: IdeiaNote) {
+  editingNoteId.value = nota.id;
+  Object.assign(noteEditForm, { titulo: nota.titulo ?? '', conteudo: nota.conteudo, cor: nota.cor });
+}
+
+async function saveEditNote(id: string) {
+  const api = (window as any).electronAPI;
+  const updated = await api.notas.update({
+    id,
+    titulo:   noteEditForm.titulo.trim() || null,
+    conteudo: noteEditForm.conteudo.trim(),
+    cor: noteEditForm.cor,
+  });
+  const idx = notas.value.findIndex(n => n.id === id);
+  if (idx !== -1) notas.value[idx] = updated;
+  editingNoteId.value = null;
+  showToast('Nota atualizada!');
+}
+
+async function deleteNota(id: string) {
+  const api = (window as any).electronAPI;
+  await api.notas.delete(id);
+  notas.value = notas.value.filter(n => n.id !== id);
+  showToast('Nota removida.');
+}
+
+// ── Links ─────────────────────────────────────────────────────────────────────
+async function saveNewLink() {
+  linkErro.value = '';
+  if (!newLinkForm.url.trim()) { linkErro.value = 'URL é obrigatória.'; return; }
+  try { new URL(newLinkForm.url.trim()); } catch { linkErro.value = 'URL inválida.'; return; }
+  if (!drawerIdeia.value) return;
+  const api = (window as any).electronAPI;
+  const link = await api.links.create({
+    ideia_id: drawerIdeia.value.id,
+    url:      newLinkForm.url.trim(),
+    titulo:   newLinkForm.titulo.trim() || null,
+    descricao: newLinkForm.descricao.trim() || null,
+  });
+  links.value.unshift(link);
+  Object.assign(newLinkForm, { url: '', titulo: '', descricao: '' });
+  addingLink.value = false;
+  showToast('Link adicionado!');
+}
+
+async function deleteLink(id: string) {
+  const api = (window as any).electronAPI;
+  await api.links.delete(id);
+  links.value = links.value.filter(l => l.id !== id);
+  showToast('Link removido.');
+}
+
+function openExternalLink(url: string) {
+  // Usa o shell do electron via IPC, ou simplesmente window.open
+  window.open(url);
+}
+
+// ── Arquivos ──────────────────────────────────────────────────────────────────
+async function onFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (!input.files || input.files.length === 0 || !drawerIdeia.value) return;
+  const api = (window as any).electronAPI;
+  uploadando.value = true;
+  uploadProgress.value = 0;
+  const files = Array.from(input.files);
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const base64 = await fileToBase64(file);
+    const saved = await api.arquivos.save(
+      drawerIdeia.value.id,
+      file.name,
+      base64,
+      file.type,
+      file.size,
+    );
+    arquivos.value.unshift(saved);
+    uploadProgress.value = Math.round(((i + 1) / files.length) * 100);
+  }
+  uploadando.value = false;
+  input.value = '';
+  showToast(`${files.length} arquivo(s) anexado(s)!`);
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function openArquivo(id: string) {
+  const api = (window as any).electronAPI;
+  await api.arquivos.open(id);
+}
+
+async function deleteArquivo(id: string) {
+  const api = (window as any).electronAPI;
+  await api.arquivos.delete(id);
+  arquivos.value = arquivos.value.filter(a => a.id !== id);
+  showToast('Arquivo removido.');
+}
+
+function fileIcon(mime?: string): string {
+  if (!mime) return '📄';
+  if (mime.startsWith('image/')) return '🖼️';
+  if (mime === 'application/pdf') return '📕';
+  if (mime.includes('word')) return '📘';
+  if (mime.includes('sheet') || mime.includes('excel')) return '📗';
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return '📙';
+  if (mime.startsWith('video/')) return '🎬';
+  if (mime.startsWith('audio/')) return '🎵';
+  return '📄';
+}
+
+function formatBytes(bytes?: number): string {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 async function mudarStatus(id: string, status: string) {
@@ -2127,8 +2481,9 @@ function formatDate(iso: string): string {
 }
 
 .bv-drawer {
-  width: 400px;
+  width: 50vw;
   max-width: calc(100vw - 40px);
+  min-width: 480px;
   height: 100%;
   background: #ffffff;
   border-left: 1px solid #e2e8f0;
@@ -2166,11 +2521,75 @@ function formatDate(iso: string): string {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #f8fafc;
+}
+
+/* ════════════════════════════════ DRAWER TABS (primeiras) */
+.bv-drawer-tabs {
+  display: flex;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 20px;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.bv-drawer-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.bv-drawer-tab svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.bv-drawer-tab:hover { color: #1e293b; }
+
+.bv-drawer-tab.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.bv-drawer-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #3b82f6;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bv-drawer-tab-pane {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: #f8fafc;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .bv-drawer-row {
@@ -2489,6 +2908,436 @@ function formatDate(iso: string): string {
   font-size: 9px !important;
   padding: 1px 6px !important;
   border-radius: 4px !important;
+}
+
+/* ══════════════════════════════════════════════════ DOCUMENTAÇÃO */
+.bv-doc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+/* Sub-abas Documentação */
+.bv-doc-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 6px;
+}
+
+.bv-doc-tab {
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.bv-doc-tab:hover { color: #1e293b; border-color: #cbd5e1; }
+.bv-doc-tab.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+.bv-doc-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Botão genérico + Adicionar */
+.bv-doc-add-btn {
+  align-self: flex-start;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: rgba(59,130,246,0.08);
+  color: #3b82f6;
+  border: 1.5px dashed #93c5fd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bv-doc-add-btn:hover { background: rgba(59,130,246,0.14); border-style: solid; }
+.bv-doc-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.bv-doc-input {
+  width: 100%;
+  padding: 8px 11px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.bv-doc-input:focus { border-color: #3b82f6; }
+
+.bv-doc-empty {
+  font-size: 12.5px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 12px 0;
+  font-style: italic;
+}
+
+.bv-doc-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: -4px;
+}
+
+/* ─── Notas ────────────────────────────── */
+.bv-notas-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.bv-nota-card {
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: box-shadow 0.15s;
+}
+
+.bv-nota-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+.bv-nota-view {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 60px;
+}
+
+.bv-nota-titulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.bv-nota-conteudo {
+  font-size: 12.5px;
+  color: #334155;
+  line-height: 1.5;
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bv-nota-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.bv-nota-card:hover .bv-nota-actions { opacity: 1; }
+
+.bv-nota-btn {
+  background: rgba(0,0,0,0.06);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.bv-nota-btn:hover { background: rgba(0,0,0,0.13); }
+
+.bv-nota-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bv-nota-input {
+  width: 100%;
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.75);
+  border: 1.5px solid rgba(0,0,0,0.1);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e293b;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.bv-nota-textarea {
+  width: 100%;
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.75);
+  border: 1.5px solid rgba(0,0,0,0.1);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e293b;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.bv-nota-edit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bv-cor-group {
+  display: flex;
+  gap: 4px;
+}
+
+.bv-cor-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.12s, border-color 0.12s;
+}
+
+.bv-cor-btn.active {
+  border-color: #1e293b;
+  transform: scale(1.2);
+}
+
+.bv-nota-save-btn {
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.bv-nota-save-btn:hover { opacity: 0.85; }
+
+.bv-nota-cancel-btn {
+  padding: 4px 8px;
+  font-size: 11.5px;
+  background: rgba(0,0,0,0.07);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #334155;
+}
+
+.bv-nota-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  background: rgba(0,0,0,0.03);
+  border: 2px dashed #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 600;
+  justify-content: center;
+  transition: all 0.15s;
+  align-self: start;
+  min-height: 60px;
+}
+
+.bv-nota-add-btn:hover { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.04); }
+
+.bv-nota-card-new { grid-column: 1 / -1; }
+
+/* ─── Links ────────────────────────────── */
+.bv-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bv-link-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  transition: border-color 0.15s;
+}
+
+.bv-link-item:hover { border-color: #93c5fd; }
+
+.bv-link-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+.bv-link-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bv-link-url {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b82f6;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.bv-link-url:hover { text-decoration: underline; }
+
+.bv-link-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bv-link-desc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.bv-link-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.bv-link-item:hover .bv-link-del { opacity: 1; }
+
+.bv-link-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: #f1f5f9;
+  border-radius: 9px;
+  border: 1.5px solid #e2e8f0;
+}
+
+/* ─── Arquivos ────────────────────────── */
+.bv-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bv-file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  transition: border-color 0.15s;
+}
+
+.bv-file-item:hover { border-color: #93c5fd; }
+
+.bv-file-icon { font-size: 22px; flex-shrink: 0; }
+
+.bv-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bv-file-nome {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bv-file-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.bv-file-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.bv-file-item:hover .bv-file-actions { opacity: 1; }
+
+.bv-file-btn {
+  background: rgba(0,0,0,0.05);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 3px 6px;
+  transition: background 0.15s;
+}
+
+.bv-file-btn:hover { background: rgba(0,0,0,0.12); }
+
+/* Upload progress */
+.bv-upload-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.bv-upload-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.bv-upload-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.bv-upload-progress span {
+  font-size: 11.5px;
+  color: #64748b;
 }
 
 </style>

@@ -1,6 +1,7 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
 import { updateElectronApp } from 'update-electron-app';
 
@@ -66,6 +67,38 @@ function initDatabase() {
       acao       TEXT NOT NULL,
       detalhes   TEXT,
       created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
+  // Evolução 4: Documentação Complementar
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ideia_notas (
+      id         TEXT PRIMARY KEY,
+      ideia_id   TEXT NOT NULL,
+      titulo     TEXT,
+      conteudo   TEXT NOT NULL,
+      cor        TEXT NOT NULL DEFAULT '#1e293b',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS ideia_links (
+      id         TEXT PRIMARY KEY,
+      ideia_id   TEXT NOT NULL,
+      url        TEXT NOT NULL,
+      titulo     TEXT,
+      descricao  TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS ideia_arquivos (
+      id            TEXT PRIMARY KEY,
+      ideia_id      TEXT NOT NULL,
+      nome_original TEXT NOT NULL,
+      caminho       TEXT NOT NULL,
+      tipo_mime     TEXT,
+      tamanho       INTEGER,
+      created_at    TEXT DEFAULT (datetime('now'))
     );
   `);
 }
@@ -181,6 +214,14 @@ function registerIdeiaHandlers() {
 
   // DELETE
   ipcMain.handle('ideias:delete', (_, id: string) => {
+    // Remove arquivos físicos antes de deletar registros
+    const arquivos = db.prepare('SELECT caminho FROM ideia_arquivos WHERE ideia_id = ?').all(id) as { caminho: string }[];
+    for (const arq of arquivos) {
+      try { if (fs.existsSync(arq.caminho)) fs.unlinkSync(arq.caminho); } catch { /* ignore */ }
+    }
+    db.prepare('DELETE FROM ideia_notas WHERE ideia_id = ?').run(id);
+    db.prepare('DELETE FROM ideia_links WHERE ideia_id = ?').run(id);
+    db.prepare('DELETE FROM ideia_arquivos WHERE ideia_id = ?').run(id);
     db.prepare('DELETE FROM ideias WHERE id = ?').run(id);
     db.prepare('DELETE FROM ideias_historico WHERE ideia_id = ?').run(id);
     return true;
@@ -202,6 +243,126 @@ function registerIdeiaHandlers() {
   // TOGGLE FAVORITA
   ipcMain.handle('ideias:toggleFavorita', (_, { id, is_favorita }: { id: string; is_favorita: number }) => {
     db.prepare(`UPDATE ideias SET is_favorita = ? WHERE id = ?`).run(is_favorita, id);
+    return true;
+  });
+
+  // ── Notas ──────────────────────────────────────────────────────────────────
+  ipcMain.handle('ideias:notas:getAll', (_, ideia_id: string) => {
+    return db.prepare('SELECT * FROM ideia_notas WHERE ideia_id = ? ORDER BY created_at DESC').all(ideia_id);
+  });
+
+  ipcMain.handle('ideias:notas:create', (_, payload: Record<string, unknown>) => {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO ideia_notas (id, ideia_id, titulo, conteudo, cor, created_at, updated_at)
+      VALUES (@id, @ideia_id, @titulo, @conteudo, @cor, @created_at, @updated_at)
+    `).run({
+      id,
+      ideia_id: payload.ideia_id,
+      titulo: payload.titulo ?? null,
+      conteudo: payload.conteudo ?? '',
+      cor: payload.cor ?? '#1e293b',
+      created_at: now,
+      updated_at: now,
+    });
+    return db.prepare('SELECT * FROM ideia_notas WHERE id = ?').get(id);
+  });
+
+  ipcMain.handle('ideias:notas:update', (_, payload: Record<string, unknown>) => {
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE ideia_notas SET titulo = @titulo, conteudo = @conteudo, cor = @cor, updated_at = @updated_at
+      WHERE id = @id
+    `).run({
+      id: payload.id,
+      titulo: payload.titulo ?? null,
+      conteudo: payload.conteudo ?? '',
+      cor: payload.cor ?? '#1e293b',
+      updated_at: now,
+    });
+    return db.prepare('SELECT * FROM ideia_notas WHERE id = ?').get(payload.id);
+  });
+
+  ipcMain.handle('ideias:notas:delete', (_, id: string) => {
+    db.prepare('DELETE FROM ideia_notas WHERE id = ?').run(id);
+    return true;
+  });
+
+  // ── Links ──────────────────────────────────────────────────────────────────
+  ipcMain.handle('ideias:links:getAll', (_, ideia_id: string) => {
+    return db.prepare('SELECT * FROM ideia_links WHERE ideia_id = ? ORDER BY created_at DESC').all(ideia_id);
+  });
+
+  ipcMain.handle('ideias:links:create', (_, payload: Record<string, unknown>) => {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO ideia_links (id, ideia_id, url, titulo, descricao, created_at)
+      VALUES (@id, @ideia_id, @url, @titulo, @descricao, @created_at)
+    `).run({
+      id,
+      ideia_id: payload.ideia_id,
+      url: payload.url ?? '',
+      titulo: payload.titulo ?? null,
+      descricao: payload.descricao ?? null,
+      created_at: now,
+    });
+    return db.prepare('SELECT * FROM ideia_links WHERE id = ?').get(id);
+  });
+
+  ipcMain.handle('ideias:links:delete', (_, id: string) => {
+    db.prepare('DELETE FROM ideia_links WHERE id = ?').run(id);
+    return true;
+  });
+
+  // ── Arquivos ───────────────────────────────────────────────────────────────
+  ipcMain.handle('ideias:arquivos:getAll', (_, ideia_id: string) => {
+    return db.prepare('SELECT * FROM ideia_arquivos WHERE ideia_id = ? ORDER BY created_at DESC').all(ideia_id);
+  });
+
+  ipcMain.handle('ideias:arquivos:save', (_, payload: { ideia_id: string; nome: string; base64: string; tipo: string; tamanho: number }) => {
+    try {
+      const attachDir = path.join(app.getPath('userData'), 'attachments', payload.ideia_id);
+      if (!fs.existsSync(attachDir)) fs.mkdirSync(attachDir, { recursive: true });
+      const ext = path.extname(payload.nome);
+      const fileName = `${crypto.randomUUID()}${ext}`;
+      const filePath = path.join(attachDir, fileName);
+      fs.writeFileSync(filePath, Buffer.from(payload.base64, 'base64'));
+      const id = crypto.randomUUID();
+      db.prepare(`
+        INSERT INTO ideia_arquivos (id, ideia_id, nome_original, caminho, tipo_mime, tamanho, created_at)
+        VALUES (@id, @ideia_id, @nome_original, @caminho, @tipo_mime, @tamanho, @created_at)
+      `).run({
+        id,
+        ideia_id: payload.ideia_id,
+        nome_original: payload.nome,
+        caminho: filePath,
+        tipo_mime: payload.tipo ?? null,
+        tamanho: payload.tamanho ?? null,
+        created_at: new Date().toISOString(),
+      });
+      return db.prepare('SELECT * FROM ideia_arquivos WHERE id = ?').get(id);
+    } catch (e) {
+      console.error('ERRO AO SALVAR ARQUIVO:', e);
+      throw e;
+    }
+  });
+
+  ipcMain.handle('ideias:arquivos:delete', (_, id: string) => {
+    const row = db.prepare('SELECT caminho FROM ideia_arquivos WHERE id = ?').get(id) as { caminho: string } | undefined;
+    if (row) {
+      try { if (fs.existsSync(row.caminho)) fs.unlinkSync(row.caminho); } catch { /* ignore */ }
+    }
+    db.prepare('DELETE FROM ideia_arquivos WHERE id = ?').run(id);
+    return true;
+  });
+
+  ipcMain.handle('ideias:arquivos:open', (_, id: string) => {
+    const row = db.prepare('SELECT caminho FROM ideia_arquivos WHERE id = ?').get(id) as { caminho: string } | undefined;
+    if (row && fs.existsSync(row.caminho)) {
+      shell.openPath(row.caminho);
+    }
     return true;
   });
 

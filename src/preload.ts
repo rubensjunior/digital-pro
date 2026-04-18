@@ -24,4 +24,29 @@ contextBridge.exposeInMainWorld('electronAPI', {
     toggleFavorita: (id: string, is_favorita: number) => ipcRenderer.invoke('ideias:toggleFavorita', { id, is_favorita }),
     toggleArquivada: (id: string, is_arquivada: number) => ipcRenderer.invoke('ideias:toggleArquivada', { id, is_arquivada }),
   },
+
+  // ─── Brain Vault — Notas ──────────────────────────────────────────────────
+  notas: {
+    getAll: (ideia_id: string) => ipcRenderer.invoke('ideias:notas:getAll', ideia_id),
+    create: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:notas:create', payload),
+    update: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:notas:update', payload),
+    delete: (id: string) => ipcRenderer.invoke('ideias:notas:delete', id),
+  },
+
+  // ─── Brain Vault — Links ──────────────────────────────────────────────────
+  links: {
+    getAll: (ideia_id: string) => ipcRenderer.invoke('ideias:links:getAll', ideia_id),
+    create: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:links:create', payload),
+    delete: (id: string) => ipcRenderer.invoke('ideias:links:delete', id),
+  },
+
+  // ─── Brain Vault — Arquivos ───────────────────────────────────────────────
+  arquivos: {
+    getAll: (ideia_id: string) => ipcRenderer.invoke('ideias:arquivos:getAll', ideia_id),
+    save: (ideia_id: string, nome: string, base64: string, tipo: string, tamanho: number) =>
+      ipcRenderer.invoke('ideias:arquivos:save', { ideia_id, nome, base64, tipo, tamanho }),
+    delete: (id: string) => ipcRenderer.invoke('ideias:arquivos:delete', id),
+    open: (id: string) => ipcRenderer.invoke('ideias:arquivos:open', id),
+  },
 });
+
