@@ -100,6 +100,14 @@ function initDatabase() {
       tamanho       INTEGER,
       created_at    TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS ideia_correlacoes (
+      id         TEXT PRIMARY KEY,
+      ideia_a_id TEXT NOT NULL,
+      ideia_b_id TEXT NOT NULL,
+      descricao  TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 }
 
@@ -370,6 +378,47 @@ function registerIdeiaHandlers() {
   ipcMain.handle('ideias:toggleArquivada', (_, { id, is_arquivada }: { id: string; is_arquivada: number }) => {
     db.prepare(`UPDATE ideias SET is_arquivada = ? WHERE id = ?`).run(is_arquivada, id);
     logHistorico(id, is_arquivada ? 'Arquivou a ideia' : 'Desarquivou a ideia');
+    return true;
+  });
+
+  // ── Correlacoes (Ecossistema Geral) ───────────────────────────────────────
+  ipcMain.handle('ideias:correlacoes:getAll', (_, ideia_id: string) => {
+    // Retorna as correlações onde a ideia aparece como a ou b
+    return db.prepare(`
+      SELECT 
+        c.*,
+        CASE WHEN c.ideia_a_id = ? THEN c.ideia_b_id ELSE c.ideia_a_id END as correlata_id,
+        CASE WHEN c.ideia_a_id = ? THEN i_b.nome ELSE i_a.nome END as correlata_nome,
+        CASE WHEN c.ideia_a_id = ? THEN i_b.tipo ELSE i_a.tipo END as correlata_tipo,
+        CASE WHEN c.ideia_a_id = ? THEN i_b.status ELSE i_a.status END as correlata_status
+      FROM ideia_correlacoes c
+      LEFT JOIN ideias i_a ON c.ideia_a_id = i_a.id
+      LEFT JOIN ideias i_b ON c.ideia_b_id = i_b.id
+      WHERE c.ideia_a_id = ? OR c.ideia_b_id = ?
+      ORDER BY c.created_at DESC
+    `).all(ideia_id, ideia_id, ideia_id, ideia_id, ideia_id, ideia_id);
+  });
+
+  ipcMain.handle('ideias:correlacoes:getAllTodos', () => {
+    return db.prepare('SELECT * FROM ideia_correlacoes').all();
+  });
+
+  ipcMain.handle('ideias:correlacoes:create', (_, payload: { ideia_a_id: string; ideia_b_id: string; descricao?: string }) => {
+    const id = crypto.randomUUID();
+    db.prepare(`
+      INSERT INTO ideia_correlacoes (id, ideia_a_id, ideia_b_id, descricao, created_at)
+      VALUES (@id, @ideia_a_id, @ideia_b_id, @descricao, datetime('now'))
+    `).run({
+      id,
+      ideia_a_id: payload.ideia_a_id,
+      ideia_b_id: payload.ideia_b_id,
+      descricao: payload.descricao ?? null
+    });
+    return true;
+  });
+
+  ipcMain.handle('ideias:correlacoes:delete', (_, id: string) => {
+    db.prepare('DELETE FROM ideia_correlacoes WHERE id = ?').run(id);
     return true;
   });
 }

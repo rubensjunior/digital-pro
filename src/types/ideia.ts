@@ -155,3 +155,16 @@ export interface IdeiaArquivo {
   tamanho?: number;
   created_at: string;
 }
+
+export interface IdeiaCorrelacao {
+  id: string;
+  ideia_a_id: string;
+  ideia_b_id: string;
+  descricao?: string;
+  created_at: string;
+  // Campos virtuais (JOIN)
+  correlata_id?: string;
+  correlata_nome?: string;
+  correlata_tipo?: string;
+  correlata_status?: string;
+}

@@ -7,6 +7,7 @@ import DashboardLayout from '../layouts/DashboardLayout.vue';
 import Dashboard from '../views/dashboard/Dashboard.vue';
 import IdeaManager from '../views/dashboard/IdeaManager.vue';
 import IdeaNetworkView from '../views/dashboard/IdeaNetworkView.vue';
+import GeneralNetworkView from '../views/dashboard/GeneralNetworkView.vue';
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -67,6 +68,7 @@ const router = createRouter({
         { path: '', component: Dashboard },
         { path: 'ideas', component: IdeaManager },
         { path: 'ideas/network/:rootId', component: IdeaNetworkView },
+        { path: 'ideas/general-network', component: GeneralNetworkView },
       ],
     },
   ],

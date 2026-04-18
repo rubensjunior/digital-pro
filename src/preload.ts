@@ -48,5 +48,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     delete: (id: string) => ipcRenderer.invoke('ideias:arquivos:delete', id),
     open: (id: string) => ipcRenderer.invoke('ideias:arquivos:open', id),
   },
+
+  // ─── Brain Vault — Correlações ────────────────────────────────────────────
+  correlacoes: {
+    getAll: (ideia_id: string) => ipcRenderer.invoke('ideias:correlacoes:getAll', ideia_id),
+    getAllTodos: () => ipcRenderer.invoke('ideias:correlacoes:getAllTodos'),
+    create: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:correlacoes:create', payload),
+    delete: (id: string) => ipcRenderer.invoke('ideias:correlacoes:delete', id),
+  },
 });
 

@@ -19,12 +19,18 @@
           · {{ porStatus.escalada.length }} escalada{{ porStatus.escalada.length !== 1 ? 's' : '' }}
         </p>
       </div>
-      <button class="bv-btn-primary" @click="abrirModal()">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-        Nova Ideia
-      </button>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button class="bv-btn-neural" @click="abrirRedeNeuralGeral()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Rede Neural Geral
+        </button>
+        <button class="bv-btn-primary" @click="abrirModal()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Nova Ideia
+        </button>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════ METRICS -->
@@ -456,6 +462,11 @@
                 Documentação
                 <span v-if="notas.length + links.length + arquivos.length > 0" class="bv-drawer-tab-badge">{{ notas.length + links.length + arquivos.length }}</span>
               </button>
+              <button :class="['bv-drawer-tab', { active: drawerTab === 'conexoes' }]" @click="drawerTab = 'conexoes'">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                Conexões
+                <span v-if="correlacoes.length > 0" class="bv-drawer-tab-badge">{{ correlacoes.length }}</span>
+              </button>
               <button class="bv-drawer-tab bv-drawer-tab-neural" @click="abrirRedeNeural(drawerIdeia)">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 Rede Neural
@@ -703,6 +714,48 @@
 
             </div><!-- /aba doc -->
 
+            <!-- ══════════════════════════ ABA: CONEXÕES -->
+            <div v-show="drawerTab === 'conexoes'" class="bv-drawer-tab-pane">
+              <div class="bv-drawer-section">
+                <div class="bv-drawer-section-title">Ideias Correlacionadas</div>
+                <p class="bv-drawer-text" style="margin-bottom: 15px;">Conecte esta ideia a outras de forma livre, criando um Ecossistema Geral.</p>
+                
+                <div class="bv-historico-list" style="margin-bottom: 20px;">
+                  <div v-for="c in correlacoes" :key="c.id" class="bv-historico-item" style="display:flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                        <span class="bv-card-tipo-badge" :data-tipo="c.correlata_tipo" style="padding: 2px 6px; font-size: 10px;">{{ c.correlata_tipo }}</span>
+                        <strong>{{ c.correlata_nome }}</strong>
+                      </div>
+                      <div class="bv-historico-acao">
+                        <span class="bv-status-badge bv-status-sm" :data-status="c.correlata_status">{{ statusLabel(c.correlata_status) }}</span>
+                        <span v-if="c.descricao" class="bv-historico-detalhes" style="margin-left:8px;"> — {{ c.descricao }}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <button class="bv-btn-ghost bv-btn-sm" @click="abrirDrawer(ideias.find(i => i.id === c.correlata_id)!)" title="Abrir Ideia">↗️</button>
+                      <button class="bv-link-del" @click="deleteCorrelacao(c.id)" title="Desconectar" style="margin-left: 8px;">🗑️</button>
+                    </div>
+                  </div>
+                  <div v-if="correlacoes.length === 0" class="bv-doc-empty">Nenhuma conexão estabelecida.</div>
+                </div>
+
+                <div class="bv-field" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                  <label class="bv-label">Adicionar Conexão</label>
+                  <select v-model="novaCorrelacaoForm.ideia_id" class="bv-input bv-select-field" style="margin-bottom: 10px;">
+                    <option value="">Selecione uma ideia para conectar...</option>
+                    <option v-for="i in ideiasParaConectar" :key="i.id" :value="i.id">
+                      {{ i.nome }} ({{ i.tipo }})
+                    </option>
+                  </select>
+                  <input v-model="novaCorrelacaoForm.descricao" class="bv-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 10px;" />
+                  <button class="bv-btn-primary" style="width: 100%; justify-content: center;" @click="criarCorrelacao" :disabled="!novaCorrelacaoForm.ideia_id">
+                    Conectar Ideia
+                  </button>
+                </div>
+              </div>
+            </div><!-- /aba conexoes -->
+
           </div><!-- /bv-drawer-body -->
 
 
@@ -740,7 +793,7 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
-import type { Ideia, IdeiaStatus, IdeiaTipo, IdeiaNote, IdeiaLink, IdeiaArquivo } from '../../types/ideia';
+import type { Ideia, IdeiaStatus, IdeiaTipo, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../../types/ideia';
 
 // Tipos globais do Electron (preload)
 declare const window: Window & {
@@ -761,6 +814,11 @@ declare const window: Window & {
       save: (ideia_id: string, nome: string, base64: string, tipo: string, tamanho: number) => Promise<IdeiaArquivo>;
       delete: (id: string) => Promise<boolean>;
       open: (id: string) => Promise<boolean>;
+    };
+    correlacoes: {
+      getAll: (id: string) => Promise<IdeiaCorrelacao[]>;
+      create: (p: Record<string, unknown>) => Promise<boolean>;
+      delete: (id: string) => Promise<boolean>;
     };
   };
 };
@@ -1095,8 +1153,57 @@ function removeTag(key: string, tag: string) {
 
 // ─── Drawer ───────────────────────────────────────────────────────────────────
 const drawerIdeia = ref<Ideia | null>(null);
-const drawerTab   = ref<'geral' | 'doc'>('geral');
+const drawerTab   = ref<'geral' | 'doc' | 'conexoes'>('geral');
 const historicoIdeia = ref<any[]>([]);
+
+// ─── Conexões (Ecossistema Geral) ─────────────────────────────────────────────
+const correlacoes = ref<IdeiaCorrelacao[]>([]);
+const novaCorrelacaoForm = reactive({ ideia_id: '', descricao: '' });
+
+const ideiasParaConectar = computed(() => {
+  if (!drawerIdeia.value) return [];
+  const connectedIds = new Set(correlacoes.value.map(c => c.correlata_id));
+  return ideiasFilradas.value.filter(i => i.id !== drawerIdeia.value!.id && !connectedIds.has(i.id));
+});
+
+async function carregarCorrelacoes(id: string) {
+  try {
+    const api = (window as any).electronAPI;
+    correlacoes.value = await api.correlacoes.getAll(id);
+  } catch (e) {
+    console.error('Erro ao buscar correlacoes:', e);
+  }
+}
+
+async function criarCorrelacao() {
+  if (!novaCorrelacaoForm.ideia_id || !drawerIdeia.value) return;
+  try {
+    const api = (window as any).electronAPI;
+    await api.correlacoes.create({
+      ideia_a_id: drawerIdeia.value.id,
+      ideia_b_id: novaCorrelacaoForm.ideia_id,
+      descricao: novaCorrelacaoForm.descricao,
+    });
+    await carregarCorrelacoes(drawerIdeia.value.id);
+    novaCorrelacaoForm.ideia_id = '';
+    novaCorrelacaoForm.descricao = '';
+    showToast('Conexão estabelecida com sucesso!');
+  } catch (e) {
+    console.error('Erro ao criar correlacao:', e);
+    showToast('Erro ao criar conexão', 'error');
+  }
+}
+
+async function deleteCorrelacao(id: string) {
+  if (!confirm('Deseja realmente remover esta conexão?')) return;
+  try {
+    const api = (window as any).electronAPI;
+    await api.correlacoes.delete(id);
+    if (drawerIdeia.value) await carregarCorrelacoes(drawerIdeia.value.id);
+  } catch (e) {
+    console.error('Erro ao deletar correlacao:', e);
+  }
+}
 
 const ideiaPai = computed(() => {
   if (!drawerIdeia.value?.parent_id) return null;
@@ -1155,6 +1262,7 @@ async function abrirDrawer(ideia: Ideia) {
   await updateAcesso(ideia.id);
   // Carrega documentação
   await carregarDocumentacao(ideia.id);
+  await carregarCorrelacoes(ideia.id);
 }
 
 function fecharDrawer() {
@@ -1164,6 +1272,7 @@ function fecharDrawer() {
   notas.value = [];
   links.value = [];
   arquivos.value = [];
+  correlacoes.value = [];
   addingNote.value = false;
   addingLink.value = false;
   editingNoteId.value = null;
@@ -1408,7 +1517,11 @@ function encontrarRaizEcossistema(ideia: Ideia): string {
 }
 
 function abrirRedeNeural(ideia: Ideia) {
-  router.push(`/dashboard/ideas/network/${encontrarRaizEcossistema(ideia)}`);
+  router.push(`/dashboard/ideas/network/${ideia.id}`);
+}
+
+function abrirRedeNeuralGeral() {
+  router.push(`/dashboard/ideas/general-network`);
 }
 
 // ─── Drag & Drop (Kanban) ─────────────────────────────────────────────────────
@@ -1573,6 +1686,8 @@ function formatDate(iso: string): string {
   padding: 9px 16px;
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .bv-btn-ghost:hover {
@@ -1612,6 +1727,8 @@ function formatDate(iso: string): string {
   padding: 9px 16px;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .bv-btn-neural:hover {
