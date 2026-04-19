@@ -10,7 +10,9 @@
     <div class="bv-header">
       <div class="bv-header-text">
         <h1 class="bv-title">
-          <span class="bv-title-icon">🧠</span>
+          <span class="bv-title-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          </span>
           Brain Vault
         </h1>
         <p class="bv-subtitle">
@@ -24,39 +26,55 @@
 
     <!-- ════════════════════════════════════════════ METRICS -->
     <div v-if="!loading && ideiasFilradas.length > 0" class="bv-metrics-grid">
-      <div class="bv-metric-card">
+      <div class="bv-metric-card bv-metric-blue">
         <div class="bv-metric-header">
           <span class="bv-metric-title">Total de Ideias</span>
-          <span class="bv-metric-icon">💡</span>
+          <div class="bv-metric-icon-wrap">
+            <svg class="bv-metric-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+            </svg>
+          </div>
         </div>
         <div class="bv-metric-value">{{ ideiasFilradas.length }}</div>
-        <div class="bv-metric-trend">🧠 Banco de ideias</div>
+        <div class="bv-metric-trend">Banco de ideias ativo</div>
       </div>
-      <div class="bv-metric-card">
+      <div class="bv-metric-card bv-metric-green">
         <div class="bv-metric-header">
-          <span class="bv-metric-title">Validadas / Escaladas</span>
-          <span class="bv-metric-icon">🎯</span>
+          <span class="bv-metric-title">Taxa de Sucesso</span>
+          <div class="bv-metric-icon-wrap">
+             <svg class="bv-metric-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+             </svg>
+          </div>
         </div>
-        <div class="bv-metric-value">{{ porStatus.validada.length + porStatus.escalada.length }}</div>
-        <div class="bv-metric-trend" :class="taxaSucesso >= 20 ? 'bv-trend-up' : 'bv-trend-flat'">
-          {{ taxaSucesso }}% de taxa de sucesso
+        <div class="bv-metric-value">{{ taxaSucesso }}%</div>
+        <div class="bv-metric-trend">
+          Ideias validadas/escaladas: {{ porStatus.validada.length + porStatus.escalada.length }}
         </div>
       </div>
-      <div class="bv-metric-card">
+      <div class="bv-metric-card bv-metric-orange">
         <div class="bv-metric-header">
           <span class="bv-metric-title">Alto Potencial</span>
-          <span class="bv-metric-icon">🔥</span>
+          <div class="bv-metric-icon-wrap">
+            <svg class="bv-metric-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
         </div>
         <div class="bv-metric-value">{{ deAltoPotencial }}</div>
-        <div class="bv-metric-trend bv-trend-star">⭐ Score 3 ou 4</div>
+        <div class="bv-metric-trend">Score 3 ou superior</div>
       </div>
-      <div class="bv-metric-card">
+      <div class="bv-metric-card bv-metric-purple">
         <div class="bv-metric-header">
-          <span class="bv-metric-title">Em Teste</span>
-          <span class="bv-metric-icon">🧪</span>
+          <span class="bv-metric-title">Em Validação</span>
+          <div class="bv-metric-icon-wrap">
+            <svg class="bv-metric-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+            </svg>
+          </div>
         </div>
         <div class="bv-metric-value">{{ porStatus.em_teste.length }}</div>
-        <div class="bv-metric-trend bv-trend-test">Em validação atual</div>
+        <div class="bv-metric-trend">Testes rolando atualmente</div>
       </div>
     </div>
 
@@ -90,10 +108,10 @@
 
       <select v-model="filtro.score" class="bv-select">
         <option value="">Qualquer score</option>
-        <option value="4">⭐⭐⭐⭐ Muito alto</option>
-        <option value="3">⭐⭐⭐ Alto</option>
-        <option value="2">⭐⭐ Médio</option>
-        <option value="1">⭐ Baixo</option>
+        <option value="4">4 / 4 - Muito alto</option>
+        <option value="3">3 / 4 - Alto</option>
+        <option value="2">2 / 4 - Médio</option>
+        <option value="1">1 / 4 - Baixo</option>
       </select>
 
       <select v-model="filtro.ordenacao" class="bv-select">
@@ -103,12 +121,14 @@
 
       <label class="bv-toggle-label">
         <input type="checkbox" v-model="filtro.apenasFavoritas" />
-        ⭐ Só Favoritas
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+        Só Favoritas
       </label>
 
       <label class="bv-toggle-label">
         <input type="checkbox" v-model="filtro.emArquivo" />
-        🗃️ Ver Arquivo
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+        Ver Arquivo
       </label>
     </div>
 
@@ -120,7 +140,11 @@
 
     <!-- ════════════════════════════════════════════ EMPTY STATE -->
     <div v-else-if="!loading && ideiasFilradas.length === 0 && view === 'lista'" class="bv-empty">
-      <div class="bv-empty-icon">🧠</div>
+      <div class="bv-empty-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+        </svg>
+      </div>
       <h3>Nenhuma ideia encontrada</h3>
       <p v-if="ideias.length === 0">Comece capturando sua primeira ideia agora!</p>
       <p v-else>Tente ajustar os filtros de busca.</p>
@@ -152,7 +176,8 @@
         <div class="bv-card-left">
           <div style="display: flex; gap: 8px; align-items: center;">
             <span class="bv-fav-star" :class="{ 'is-fav': ideia.is_favorita }" @click.stop="handleToggleFavorita(ideia)">
-              {{ ideia.is_favorita ? '⭐' : '☆' }}
+              <svg v-if="ideia.is_favorita" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              <svg v-else fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
             </span>
             <div class="bv-card-tipo-badge" :data-tipo="ideia.tipo">{{ ideia.tipo }}</div>
             <div v-if="(ideia as any).relationship_type && (ideia as any).depth > 0" class="bv-card-rel-badge">
@@ -177,7 +202,11 @@
         <div class="bv-card-right">
           <span class="bv-status-badge" :data-status="ideia.status">{{ statusLabel(ideia.status) }}</span>
           <div class="bv-stars">
-            <span v-for="n in 4" :key="n" :class="n <= ideia.score ? 'bv-star-on' : 'bv-star-off'">★</span>
+            <template v-for="n in 4" :key="n">
+              <svg :class="n <= ideia.score ? 'bv-star-on' : 'bv-star-off'" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+              </svg>
+            </template>
           </div>
           <div class="bv-card-date">{{ formatDate(ideia.created_at) }}</div>
         </div>
@@ -494,7 +523,18 @@ function formatDate(iso: string): string {
 }
 
 .bv-title-icon {
-  font-size: 20px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-radius: 6px;
+}
+.bv-title-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .bv-subtitle {
@@ -577,7 +617,7 @@ function formatDate(iso: string): string {
 .bv-card {
   position: relative;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px dashed var(--border);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -590,7 +630,21 @@ function formatDate(iso: string): string {
 
 .bv-card:hover { border-color: var(--accent); transform: translateX(4px); }
 
-.is-fav { color: #f59e0b; }
+.bv-fav-star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bv-fav-star:hover {
+  color: #f59e0b;
+}
+
+.is-fav { color: #f59e0b; fill: #f59e0b; }
 
 .bv-card-tipo-badge {
   font-size: 10px;
@@ -731,8 +785,96 @@ function formatDate(iso: string): string {
 .bv-status-badge[data-status="arquivada"] { background: rgba(100,116,139,0.12); color: #94a3b8; opacity: 0.6; }
 
 .bv-stars { display: flex; gap: 2px; margin: 4px 0; }
-.bv-star-on { color: #f59e0b; }
-.bv-star-off { color: var(--border); }
+.bv-star-on { color: #f59e0b; fill: #f59e0b; }
+.bv-star-off { color: transparent; stroke: var(--border); stroke-width: 2; }
+.bv-star-off path { fill: transparent; stroke: var(--border); }
+
+/* ──────────────────────────────────────────────── Metrics Grid */
+.bv-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 8px;
+}
+
+.bv-metric-card {
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 0.1rem 0.5rem 0.1rem rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #ffffff;
+  border: none;
+}
+
+.bv-metric-blue { background: #3b82f6; }
+.bv-metric-green { background: #10b981; }
+.bv-metric-orange { background: #f59e0b; }
+.bv-metric-purple { background: #8b5cf6; }
+
+.bv-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1.5rem -0.5rem rgba(0, 0, 0, 0.15);
+}
+
+.bv-metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.bv-metric-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.bv-metric-icon-wrap {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.bv-metric-svg {
+  width: 20px;
+  height: 20px;
+}
+
+.bv-metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.bv-metric-trend {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+}
+
+/* Customizing the empty icon */
+.bv-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  color: #94a3b8;
+}
+.bv-empty-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
 
 .bv-card-date { font-size: 11px; color: var(--text-secondary); }
 

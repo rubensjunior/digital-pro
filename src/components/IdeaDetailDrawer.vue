@@ -9,8 +9,9 @@
               <h2 class="bv-drawer-title">{{ drawer.drawerIdeia.value.nome }}</h2>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="bv-modal-close" style="font-size: 16px;" @click="drawer.handleToggleFavorita()">
-                {{ drawer.drawerIdeia.value.is_favorita ? '⭐' : '☆' }}
+              <button class="bv-modal-close" style="font-size: 16px; width: 32px; height: 32px;" @click="drawer.handleToggleFavorita()">
+                <svg v-if="drawer.drawerIdeia.value.is_favorita" fill="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                <svg v-else fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
               </button>
               <button class="bv-modal-close" @click="drawer.fecharDrawer()">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +103,8 @@
                   + Nova Derivada
                 </button>
                 <button class="bv-btn-primary bv-btn-sm" style="flex: 1; justify-content: center;" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawer.drawerIdeia.value!.id}`)">
-                  👁️ Admin Kanban
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                  Admin Kanban
                 </button>
               </div>
             </div>
@@ -113,7 +115,8 @@
                   + Criar Ideia Derivada
                 </button>
                 <button class="bv-btn-primary" style="flex: 1; justify-content: center;" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawer.drawerIdeia.value!.id}`)">
-                  👁️ Admin Kanban
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                  Admin Kanban
                 </button>
               </div>
             </div>
@@ -172,9 +175,18 @@
 
             <!-- SUB-ABAS -->
             <div class="bv-doc-tabs">
-              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'notas' }]"   @click="drawer.docTab.value = 'notas'">📝 Notas ({{ drawer.notas.value.length }})</button>
-              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'links' }]"   @click="drawer.docTab.value = 'links'">🔗 Links ({{ drawer.links.value.length }})</button>
-              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'arquivos' }]" @click="drawer.docTab.value = 'arquivos'">📁 Arquivos ({{ drawer.arquivos.value.length }})</button>
+              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'notas' }]"   @click="drawer.docTab.value = 'notas'">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; display: inline; vertical-align: text-bottom;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Notas ({{ drawer.notas.value.length }})
+              </button>
+              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'links' }]"   @click="drawer.docTab.value = 'links'">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; display: inline; vertical-align: text-bottom;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                Links ({{ drawer.links.value.length }})
+              </button>
+              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'arquivos' }]" @click="drawer.docTab.value = 'arquivos'">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; display: inline; vertical-align: text-bottom;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                Arquivos ({{ drawer.arquivos.value.length }})
+              </button>
             </div>
 
             <!-- NOTAS -->
@@ -192,9 +204,15 @@
                       <div class="bv-nota-conteudo bv-rich-text bv-nota-preview" v-html="nota.conteudo"></div>
                     </div>
                     <div class="bv-nota-actions">
-                      <button class="bv-nota-action-btn" @click.stop="drawer.viewingNote.value = nota" title="Visualizar">👁️</button>
-                      <button class="bv-nota-action-btn" @click.stop="drawer.startEditNote(nota)" title="Editar">✏️</button>
-                      <button class="bv-nota-action-btn" @click.stop="drawer.deleteNota(nota.id)" title="Excluir">🗑️</button>
+                      <button class="bv-nota-action-btn" @click.stop="drawer.viewingNote.value = nota" title="Visualizar">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                      </button>
+                      <button class="bv-nota-action-btn" @click.stop="drawer.startEditNote(nota)" title="Editar">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                      </button>
+                      <button class="bv-nota-action-btn bv-action-danger" @click.stop="drawer.deleteNota(nota.id)" title="Excluir">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
                     </div>
                   </div>
                   <div v-else class="bv-link-form" style="margin: 0; border: none; padding: 10px;">
@@ -238,13 +256,17 @@
             <div v-show="drawer.docTab.value === 'links'" class="bv-doc-pane">
               <div class="bv-links-list">
                 <div v-for="link in drawer.links.value" :key="link.id" class="bv-link-item">
-                  <div class="bv-link-icon">🔗</div>
+                  <div class="bv-link-icon">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                  </div>
                   <div class="bv-link-info">
                     <a class="bv-link-url" :href="link.url" @click.prevent="drawer.openExternalLink(link.url)">{{ link.titulo || link.url }}</a>
                     <div v-if="link.titulo" class="bv-link-sub">{{ link.url }}</div>
                     <div v-if="link.descricao" class="bv-link-desc">{{ link.descricao }}</div>
                   </div>
-                  <button class="bv-link-del" @click="drawer.deleteLink(link.id)" title="Remover">🗑️</button>
+                  <button class="bv-link-del bv-action-danger" @click="drawer.deleteLink(link.id)" title="Remover">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
                 </div>
 
                 <!-- Form novo link -->
@@ -275,8 +297,12 @@
                     <div class="bv-file-meta">{{ drawer.formatBytes(arq.tamanho) }}</div>
                   </div>
                   <div class="bv-file-actions">
-                    <button class="bv-file-btn" @click="drawer.openArquivo(arq.id)" title="Abrir">📂</button>
-                    <button class="bv-file-btn" @click="drawer.deleteArquivo(arq.id)" title="Excluir">🗑️</button>
+                    <button class="bv-file-btn" @click="drawer.openArquivo(arq.id)" title="Abrir">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2z"></path></svg>
+                    </button>
+                    <button class="bv-file-btn bv-action-danger" @click="drawer.deleteArquivo(arq.id)" title="Excluir">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
                   </div>
                 </div>
                 <div v-if="drawer.arquivos.value.length === 0 && !drawer.uploadando.value" class="bv-doc-empty">Nenhum arquivo anexado</div>
@@ -310,9 +336,15 @@
                       </div>
                     </div>
                     <div class="bv-cor-actions">
-                      <button class="bv-nota-action-btn" @click="abrirIdeiaCorrelata(c.correlata_id!)" title="Abrir Ideia">↗️</button>
-                      <button class="bv-nota-action-btn" @click="drawer.startEditCorrelacao(c)" title="Editar">✏️</button>
-                      <button class="bv-nota-action-btn" @click="drawer.deleteCorrelacao(c.id)" title="Desconectar">🗑️</button>
+                      <button class="bv-nota-action-btn" @click="abrirIdeiaCorrelata(c.correlata_id!)" title="Abrir Ideia">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                      </button>
+                      <button class="bv-nota-action-btn" @click="drawer.startEditCorrelacao(c)" title="Editar">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                      </button>
+                      <button class="bv-nota-action-btn bv-action-danger" @click="drawer.deleteCorrelacao(c.id)" title="Desconectar">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
                     </div>
                   </div>
                   
@@ -782,6 +814,8 @@ defineExpose({
 .bv-nota-item:hover .bv-nota-actions { opacity: 1; }
 .bv-nota-action-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; transition: transform 0.15s; }
 .bv-nota-action-btn:hover { transform: scale(1.1); }
+.bv-action-danger { color: #94a3b8; }
+.bv-action-danger:hover { color: #ef4444 !important; }
 .bv-cor-group { display: flex; gap: 6px; }
 .bv-cor-btn { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; transition: transform 0.15s, border-color 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .bv-cor-btn.active { border-color: #0f172a; transform: scale(1.15); }

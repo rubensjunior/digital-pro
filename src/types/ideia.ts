@@ -27,7 +27,7 @@ export type IdeiaStatus =
 
 export const STATUS_AGRUPADOS: { label: string; options: { value: IdeiaStatus; label: string }[] }[] = [
   {
-    label: '🧠 Fluxo de Ideia (Geral)',
+    label: 'Fluxo de Ideia (Geral)',
     options: [
       { value: 'bruta', label: 'Bruta (Capturada)' },
       { value: 'pesquisa', label: 'Em Pesquisa / Estudo' },
