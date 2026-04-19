@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, protocol, net } from 'electron';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
@@ -13,6 +14,11 @@ updateElectronApp({
 if (started) {
   app.quit();
 }
+
+// Registrar schemas privilegiados antes do app estar pronto
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'brainvault', privileges: { standard: true, secure: true, supportFetchAPI: true } }
+]);
 
 // ─── SQLite — Brain Vault ─────────────────────────────────────────────────────
 // O banco fica em %APPDATA%\rks-digital-pro\brainvault.db (Windows)
@@ -485,6 +491,41 @@ const createWindow = () => {
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 app.on('ready', () => {
+  // Registrar handler para o protocolo brainvault://
+  protocol.handle('brainvault', (request) => {
+    try {
+      // Formato esperado: brainvault://<ideia_id>/<file_name>
+      const urlStr = request.url;
+      const pathPart = urlStr.replace('brainvault://', '');
+      const [ideiaId, ...fileParts] = pathPart.split('/');
+      const fileName = decodeURIComponent(fileParts.join('/'));
+      
+      const fullPath = path.join(app.getPath('userData'), 'attachments', ideiaId, fileName);
+
+      if (!fs.existsSync(fullPath)) {
+        return new Response('File not found', { status: 404 });
+      }
+
+      const data = fs.readFileSync(fullPath);
+      
+      // Determinar MIME type básico
+      const ext = path.extname(fileName).toLowerCase();
+      let contentType = 'application/octet-stream';
+      if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+      else if (ext === '.png') contentType = 'image/png';
+      else if (ext === '.gif') contentType = 'image/gif';
+      else if (ext === '.webp') contentType = 'image/webp';
+      else if (ext === '.svg') contentType = 'image/svg+xml';
+
+      return new Response(data, {
+        headers: { 'Content-Type': contentType }
+      });
+    } catch (e) {
+      console.error('Erro no protocolo brainvault:', e);
+      return new Response('Internal Server Error', { status: 500 });
+    }
+  });
+
   initDatabase();
   registerIdeiaHandlers();
   createWindow();

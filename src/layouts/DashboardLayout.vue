@@ -116,65 +116,95 @@ const SUBSCRIPTION_CHECK_INTERVAL_MS = 15 * 60 * 1000; // 15 min
 let subscriptionCheckTimer: ReturnType<typeof setInterval> | null = null;
 
 async function checkSubscription(): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
+  try {
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
 
-  if (!session) {
-    router.push('/login');
-    return;
-  }
-
-  const userId = session.user.id;
-
-  // Verifica status do cliente
-  const { data: clientData } = await supabase
-    .from('clientes')
-    .select('status')
-    .eq('id', userId)
-    .single();
-
-  if (!clientData || clientData.status === 'inativo') {
-    await supabase.auth.signOut();
-    router.push('/login');
-    return;
-  }
-
-  // Verifica validade da assinatura
-  const { data: assinatura } = await supabase
-    .from('assinaturas')
-    .select('data_fim, status')
-    .eq('cliente_id', userId)
-    .order('data_fim', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (assinatura) {
-    const vencida =
-      assinatura.status === 'cancelado' ||
-      (assinatura.data_fim && new Date(assinatura.data_fim) < new Date());
-
-    if (vencida) {
-      router.push('/pending-payment');
+    if (authError || !session) {
+      router.push('/login');
+      return;
     }
+
+    // Se estiver offline, não tentamos validar assinatura remotamente
+    if (!navigator.onLine) return;
+
+    const userId = session.user.id;
+
+    // Verifica status do cliente
+    const { data: clientData, error: clientError } = await supabase
+      .from('clientes')
+      .select('status')
+      .eq('id', userId)
+      .single();
+
+    if (clientError) {
+      console.warn('Falha ao verificar status do cliente (offline?):', clientError);
+      return;
+    }
+
+    if (!clientData || clientData.status === 'inativo') {
+      await supabase.auth.signOut();
+      router.push('/login');
+      return;
+    }
+
+    // Verifica validade da assinatura
+    const { data: assinatura, error: scrollError } = await supabase
+      .from('assinaturas')
+      .select('data_fim, status')
+      .eq('cliente_id', userId)
+      .order('data_fim', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (scrollError && scrollError.code !== 'PGRST116') {
+      console.warn('Falha ao verificar assinatura:', scrollError);
+      return;
+    }
+
+    if (assinatura) {
+      const vencida =
+        assinatura.status === 'cancelado' ||
+        (assinatura.data_fim && new Date(assinatura.data_fim) < new Date());
+
+      if (vencida) {
+        router.push('/pending-payment');
+      }
+    }
+  } catch (err) {
+    console.error('Erro na verificação de assinatura:', err);
   }
 }
 
 // ─── Lifecycle ────────────────────────────────────────────
 onMounted(async () => {
-  // Carrega nome do usuário
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    const { data } = await supabase
-      .from('clientes')
-      .select('nome')
-      .eq('id', user.id)
-      .single();
-    userName.value = data?.nome ?? user.email ?? '';
+  try {
+    // Carrega nome do usuário
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (user) {
+      userName.value = user.email ? user.email.split('@')[0] : 'Usuário';
+
+      // Se estiver online, tenta pegar o nome real da tabela clientes
+      if (navigator.onLine) {
+        const { data } = await supabase
+          .from('clientes')
+          .select('nome')
+          .eq('id', user.id)
+          .single();
+        if (data?.nome) userName.value = data.nome;
+      } else {
+        console.log('Modo offline: usando email como nome de exibição.');
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao inicializar dados do usuário:', error);
+    userName.value = 'Usuário';
   }
 
   // Inicia verificação periódica de assinatura
   subscriptionCheckTimer = setInterval(checkSubscription, SUBSCRIPTION_CHECK_INTERVAL_MS);
 
-  // Ouve mudanças de sessão (ex: token revogado pelo admin)
+  // Ouve mudanças de sessão
   supabase.auth.onAuthStateChange((event) => {
     if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
       if (event === 'SIGNED_OUT') {

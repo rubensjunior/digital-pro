@@ -190,18 +190,19 @@
                 >
                   <div v-if="drawer.editingNoteId.value !== nota.id" class="bv-nota-view" @dblclick="drawer.startEditNote(nota)">
                     <div class="bv-nota-icon" :style="{ backgroundColor: nota.cor || '#e2e8f0' }"></div>
-                    <div class="bv-nota-info">
+                    <div class="bv-nota-info" @click="drawer.viewingNote.value = nota">
                       <div v-if="nota.titulo" class="bv-nota-titulo">{{ nota.titulo }}</div>
-                      <div class="bv-nota-conteudo">{{ nota.conteudo }}</div>
+                      <div class="bv-nota-conteudo bv-rich-text bv-nota-preview" v-html="nota.conteudo"></div>
                     </div>
                     <div class="bv-nota-actions">
+                      <button class="bv-nota-action-btn" @click.stop="drawer.viewingNote.value = nota" title="Visualizar">👁️</button>
                       <button class="bv-nota-action-btn" @click.stop="drawer.startEditNote(nota)" title="Editar">✏️</button>
                       <button class="bv-nota-action-btn" @click.stop="drawer.deleteNota(nota.id)" title="Excluir">🗑️</button>
                     </div>
                   </div>
                   <div v-else class="bv-link-form" style="margin: 0; border: none; padding: 10px;">
                     <input v-model="drawer.noteEditForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
-                    <textarea v-model="drawer.noteEditForm.conteudo" class="bv-doc-input" style="resize:vertical;" rows="3" placeholder="Conteúdo..."/>
+                    <RichTextEditor v-model="drawer.noteEditForm.conteudo" :ideia-id="drawer.drawerIdeia.value?.id" style="margin-bottom: 8px;" />
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
                       <div class="bv-cor-group">
                         <button v-for="c in drawer.NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: drawer.noteEditForm.cor === c}" @click="drawer.noteEditForm.cor = c" type="button"/>
@@ -217,7 +218,7 @@
                 <!-- Form de nova nota -->
                 <div v-if="drawer.addingNote.value" class="bv-link-form">
                   <input v-model="drawer.newNoteForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
-                  <textarea v-model="drawer.newNoteForm.conteudo" class="bv-doc-input" style="resize:vertical;" rows="3" placeholder="Escreva sua nota..."/>
+                  <RichTextEditor v-model="drawer.newNoteForm.conteudo" :ideia-id="drawer.drawerIdeia.value?.id" style="margin-bottom: 8px;" />
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
                     <div class="bv-cor-group">
                       <button v-for="c in drawer.NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: drawer.newNoteForm.cor === c}" @click="drawer.newNoteForm.cor = c" type="button"/>
@@ -347,14 +348,34 @@
         </div>
       </div>
     </div>
+ 
+    <!-- Modal de Confirmação Personalizado -->
+    <ConfirmModal 
+      v-if="drawer.confirmDialog.show"
+      :title="drawer.confirmDialog.title"
+      :message="drawer.confirmDialog.message"
+      :type="drawer.confirmDialog.type"
+      :icon="drawer.confirmDialog.icon"
+      @confirm="drawer.handleConfirmResult(true)"
+      @cancel="drawer.handleConfirmResult(false)"
+    />
+
+    <NoteViewModal 
+      v-if="drawer.viewingNote.value"
+      :note="drawer.viewingNote.value"
+      @close="drawer.viewingNote.value = null"
+    />
   </Teleport>
 </template>
 
 <script setup lang="ts">
 import { ref, toRef } from 'vue';
 import { useIdeiaDrawer, type DrawerCallbacks } from '../composables/useIdeiaDrawer';
-import type { Ideia, IdeiaStatus } from '../types/ideia';
+import type { Ideia, IdeiaStatus, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../types/ideia';
 import { useIdeias } from '../composables/useIdeias';
+import RichTextEditor from './RichTextEditor.vue';
+import ConfirmModal from './ConfirmModal.vue';
+import NoteViewModal from './NoteViewModal.vue';
 
 const props = defineProps<{
   ideias: Ideia[];
@@ -735,7 +756,27 @@ defineExpose({
 .bv-nota-icon { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.1); }
 .bv-nota-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .bv-nota-titulo { font-size: 13px; font-weight: 600; color: #1e293b; line-height: 1.3; }
-.bv-nota-conteudo { font-size: 13px; color: #475569; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.bv-nota-conteudo { font-size: 13px; color: #475569; line-height: 1.5; word-break: break-word; position: relative; }
+.bv-nota-preview {
+  max-height: 130px;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+.bv-nota-preview :deep(img) {
+  max-height: 100px;
+  object-fit: cover;
+  width: auto;
+  opacity: 0.8;
+}
+.bv-nota-conteudo :deep(p) { margin: 0 0 0.5em; }
+.bv-nota-conteudo :deep(p:last-child) { margin-bottom: 0; }
+.bv-nota-conteudo :deep(h3) { font-size: 1.1em; font-weight: 700; margin: 0.8em 0 0.4em; color: #1e293b; }
+.bv-nota-conteudo :deep(ul), .bv-nota-conteudo :deep(ol) { padding-left: 1.25em; margin: 0.5em 0; }
+.bv-nota-conteudo :deep(li) { margin-bottom: 0.25em; }
+.bv-nota-conteudo :deep(blockquote) { border-left: 3px solid #cbd5e1; padding-left: 1em; margin: 0.8em 0; color: #64748b; font-style: italic; }
+.bv-nota-conteudo :deep(a) { color: #3b82f6; text-decoration: underline; }
+.bv-rich-text :deep(img) { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; border: 1px solid #e2e8f0; display: block; }
 .bv-nota-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
 .bv-nota-item:hover .bv-nota-actions { opacity: 1; }
 .bv-nota-action-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; transition: transform 0.15s; }

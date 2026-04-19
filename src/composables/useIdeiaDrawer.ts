@@ -22,7 +22,34 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   // ─── Estado do Drawer ───────────────────────────────────────────────────────
   const drawerIdeia = ref<Ideia | null>(null);
   const drawerTab = ref<'geral' | 'doc' | 'conexoes'>('geral');
-  const historicoIdeia = ref<any[]>([]);
+   const historicoIdeia = ref<any[]>([]);
+ 
+   // ─── Modal de Confirmação ────────────────────────────────────────────────
+   const confirmDialog = reactive({
+     show: false,
+     title: '',
+     message: '',
+     type: 'primary' as 'primary' | 'danger',
+     icon: '⚠️',
+     resolve: null as ((val: boolean) => void) | null,
+   });
+ 
+   function solicitarConfirmacao(title: string, message: string, type: 'primary' | 'danger' = 'danger', icon = '🗑️'): Promise<boolean> {
+     confirmDialog.title = title;
+     confirmDialog.message = message;
+     confirmDialog.type = type;
+     confirmDialog.icon = icon;
+     confirmDialog.show = true;
+     return new Promise((resolve) => {
+       confirmDialog.resolve = resolve;
+     });
+   }
+ 
+   function handleConfirmResult(result: boolean) {
+     if (confirmDialog.resolve) confirmDialog.resolve(result);
+     confirmDialog.show = false;
+     confirmDialog.resolve = null;
+   }
 
   // ─── Conexões (Ecossistema Geral) ──────────────────────────────────────────
   const correlacoes = ref<IdeiaCorrelacao[]>([]);
@@ -62,18 +89,17 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     }
   }
 
-  function deleteCorrelacao(id: string) {
-    if (!confirm('Remover conexão?\nDeseja realmente remover esta conexão?')) return;
-    (async () => {
-      try {
-        const api = (window as any).electronAPI;
-        await api.correlacoes.delete(id);
-        if (drawerIdeia.value) await carregarCorrelacoes(drawerIdeia.value.id);
-        callbacks.showToast('Conexão removida.');
-      } catch (e) {
-        console.error('Erro ao deletar correlacao:', e);
-      }
-    })();
+  async function deleteCorrelacao(id: string) {
+    const ok = await solicitarConfirmacao('Remover conexão?', 'Deseja realmente remover esta conexão? Ela desaparecerá do ecossistema geral.');
+    if (!ok) return;
+    try {
+      const api = (window as any).electronAPI;
+      await api.correlacoes.delete(id);
+      if (drawerIdeia.value) await carregarCorrelacoes(drawerIdeia.value.id);
+      callbacks.showToast('Conexão removida.');
+    } catch (e) {
+      console.error('Erro ao deletar correlacao:', e);
+    }
   }
 
   // ─── Ecossistema ────────────────────────────────────────────────────────────
@@ -126,8 +152,10 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   // Notas
   const addingNote = ref(false);
   const editingNoteId = ref<string | null>(null);
-  const newNoteForm = reactive({ titulo: '', conteudo: '', cor: '#fef9c3' });
-  const noteEditForm = reactive({ titulo: '', conteudo: '', cor: '#fef9c3' });
+   const newNoteForm = reactive({ titulo: '', conteudo: '', cor: '#fef9c3' });
+   const noteEditForm = reactive({ titulo: '', conteudo: '', cor: '#fef9c3' });
+ 
+   const viewingNote = ref<IdeiaNote | null>(null);
 
   // Links
   const addingLink = ref(false);
@@ -190,14 +218,17 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     callbacks.showToast('Nota atualizada!');
   }
 
-  function deleteNota(id: string) {
-    if (!confirm('Excluir nota?\nEsta ação não pode ser desfeita.')) return;
-    (async () => {
+  async function deleteNota(id: string) {
+    const ok = await solicitarConfirmacao('Excluir nota?', 'Esta ação não pode ser desfeita e o conteúdo será permanentemente removido.');
+    if (!ok) return;
+    try {
       const api = (window as any).electronAPI;
       await api.notas.delete(id);
       notas.value = notas.value.filter(n => n.id !== id);
       callbacks.showToast('Nota removida.');
-    })();
+    } catch (e) {
+      console.error('Erro ao deletar nota:', e);
+    }
   }
 
   // ── Links ───────────────────────────────────────────────────────────────────
@@ -219,14 +250,17 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     callbacks.showToast('Link adicionado!');
   }
 
-  function deleteLink(id: string) {
-    if (!confirm('Excluir link?\nEsta ação não pode ser desfeita.')) return;
-    (async () => {
+  async function deleteLink(id: string) {
+    const ok = await solicitarConfirmacao('Excluir link?', 'Deseja remover este link da documentação?');
+    if (!ok) return;
+    try {
       const api = (window as any).electronAPI;
       await api.links.delete(id);
       links.value = links.value.filter(l => l.id !== id);
       callbacks.showToast('Link removido.');
-    })();
+    } catch (e) {
+      console.error('Erro ao deletar link:', e);
+    }
   }
 
   function openExternalLink(url: string) {
@@ -273,14 +307,17 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     await api.arquivos.open(id);
   }
 
-  function deleteArquivo(id: string) {
-    if (!confirm('Excluir arquivo?\nEsta ação não pode ser desfeita.')) return;
-    (async () => {
+  async function deleteArquivo(id: string) {
+    const ok = await solicitarConfirmacao('Excluir arquivo?', 'O arquivo será removido permanentemente do seu computador.');
+    if (!ok) return;
+    try {
       const api = (window as any).electronAPI;
       await api.arquivos.delete(id);
       arquivos.value = arquivos.value.filter(a => a.id !== id);
       callbacks.showToast('Arquivo removido.');
-    })();
+    } catch (e) {
+      console.error('Erro ao deletar arquivo:', e);
+    }
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -379,12 +416,11 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     fecharDrawer();
   }
 
-  function confirmarDelete(id: string) {
-    if (!confirm('Excluir ideia?\nEsta ação não pode ser desfeita.')) return;
-    (async () => {
-      await callbacks.onDelete(id);
-      drawerIdeia.value = null;
-    })();
+  async function confirmarDelete(id: string) {
+    const ok = await solicitarConfirmacao('Excluir ideia?', 'Esta ação excluirá permanentemente a ideia, suas notas, links e arquivos anexos. Não há como desfazer.');
+    if (!ok) return;
+    await callbacks.onDelete(id);
+    fecharDrawer();
   }
 
   function cadastrarDerivada() {
@@ -426,9 +462,11 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     addingLink,
     linkErro,
     newLinkForm,
+    viewingNote,
     fileInputRef,
     uploadando,
     uploadProgress,
+    confirmDialog,
 
     // Operações
     abrirDrawer,
@@ -453,6 +491,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     openArquivo,
     deleteArquivo,
     carregarCorrelacoes,
+    handleConfirmResult,
 
     // Helpers
     fileIcon,
