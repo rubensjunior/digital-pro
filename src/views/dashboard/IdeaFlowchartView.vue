@@ -11,12 +11,12 @@
           Voltar ao Brain Vault
         </button>
         <div class="nn-topbar-divider"></div>
-        <span class="nn-topbar-orb" data-status="bruta" style="background:#3b82f6;color:#3b82f6;"></span>
+        <span class="nn-topbar-orb" :data-status="rootIdeia?.status"></span>
         <div class="nn-topbar-info">
-          <span class="nn-topbar-title">Ecossistema Geral</span>
+          <span class="nn-topbar-title">{{ rootIdeia?.nome ?? 'Ecossistema' }}</span>
           <span class="nn-topbar-sub">
-            {{ nosGrafo.length }} ideia{{ nosGrafo.length !== 1 ? 's' : '' }} principal{{ nosGrafo.length !== 1 ? 'is' : '' }}
-            · {{ arestas.length }} conexão{{ arestas.length !== 1 ? 'ões' : '' }}
+            {{ nosGrafo.length }} nó{{ nosGrafo.length !== 1 ? 's' : '' }}
+            · {{ arestas.length }} conex{{ arestas.length !== 1 ? 'ões' : 'ão' }}
             · Clique em qualquer nó para ver detalhes
           </span>
         </div>
@@ -26,6 +26,10 @@
         <button class="nn-nav-btn nn-nav-flowchart" @click="irParaFluxogramaGeral" title="Fluxograma Geral">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
           Fluxograma Geral
+        </button>
+        <button class="nn-nav-btn nn-nav-neural" @click="irParaRedeNeuralGeral" title="Rede Neural Geral">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Rede Neural Geral
         </button>
         <div class="nn-topbar-divider"></div>
         <button class="nn-ctrl-btn" @click="resetZoom" title="Centralizar (Shift+C)">
@@ -70,21 +74,6 @@
         <span>Carregando ecossistema...</span>
       </div>
 
-      <!-- Tooltip hover -->
-      <div v-if="tooltip.visible" class="nn-tooltip"
-        :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
-        <div class="nn-tooltip-nome">{{ tooltip.nome }}</div>
-        <div class="nn-tooltip-meta">
-          <span class="nn-tooltip-tipo">{{ tooltip.tipo }}</span>
-          <span class="nn-tooltip-status" :data-status="tooltip.status">{{ tooltip.statusLabel }}</span>
-        </div>
-        <div class="nn-tooltip-stars">
-          <span v-for="n in 4" :key="n" :class="n <= tooltip.score ? 'nn-star-on' : 'nn-star-off'">★</span>
-        </div>
-        <div v-if="tooltip.rel" class="nn-tooltip-rel">↳ {{ tooltip.rel }}</div>
-        <div class="nn-tooltip-hint">Clique para ver detalhes · Duplo clique para abrir</div>
-      </div>
-
       <!-- Legenda -->
       <div class="nn-legend">
         <div class="nn-legend-title">Status</div>
@@ -94,7 +83,7 @@
         </div>
       </div>
 
-      <!-- Painel de detalhes (abre ao clicar num nó) -->
+      <!-- Painel de detalhes -->
       <Transition name="panel">
         <div v-if="painelIdeia" class="nn-panel">
           <div class="nn-panel-header">
@@ -148,7 +137,7 @@
 
       <!-- Hint inicial -->
       <div v-if="!loading && nosGrafo.length > 0 && !hintDismissed" class="nn-hint" @click="hintDismissed = true">
-        🕸️ Arraste os nós · Scroll para zoom · Clique para detalhes
+        📊 Scroll para zoom · Clique para detalhes · Clique [+]/[-] para expandir/colapsar
         <button @click.stop="hintDismissed = true">✕</button>
       </div>
     </div>
@@ -156,29 +145,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useIdeias } from '../../composables/useIdeias';
-import type { Ideia, IdeiaStatus, IdeiaCorrelacao } from '../../types/ideia';
+import type { Ideia, IdeiaStatus } from '../../types/ideia';
 
 // ─── Router & Dados ───────────────────────────────────────────────────────────
+const route  = useRoute();
 const router = useRouter();
 const { ideias, loading, fetchIdeias } = useIdeias();
 
+const rootId = computed(() => route.params.rootId as string);
+const rootIdeia = computed(() => ideias.value.find(i => i.id === rootId.value) ?? null);
+
+// ─── Estado de Colapso ────────────────────────────────────────────────────────
+const collapsedNodes = reactive(new Set<string>());
+
 onMounted(async () => {
   await fetchIdeias();
-  
-  const api = (window as any).electronAPI;
-  const correlacoes = await api.correlacoes.getAllTodos();
-
-  await nextTick(); // garante que o DOM está pronto
+  await nextTick();
   if (canvasEl.value && canvasWrap.value) {
     const { width, height } = canvasWrap.value.getBoundingClientRect();
     canvasEl.value.width  = Math.floor(width);
     canvasEl.value.height = Math.floor(height);
   }
-
-  construirGrafo(correlacoes);
+  construirGrafo(rootId.value);
   animFrame = requestAnimationFrame(drawCanvas);
 });
 
@@ -191,6 +182,9 @@ function abrirRedeNeuralDaIdeia(ideia: Ideia) {
 }
 function irParaFluxogramaGeral() {
   router.push('/dashboard/ideas/general-flowchart');
+}
+function irParaRedeNeuralGeral() {
+  router.push('/dashboard/ideas/general-network');
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -211,6 +205,12 @@ const STATUS_LABEL_MAP: Record<IdeiaStatus, string> = {
   nao_validada: 'Não Validada', escalada: 'Escalada',
 };
 
+const NODE_W = 180;
+const NODE_H = 60;
+const NODE_R = 10;
+const LAYER_DIST = 120;
+const NODE_PAD_X = 40;
+
 function statusLabel(s: IdeiaStatus) { return STATUS_LABEL_MAP[s] ?? s; }
 function allTags(i: Ideia) {
   return [...i.tags_avatar, ...i.tags_nicho, ...i.tags_dor, ...i.tags_desejo, ...i.tags_mecanismo];
@@ -219,9 +219,11 @@ function allTags(i: Ideia) {
 // ─── Grafo ────────────────────────────────────────────────────────────────────
 interface GrafoNo {
   id: string; ideia: Ideia;
-  x: number; y: number; vx: number; vy: number;
-  radius: number; depth: number; parentId: string | null;
+  x: number; y: number;
+  w: number; h: number;
+  depth: number; parentId: string | null;
   isCentral: boolean; relType: string | null;
+  hasChildren: boolean;
 }
 interface Aresta { origem: GrafoNo; destino: GrafoNo; label: string; }
 interface Particula { arestaIdx: number; t: number; speed: number; alpha: number; }
@@ -231,113 +233,87 @@ const arestas    = ref<Aresta[]>([]);
 const particulas = ref<Particula[]>([]);
 const hintDismissed = ref(false);
 
-function construirGrafo(correlacoes: IdeiaCorrelacao[]) {
-  // Pega apenas ideias principais de forma robusta (mesma lógica da lista)
-  const mapList = new Map(ideias.value.map(i => [i.id, i]));
-  const todos = ideias.value.filter(i => {
-    if (i.is_arquivada) return false;
-    // Sem pai definido (mesmo que seja string vazia ou magic strings)
-    if (!i.parent_id || i.parent_id === 'null' || i.parent_id === 'undefined') return true;
-    // Ou o pai foi deletado/arquivado
-    const pai = mapList.get(i.parent_id);
-    if (!pai || pai.is_arquivada) return true;
-    
-    return false;
-  });
+function construirGrafo(rId: string) {
+  const todos = ideias.value;
+  const visitados = new Set<string>();
   const nos: GrafoNo[] = [];
 
-  todos.forEach(ideia => {
-    const isCentral = false; 
-    const radius = Math.max(22, 18 + ideia.score * 5);
-    
-    // Distribuição inicial mais concentrada
-    const nx = (Math.random() - 0.5) * 400;
-    const ny = (Math.random() - 0.5) * 400;
+  function getSize(id: string, visited = new Set<string>()): number {
+    if (visited.has(id)) return NODE_W;
+    visited.add(id);
+    if (collapsedNodes.has(id)) return NODE_W;
+    const filhos = todos.filter(i => i.parent_id === id && !i.is_arquivada);
+    if (!filhos.length) return NODE_W;
+    return filhos.reduce((s, f) => s + getSize(f.id, visited), 0) + (filhos.length - 1) * NODE_PAD_X;
+  }
 
-    nos.push({ 
-      id: ideia.id, 
-      ideia, 
-      x: nx, 
-      y: ny, 
-      vx: 0, 
-      vy: 0, 
-      radius, 
-      depth: 0, 
-      parentId: null, 
-      isCentral, 
-      relType: null 
+  function posicionar(id: string, depth: number, parentId: string | null, relType: string | null, minX: number, maxX: number) {
+    if (visitados.has(id)) return;
+    visitados.add(id);
+    const ideia = todos.find(i => i.id === id);
+    if (!ideia) return;
+
+    const allFilhos = todos.filter(i => i.parent_id === id && !i.is_arquivada);
+    const hasChildren = allFilhos.length > 0;
+
+    nos.push({
+      id, ideia,
+      x: (minX + maxX) / 2,
+      y: depth * (NODE_H + LAYER_DIST),
+      w: NODE_W, h: NODE_H,
+      depth, parentId,
+      isCentral: id === rId,
+      relType,
+      hasChildren,
     });
-  });
+
+    if (!hasChildren || collapsedNodes.has(id)) return;
+
+    const totalReq = allFilhos.reduce((s, f) => s + getSize(f.id, new Set()), 0) + (allFilhos.length - 1) * NODE_PAD_X;
+    let currX = (minX + maxX) / 2 - totalReq / 2;
+
+    for (const f of allFilhos) {
+      const w = getSize(f.id, new Set());
+      posicionar(f.id, depth + 1, id, f.relationship_type || null, currX, currX + w);
+      currX += w + NODE_PAD_X;
+    }
+  }
+
+  const wRoot = getSize(rId, new Set());
+  posicionar(rId, 0, null, null, -wRoot / 2, wRoot / 2);
+
+  const maxY = nos.reduce((max, n) => Math.max(max, n.y), 0);
+  const offsetY = -maxY / 2;
+  nos.forEach(n => n.y += offsetY);
 
   const as: Aresta[] = [];
-  
-  // Adiciona correlações explícitas (many-to-many)
-  for (const corr of correlacoes) {
-    const origem = nos.find(n => n.id === corr.ideia_a_id);
-    const destino = nos.find(n => n.id === corr.ideia_b_id);
-    if (origem && destino) {
-      as.push({ origem, destino, label: corr.descricao || '' });
+  for (const no of nos) {
+    if (no.parentId) {
+      const pai = nos.find(n => n.id === no.parentId);
+      if (pai) as.push({ origem: pai, destino: no, label: no.relType || '' });
     }
   }
 
   const ps: Particula[] = [];
   for (let i = 0; i < as.length; i++) {
-    for (let j = 0; j < Math.max(1, Math.floor(Math.random() * 3) + 1); j++) {
+    for (let j = 0; j < Math.max(1, Math.floor(Math.random() * 2) + 1); j++) {
       ps.push({ arestaIdx: i, t: Math.random(), speed: 0.003 + Math.random() * 0.004, alpha: 0.7 + Math.random() * 0.3 });
     }
   }
 
-  nosGrafo.value   = nos;
-  arestas.value    = as;
+  nosGrafo.value = nos;
+  arestas.value = as;
   particulas.value = ps;
 }
 
-// ─── Física ───────────────────────────────────────────────────────────────────
-const K_REPEL   = 12000;  // repulsão equilibrada
-const REST_LEN  = 250;    // comprimento ideal das arestas
-const K_SPRING  = 0.035;  // rigidez das molas
-const GRAVITY   = 0.005;  // gravidade suficiente para mantê-las no centro visual
-const DAMP      = 0.75;   // amortecimento para estabilizar rápido
-const DT        = 0.45;   // passo de tempo
+function toggleCollapse(id: string) {
+  if (collapsedNodes.has(id)) collapsedNodes.delete(id);
+  else collapsedNodes.add(id);
+  construirGrafo(rootId.value);
+}
 
+// ─── Física (só partículas) ──────────────────────────────────────────────────
 function simularFisica() {
-  const nos = nosGrafo.value;
-  if (!nos.length) return;
-  for (const no of nos) {
-    let fx = 0, fy = 0;
-
-    // ── Repulsão entre todos os nós ──
-    for (const outro of nos) {
-      if (outro === no) continue;
-      const dx = no.x - outro.x, dy = no.y - outro.y;
-      const d2 = Math.max(dx * dx + dy * dy, 1);
-      const d  = Math.sqrt(d2);
-      if (d < REST_LEN * 3) {
-        const f = K_REPEL / d2;
-        fx += f * dx / d; fy += f * dy / d;
-      }
-    }
-
-    // ── Mola ao longo das arestas ──
-    for (const a of arestas.value) {
-      const outro = a.origem === no ? a.destino : a.destino === no ? a.origem : null;
-      if (!outro) continue;
-      const dx = outro.x - no.x, dy = outro.y - no.y;
-      const d  = Math.sqrt(dx * dx + dy * dy) + 0.01;
-      const f  = K_SPRING * (d - REST_LEN);
-      fx += f * dx / d; fy += f * dy / d;
-    }
-
-    // ── Gravidade suave em direção ao centro ──
-    fx -= no.x * GRAVITY;
-    fy -= no.y * GRAVITY;
-
-    no.vx = (no.vx + fx * DT) * DAMP;
-    no.vy = (no.vy + fy * DT) * DAMP;
-    no.x += no.vx; no.y += no.vy;
-  }
-
-  // ── Partículas ao longo das arestas ──
   for (const p of particulas.value) {
     p.t += p.speed;
     if (p.t > 1) p.t = 0;
@@ -347,19 +323,19 @@ function simularFisica() {
 // ─── Câmera ───────────────────────────────────────────────────────────────────
 const camX  = ref(0);
 const camY  = ref(0);
-const scale = ref(0.7); // Zoom inicial slightly reduced to see all
+const scale = ref(1);
 
-const W2S = (wx: number, wy: number, w: number, h: number) => ({
-  x: wx * scale.value + camX.value + w / 2,
-  y: wy * scale.value + camY.value + h / 2,
+const W2S = (wx: number, wy: number, cW: number, cH: number) => ({
+  x: wx * scale.value + camX.value + cW / 2,
+  y: wy * scale.value + camY.value + cH / 2,
 });
-const S2W = (sx: number, sy: number, w: number, h: number) => ({
-  x: (sx - w / 2 - camX.value) / scale.value,
-  y: (sy - h / 2 - camY.value) / scale.value,
+const S2W = (sx: number, sy: number, cW: number, cH: number) => ({
+  x: (sx - cW / 2 - camX.value) / scale.value,
+  y: (sy - cH / 2 - camY.value) / scale.value,
 });
 
 function zoom(d: number) { scale.value = Math.min(3, Math.max(0.15, scale.value + d)); }
-function resetZoom() { camX.value = 0; camY.value = 0; scale.value = 0.7; }
+function resetZoom() { camX.value = 0; camY.value = 0; scale.value = 1; }
 
 // ─── Interação ────────────────────────────────────────────────────────────────
 const canvasEl   = ref<HTMLCanvasElement | null>(null);
@@ -370,17 +346,25 @@ const isPanning  = ref(false);
 const panStart   = ref({ x: 0, y: 0 });
 const painelIdeia = ref<Ideia | null>(null);
 
-const tooltip = ref({
-  visible: false, x: 0, y: 0,
-  nome: '', tipo: '', status: '' as IdeiaStatus,
-  statusLabel: '', score: 0, rel: '',
-});
-
-function getNoAtPos(sx: number, sy: number, w: number, h: number): GrafoNo | null {
+function getNoAtPos(sx: number, sy: number, cW: number, cH: number): GrafoNo | null {
   for (const no of nosGrafo.value) {
-    const s = W2S(no.x, no.y, w, h);
-    const dx = sx - s.x, dy = sy - s.y;
-    if (Math.sqrt(dx * dx + dy * dy) <= no.radius * scale.value + 6) return no;
+    const s = W2S(no.x, no.y, cW, cH);
+    const hw = (no.w / 2) * scale.value;
+    const hh = (no.h / 2) * scale.value;
+    if (sx >= s.x - hw && sx <= s.x + hw && sy >= s.y - hh && sy <= s.y + hh) return no;
+  }
+  return null;
+}
+
+function getToggleBtnAtPos(sx: number, sy: number, cW: number, cH: number): GrafoNo | null {
+  for (const no of nosGrafo.value) {
+    if (!no.hasChildren) continue;
+    const s = W2S(no.x, no.y, cW, cH);
+    const btnX = s.x;
+    const btnY = s.y + (no.h / 2) * scale.value + 10 * scale.value;
+    const btnR = 10 * scale.value;
+    const dx = sx - btnX, dy = sy - btnY;
+    if (Math.sqrt(dx * dx + dy * dy) <= btnR) return no;
   }
   return null;
 }
@@ -393,7 +377,6 @@ function onMouseMove(e: MouseEvent) {
   if (draggedNo.value) {
     const wp = S2W(sx, sy, c.width, c.height);
     draggedNo.value.x = wp.x; draggedNo.value.y = wp.y;
-    draggedNo.value.vx = 0;   draggedNo.value.vy = 0;
     return;
   }
   if (isPanning.value) {
@@ -402,18 +385,13 @@ function onMouseMove(e: MouseEvent) {
     panStart.value = { x: e.clientX, y: e.clientY };
     return;
   }
+  const btn = getToggleBtnAtPos(sx, sy, c.width, c.height);
   const no = getNoAtPos(sx, sy, c.width, c.height);
-  if (no) {
-    hoveredId.value = no.id;
-    tooltip.value = {
-      visible: true,
-      x: Math.min(sx + 18, c.width - 250), y: Math.max(sy - 10, 10),
-      nome: no.ideia.nome, tipo: no.ideia.tipo, status: no.ideia.status,
-      statusLabel: STATUS_LABEL_MAP[no.ideia.status], score: no.ideia.score, rel: no.relType || '',
-    };
+  if (btn || no) {
+    hoveredId.value = (btn || no)!.id;
     c.style.cursor = 'pointer';
   } else {
-    hoveredId.value = null; tooltip.value.visible = false;
+    hoveredId.value = null;
     c.style.cursor = isPanning.value ? 'grabbing' : 'grab';
   }
 }
@@ -421,7 +399,8 @@ function onMouseMove(e: MouseEvent) {
 function onMouseDown(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
   const r = c.getBoundingClientRect();
-  const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  const no = getNoAtPos(sx, sy, c.width, c.height);
   if (no) { draggedNo.value = no; c.style.cursor = 'grabbing'; }
   else { isPanning.value = true; panStart.value = { x: e.clientX, y: e.clientY }; c.style.cursor = 'grabbing'; }
 }
@@ -432,20 +411,18 @@ function onMouseUp() {
 }
 
 function onMouseLeave() {
-  tooltip.value.visible = false; hoveredId.value = null;
+  hoveredId.value = null;
   draggedNo.value = null; isPanning.value = false;
 }
 
 function onWheel(e: WheelEvent) {
   const c = canvasEl.value; if (!c) return;
-  const r = c.getBoundingClientRect();
-  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  const mx = e.clientX - c.getBoundingClientRect().left;
+  const my = e.clientY - c.getBoundingClientRect().top;
   const delta = e.deltaY < 0 ? 0.12 : -0.12;
   const oldScale = scale.value;
   scale.value = Math.min(3, Math.max(0.15, scale.value + delta));
-  
   const dScale = scale.value / oldScale;
-  camX.value = mx - dScale * (mx - camX.value - c.width / 2) - c.width / 2 + camX.value * 0;
   camX.value = (mx - c.width / 2) * (1 - dScale) + camX.value * dScale;
   camY.value = (my - c.height / 2) * (1 - dScale) + camY.value * dScale;
 }
@@ -453,7 +430,12 @@ function onWheel(e: WheelEvent) {
 function onCanvasClick(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
   const r = c.getBoundingClientRect();
-  const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+
+  const btn = getToggleBtnAtPos(sx, sy, c.width, c.height);
+  if (btn) { toggleCollapse(btn.id); return; }
+
+  const no = getNoAtPos(sx, sy, c.width, c.height);
   if (no) painelIdeia.value = no.ideia;
 }
 
@@ -467,9 +449,8 @@ function onCanvasDblClick(e: MouseEvent) {
 // ─── Renderização ─────────────────────────────────────────────────────────────
 let animFrame: number | null = null;
 let tick = 0;
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lh: number) {
+function wrapTextLines(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
   const words = text.split(' '), lines: string[] = [];
   let line = '';
   for (const w of words) {
@@ -478,8 +459,21 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: num
     else line = test;
   }
   if (line) lines.push(line);
-  const th = lines.length * lh;
-  lines.forEach((l, i) => ctx.fillText(l, x, y - th / 2 + i * lh + lh / 2));
+  return lines;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
 }
 
 function drawCanvas() {
@@ -506,7 +500,7 @@ function drawCanvas() {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // Grid pontilhada sutil
+  // Grid
   ctx.save();
   ctx.strokeStyle = '#ffffff08';
   ctx.lineWidth = 1;
@@ -525,93 +519,149 @@ function drawCanvas() {
   for (const a of arestas.value) {
     const isHov = hoveredId.value === a.origem.id || hoveredId.value === a.destino.id;
     const isPainel = painelIdeia.value?.id === a.origem.id || painelIdeia.value?.id === a.destino.id;
-    const alpha = isHov || isPainel ? 'ee' : '44';
+    const alpha = isHov || isPainel ? 'cc' : '55';
     const c1 = STATUS_COLORS[a.origem.ideia.status] || '#4b5563';
     const c2 = STATUS_COLORS[a.destino.ideia.status] || '#4b5563';
-    const lg = ctx.createLinearGradient(a.origem.x, a.origem.y, a.destino.x, a.destino.y);
+
+    const fromY = a.origem.y + a.origem.h / 2;
+    const toY = a.destino.y - a.destino.h / 2;
+
+    const lg = ctx.createLinearGradient(a.origem.x, fromY, a.destino.x, toY);
     lg.addColorStop(0, c1 + alpha);
     lg.addColorStop(1, c2 + alpha);
     ctx.beginPath();
-    ctx.moveTo(a.origem.x, a.origem.y);
-    ctx.lineTo(a.destino.x, a.destino.y);
+    ctx.moveTo(a.origem.x, fromY);
+    const midY = (fromY + toY) / 2;
+    ctx.bezierCurveTo(a.origem.x, midY, a.destino.x, midY, a.destino.x, toY);
     ctx.strokeStyle = lg;
-    ctx.lineWidth = isHov || isPainel ? 2.8 : 1.2;
+    ctx.lineWidth = isHov || isPainel ? 2.5 : 1.5;
     ctx.stroke();
 
     if (a.label && scale.value >= 0.5) {
       const mx = (a.origem.x + a.destino.x) / 2;
-      const my = (a.origem.y + a.destino.y) / 2;
-      const ang = Math.atan2(a.destino.y - a.origem.y, a.destino.x - a.origem.x);
-      ctx.save();
-      ctx.translate(mx, my);
-      ctx.rotate(ang > Math.PI / 2 || ang < -Math.PI / 2 ? ang + Math.PI : ang);
+      const my = (fromY + toY) / 2;
       ctx.font = '10px Inter, sans-serif';
       ctx.fillStyle = isHov ? '#cbd5e1' : '#475569';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      ctx.fillText(a.label, 0, -5);
-      ctx.restore();
+      ctx.fillText(a.label, mx, my - 4);
     }
   }
 
   // ── Partículas ──
   for (const p of particulas.value) {
     const a = arestas.value[p.arestaIdx]; if (!a) continue;
-    const px = lerp(a.origem.x, a.destino.x, p.t);
-    const py = lerp(a.origem.y, a.destino.y, p.t);
+    const fromY = a.origem.y + a.origem.h / 2;
+    const toY = a.destino.y - a.destino.h / 2;
+    const midY = (fromY + toY) / 2;
+    const p0 = { x: a.origem.x, y: fromY };
+    const p1 = { x: a.origem.x, y: midY };
+    const p2 = { x: a.destino.x, y: midY };
+    const p3 = { x: a.destino.x, y: toY };
+    const t = p.t, invT = 1 - t;
+    const px = Math.pow(invT, 3) * p0.x + 3 * Math.pow(invT, 2) * t * p1.x + 3 * invT * t * t * p2.x + t * t * t * p3.x;
+    const py = Math.pow(invT, 3) * p0.y + 3 * Math.pow(invT, 2) * t * p1.y + 3 * invT * t * t * p2.y + t * t * t * p3.y;
     const col = STATUS_COLORS[a.destino.ideia.status] || '#3b82f6';
     ctx.beginPath();
-    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.arc(px, py, 2.5, 0, Math.PI * 2);
     ctx.fillStyle = col + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
     ctx.fill();
   }
 
-  // ── Nós ──
+  // ── Nós (Retângulos) ──
   for (const no of nosGrafo.value) {
-    const r = no.radius;
     const col = STATUS_COLORS[no.ideia.status] || '#3b82f6';
     const isHov = hoveredId.value === no.id;
     const isPainelNode = painelIdeia.value?.id === no.id;
-    const pulse = 0; // Removido pulse generalizado para não ficar muito agitado
+    const rx = no.x - no.w / 2, ry = no.y - no.h / 2;
 
-    // Aura
-    const glowR = (r + pulse + (isHov || isPainelNode ? 16 : 0)) * 2.8;
-    const glow = ctx.createRadialGradient(no.x, no.y, r * 0.3, no.x, no.y, glowR);
-    glow.addColorStop(0, col + (isHov || isPainelNode ? '44' : '18'));
-    glow.addColorStop(1, col + '00');
-    ctx.beginPath(); ctx.arc(no.x, no.y, glowR, 0, Math.PI * 2);
-    ctx.fillStyle = glow; ctx.fill();
+    // Sombra / Glow
+    ctx.save();
+    ctx.shadowColor = col + (isHov || isPainelNode ? '88' : '33');
+    ctx.shadowBlur = isHov || isPainelNode ? 20 : 8;
+    ctx.shadowOffsetY = 4;
 
-    // Halo seleção
-    if (isHov || isPainelNode) {
-      ctx.beginPath(); ctx.arc(no.x, no.y, r + (isPainelNode ? 12 : 9), 0, Math.PI * 2);
-      ctx.strokeStyle = col + (isPainelNode ? 'dd' : '99');
-      ctx.lineWidth = isPainelNode ? 3 : 2; ctx.stroke();
+    // Fundo do retângulo
+    roundRect(ctx, rx, ry, no.w, no.h, NODE_R);
+    const grad = ctx.createLinearGradient(rx, ry, rx, ry + no.h);
+    grad.addColorStop(0, no.isCentral ? '#1e3a5f' : '#1e293b');
+    grad.addColorStop(1, no.isCentral ? '#0c1f3a' : '#0f172a');
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+
+    // Borda com cor do status
+    roundRect(ctx, rx, ry, no.w, no.h, NODE_R);
+    ctx.strokeStyle = col + (isHov || isPainelNode ? 'cc' : '66');
+    ctx.lineWidth = no.isCentral ? 3 : (isHov || isPainelNode ? 2.5 : 1.5);
+    ctx.stroke();
+
+    // Barra lateral de cor
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(rx + NODE_R, ry);
+    ctx.lineTo(rx + 4, ry);
+    ctx.quadraticCurveTo(rx, ry, rx, ry + NODE_R);
+    ctx.lineTo(rx, ry + no.h - NODE_R);
+    ctx.quadraticCurveTo(rx, ry + no.h, rx + NODE_R, ry + no.h);
+    ctx.lineTo(rx + 4, ry + no.h);
+    ctx.lineTo(rx + 4, ry);
+    ctx.closePath();
+    ctx.fillStyle = col;
+    ctx.fill();
+    ctx.restore();
+
+    // Texto (nome)
+    if (scale.value >= 0.25) {
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.fillStyle = '#f1f5f9';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      const textX = rx + 12;
+      const textMaxW = no.w - 20;
+      const lines = wrapTextLines(ctx, no.ideia.nome, textMaxW);
+      const maxLines = 2;
+      const displayLines = lines.slice(0, maxLines);
+      if (lines.length > maxLines) {
+        displayLines[maxLines - 1] = displayLines[maxLines - 1].slice(0, -1) + '…';
+      }
+      const lh = 14;
+      const textStartY = ry + 10;
+      displayLines.forEach((l, i) => {
+        ctx.fillText(l, textX, textStartY + i * lh);
+      });
+
+      // Estrelas dentro do balão
+      const starsY = textStartY + displayLines.length * lh + 2;
+      if (starsY + 12 < ry + no.h) {
+        ctx.font = '10px serif';
+        ctx.fillStyle = '#fbbf24cc';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('★'.repeat(no.ideia.score) + '☆'.repeat(4 - no.ideia.score), textX, starsY);
+      }
     }
 
-    // Círculo principal
-    const grad = ctx.createRadialGradient(no.x - r * 0.3, no.y - r * 0.3, r * 0.1, no.x, no.y, r + pulse);
-    grad.addColorStop(0, col + 'ff');
-    grad.addColorStop(1, col + '99');
-    ctx.beginPath(); ctx.arc(no.x, no.y, r + pulse, 0, Math.PI * 2);
-    ctx.fillStyle = grad; ctx.fill();
+    // ── Botão [+] / [-] ──
+    if (no.hasChildren) {
+      const btnX = no.x;
+      const btnY = no.y + no.h / 2 + 10;
+      const btnR = 9;
+      const isCollapsed = collapsedNodes.has(no.id);
 
-    // Rótulo
-    if (scale.value >= 0.35) {
-      const maxW = (r * 2) + 28;
-      const nome = no.ideia.nome.length > (r > 34 ? 24 : 14) ? no.ideia.nome.slice(0, r > 34 ? 23 : 13) + '…' : no.ideia.nome;
-      ctx.font = `bold ${Math.max(8, Math.min(13, r * 0.5))}px Inter, sans-serif`;
-      ctx.fillStyle = '#f8fafc'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#00000099'; ctx.shadowBlur = 5;
-      wrapText(ctx, nome, no.x, no.y, maxW, 14);
-      ctx.shadowBlur = 0;
-    }
+      ctx.beginPath();
+      ctx.arc(btnX, btnY, btnR, 0, Math.PI * 2);
+      ctx.fillStyle = '#1e293b';
+      ctx.fill();
+      ctx.strokeStyle = col + '99';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-    // Stars
-    if (scale.value >= 0.6) {
-      ctx.font = `${Math.max(7, r * 0.3)}px serif`;
-      ctx.fillStyle = '#fbbf24cc'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.fillText('★'.repeat(no.ideia.score) + '☆'.repeat(4 - no.ideia.score), no.x, no.y + r + pulse + 7);
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(isCollapsed ? '+' : '−', btnX, btnY);
     }
   }
 
@@ -771,43 +821,6 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ══════════════════════════════════════════════════════════ TOOLTIP */
-.nn-tooltip {
-  position: absolute;
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid #334155;
-  border-radius: 12px; padding: 12px 16px;
-  pointer-events: none; z-index: 50;
-  min-width: 200px; max-width: 260px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  animation: tooltipIn 0.15s ease-out;
-}
-@keyframes tooltipIn {
-  from { opacity: 0; transform: scale(0.95) translateY(4px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-.nn-tooltip-nome { font-size: 13px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; line-height: 1.3; }
-.nn-tooltip-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
-.nn-tooltip-tipo {
-  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
-  background: #1e293b; color: #94a3b8; border: 1px solid #334155;
-  text-transform: uppercase; letter-spacing: 0.04em;
-}
-.nn-tooltip-status {
-  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; color: #fff;
-}
-.nn-tooltip-status[data-status="bruta"]        { background: #475569; }
-.nn-tooltip-status[data-status="em_teste"]     { background: #d97706; }
-.nn-tooltip-status[data-status="validada"]     { background: #059669; }
-.nn-tooltip-status[data-status="nao_validada"] { background: #dc2626; }
-.nn-tooltip-status[data-status="escalada"]     { background: #7c3aed; }
-.nn-tooltip-stars { font-size: 12px; margin-bottom: 5px; }
-.nn-star-on  { color: #fbbf24; }
-.nn-star-off { color: #334155; }
-.nn-tooltip-rel { font-size: 10px; color: #94a3b8; font-style: italic; margin-bottom: 4px; }
-.nn-tooltip-hint { font-size: 10px; color: #60a5fa; font-weight: 600; }
-
 /* ══════════════════════════════════════════════════════════ LEGENDA */
 .nn-legend {
   position: absolute; bottom: 20px; left: 20px;
@@ -831,8 +844,6 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 .nn-panel {
   position: absolute; top: 16px; right: 16px;
   width: 280px;
-  max-height: calc(100vh - 32px);
-  display: flex; flex-direction: column;
   background: rgba(15, 23, 42, 0.96);
   border: 1px solid #334155; border-radius: 14px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
@@ -844,7 +855,6 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 .panel-leave-to  { opacity: 0; transform: translateX(20px) scale(0.95); }
 
 .nn-panel-header {
-  flex-shrink: 0;
   display: flex; align-items: flex-start; gap: 10px;
   padding: 14px 14px 10px;
   border-bottom: 1px solid #1e293b;
@@ -870,11 +880,7 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 .nn-panel-close svg { width: 14px; height: 14px; }
 .nn-panel-close:hover { background: #1e293b; color: #94a3b8; }
 
-.nn-panel-body { 
-  padding: 12px 14px; 
-  display: flex; flex-direction: column; gap: 10px;
-  overflow-y: auto;
-}
+.nn-panel-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 
 .nn-panel-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .nn-panel-badge {
@@ -907,7 +913,6 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 }
 
 .nn-panel-footer {
-  flex-shrink: 0;
   padding: 10px 14px;
   border-top: 1px solid #1e293b;
   display: flex;
@@ -930,11 +935,11 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
   cursor: pointer; transition: all 0.15s;
 }
 .nn-panel-btn-neural svg { width: 14px; height: 14px; }
-.nn-panel-btn-neural:hover { 
-  background: rgba(139, 92, 246, 0.22); 
-  border-color: rgba(139, 92, 246, 0.55); 
-  color: #c4b5fd; 
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.2); 
+.nn-panel-btn-neural:hover {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: rgba(139, 92, 246, 0.55);
+  color: #c4b5fd;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
 }
 
 /* ══════════════════════════════════════════════════════════ HINT */
@@ -956,4 +961,7 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
   font-size: 11px; padding: 0; line-height: 1;
 }
 .nn-hint button:hover { color: #94a3b8; }
+
+.nn-star-on  { color: #fbbf24; }
+.nn-star-off { color: #334155; }
 </style>

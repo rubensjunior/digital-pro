@@ -20,7 +20,11 @@
         </p>
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
-        <button class="bv-btn-neural" @click="abrirRedeNeuralGeral()">
+        <button class="bv-btn-neural" @click="abrirFluxogramaGeral()" title="Ver como Fluxograma" style="padding: 0 10px;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
+          Fluxograma Geral
+        </button>
+        <button class="bv-btn-neural" @click="abrirRedeNeuralGeral()" title="Ver como Rede Neural" style="padding: 0 10px;">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           Rede Neural Geral
         </button>
@@ -467,7 +471,11 @@
                 Conexões
                 <span v-if="correlacoes.length > 0" class="bv-drawer-tab-badge">{{ correlacoes.length }}</span>
               </button>
-              <button class="bv-drawer-tab bv-drawer-tab-neural" @click="abrirRedeNeural(drawerIdeia)">
+              <button class="bv-drawer-tab bv-drawer-tab-neural" @click="abrirFluxograma(drawerIdeia)" title="Ver como Fluxograma">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
+                Fluxograma
+              </button>
+              <button class="bv-drawer-tab bv-drawer-tab-neural" @click="abrirRedeNeural(drawerIdeia)" title="Ver como Rede Neural">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 Rede Neural
               </button>
@@ -606,56 +614,58 @@
 
               <!-- NOTAS -->
               <div v-show="docTab === 'notas'" class="bv-doc-pane">
-                <div class="bv-notas-grid">
+                <div class="bv-notas-list">
                   <div
                     v-for="nota in notas"
                     :key="nota.id"
-                    class="bv-nota-card"
-                    :style="{ background: nota.cor }"
+                    class="bv-nota-item"
                   >
                     <div v-if="editingNoteId !== nota.id" class="bv-nota-view" @dblclick="startEditNote(nota)">
-                      <div v-if="nota.titulo" class="bv-nota-titulo">{{ nota.titulo }}</div>
-                      <div class="bv-nota-conteudo">{{ nota.conteudo }}</div>
+                      <div class="bv-nota-icon" :style="{ backgroundColor: nota.cor || '#e2e8f0' }"></div>
+                      <div class="bv-nota-info">
+                        <div v-if="nota.titulo" class="bv-nota-titulo">{{ nota.titulo }}</div>
+                        <div class="bv-nota-conteudo">{{ nota.conteudo }}</div>
+                      </div>
                       <div class="bv-nota-actions">
-                        <button class="bv-nota-btn" @click="startEditNote(nota)" title="Editar">✏️</button>
-                        <button class="bv-nota-btn" @click="deleteNota(nota.id)" title="Excluir">🗑️</button>
+                        <button class="bv-nota-action-btn" @click.stop="startEditNote(nota)" title="Editar">✏️</button>
+                        <button class="bv-nota-action-btn" @click.stop="deleteNota(nota.id)" title="Excluir">🗑️</button>
                       </div>
                     </div>
-                    <div v-else class="bv-nota-edit-form">
-                      <input v-model="noteEditForm.titulo" class="bv-nota-input" placeholder="Título (opcional)" />
-                      <textarea v-model="noteEditForm.conteudo" class="bv-nota-textarea" rows="3" placeholder="Conteúdo..."/>
-                      <div class="bv-nota-edit-footer">
+                    <div v-else class="bv-link-form" style="margin: 0; border: none; padding: 10px;">
+                      <input v-model="noteEditForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
+                      <textarea v-model="noteEditForm.conteudo" class="bv-doc-input" style="resize:vertical;" rows="3" placeholder="Conteúdo..."/>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
                         <div class="bv-cor-group">
                           <button v-for="c in NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: noteEditForm.cor === c}" @click="noteEditForm.cor = c" type="button"/>
                         </div>
-                        <div style="display:flex;gap:4px">
+                        <div style="display:flex;gap:6px">
                           <button class="bv-nota-save-btn" @click="saveEditNote(nota.id)" type="button">Salvar</button>
-                          <button class="bv-nota-cancel-btn" @click="editingNoteId = null" type="button">✕</button>
+                          <button class="bv-nota-cancel-btn" @click="editingNoteId = null" type="button">Cancelar</button>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Card de nova nota -->
-                  <div v-if="addingNote" class="bv-nota-card bv-nota-card-new" :style="{ background: newNoteForm.cor }">
-                    <input v-model="newNoteForm.titulo" class="bv-nota-input" placeholder="Título (opcional)" />
-                    <textarea v-model="newNoteForm.conteudo" class="bv-nota-textarea" rows="3" placeholder="Escreva sua nota..."/>
-                    <div class="bv-nota-edit-footer">
+                  <!-- Form de nova nota -->
+                  <div v-if="addingNote" class="bv-link-form">
+                    <input v-model="newNoteForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
+                    <textarea v-model="newNoteForm.conteudo" class="bv-doc-input" style="resize:vertical;" rows="3" placeholder="Escreva sua nota..."/>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
                       <div class="bv-cor-group">
                         <button v-for="c in NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: newNoteForm.cor === c}" @click="newNoteForm.cor = c" type="button"/>
                       </div>
-                      <div style="display:flex;gap:4px">
+                      <div style="display:flex;gap:6px">
                         <button class="bv-nota-save-btn" @click="saveNewNote" type="button">Salvar</button>
-                        <button class="bv-nota-cancel-btn" @click="addingNote = false" type="button">✕</button>
+                        <button class="bv-nota-cancel-btn" @click="addingNote = false" type="button">Cancelar</button>
                       </div>
                     </div>
                   </div>
-
-                  <!-- Botão + Nota -->
-                  <button v-if="!addingNote" class="bv-nota-add-btn" @click="openAddNote" type="button">
-                    <span>+</span> Nova Nota
-                  </button>
+                  
+                  <div v-if="notas.length === 0 && !addingNote" class="bv-doc-empty">Nenhuma nota adicionada</div>
                 </div>
+
+                <!-- Botão + Nota -->
+                <button v-if="!addingNote" class="bv-doc-add-btn" @click="openAddNote" type="button">+ Nova Nota</button>
               </div>
 
               <!-- LINKS -->
@@ -773,14 +783,14 @@
 
     <!-- ══════════════════════════════════════════════════════ CONFIRM DELETE -->
     <Teleport to="body">
-      <div v-if="deleteConfirmId" class="bv-overlay" @click.self="deleteConfirmId = null">
+      <div v-if="deleteConfirmData" class="bv-overlay" @click.self="deleteConfirmData = null">
         <div class="bv-confirm">
           <div class="bv-confirm-icon">🗑️</div>
-          <h3>Excluir ideia?</h3>
-          <p>Esta ação não pode ser desfeita.</p>
+          <h3>{{ deleteConfirmData.titulo }}</h3>
+          <p>{{ deleteConfirmData.mensagem }}</p>
           <div class="bv-confirm-actions">
-            <button class="bv-btn-ghost" @click="deleteConfirmId = null">Cancelar</button>
-            <button class="bv-btn-danger" @click="executarDelete">Sim, excluir</button>
+            <button class="bv-btn-ghost" @click="deleteConfirmData = null">Cancelar</button>
+            <button class="bv-btn-danger" @click="executarExclusao">Sim, excluir</button>
           </div>
         </div>
       </div>
@@ -1194,15 +1204,17 @@ async function criarCorrelacao() {
   }
 }
 
-async function deleteCorrelacao(id: string) {
-  if (!confirm('Deseja realmente remover esta conexão?')) return;
-  try {
-    const api = (window as any).electronAPI;
-    await api.correlacoes.delete(id);
-    if (drawerIdeia.value) await carregarCorrelacoes(drawerIdeia.value.id);
-  } catch (e) {
-    console.error('Erro ao deletar correlacao:', e);
-  }
+function deleteCorrelacao(id: string) {
+  confirmarExclusaoGeral('Remover conexão?', 'Deseja realmente remover esta conexão?', async () => {
+    try {
+      const api = (window as any).electronAPI;
+      await api.correlacoes.delete(id);
+      if (drawerIdeia.value) await carregarCorrelacoes(drawerIdeia.value.id);
+      showToast('Conexão removida.');
+    } catch (e) {
+      console.error('Erro ao deletar correlacao:', e);
+    }
+  });
 }
 
 const ideiaPai = computed(() => {
@@ -1351,11 +1363,13 @@ async function saveEditNote(id: string) {
   showToast('Nota atualizada!');
 }
 
-async function deleteNota(id: string) {
-  const api = (window as any).electronAPI;
-  await api.notas.delete(id);
-  notas.value = notas.value.filter(n => n.id !== id);
-  showToast('Nota removida.');
+function deleteNota(id: string) {
+  confirmarExclusaoGeral('Excluir nota?', 'Esta ação não pode ser desfeita.', async () => {
+    const api = (window as any).electronAPI;
+    await api.notas.delete(id);
+    notas.value = notas.value.filter(n => n.id !== id);
+    showToast('Nota removida.');
+  });
 }
 
 // ── Links ─────────────────────────────────────────────────────────────────────
@@ -1377,11 +1391,13 @@ async function saveNewLink() {
   showToast('Link adicionado!');
 }
 
-async function deleteLink(id: string) {
-  const api = (window as any).electronAPI;
-  await api.links.delete(id);
-  links.value = links.value.filter(l => l.id !== id);
-  showToast('Link removido.');
+function deleteLink(id: string) {
+  confirmarExclusaoGeral('Excluir link?', 'Esta ação não pode ser desfeita.', async () => {
+    const api = (window as any).electronAPI;
+    await api.links.delete(id);
+    links.value = links.value.filter(l => l.id !== id);
+    showToast('Link removido.');
+  });
 }
 
 function openExternalLink(url: string) {
@@ -1429,11 +1445,13 @@ async function openArquivo(id: string) {
   await api.arquivos.open(id);
 }
 
-async function deleteArquivo(id: string) {
-  const api = (window as any).electronAPI;
-  await api.arquivos.delete(id);
-  arquivos.value = arquivos.value.filter(a => a.id !== id);
-  showToast('Arquivo removido.');
+function deleteArquivo(id: string) {
+  confirmarExclusaoGeral('Excluir arquivo?', 'Esta ação não pode ser desfeita.', async () => {
+    const api = (window as any).electronAPI;
+    await api.arquivos.delete(id);
+    arquivos.value = arquivos.value.filter(a => a.id !== id);
+    showToast('Arquivo removido.');
+  });
 }
 
 function fileIcon(mime?: string): string {
@@ -1491,22 +1509,28 @@ async function handleDuplicar(ideia: Ideia) {
 }
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
-const deleteConfirmId = ref<string | null>(null);
+const deleteConfirmData = ref<{ titulo: string, mensagem: string, onConfirm: () => Promise<void> | void } | null>(null);
 
-function confirmarDelete(id: string) {
-  deleteConfirmId.value = id;
+function confirmarExclusaoGeral(titulo: string, mensagem: string, onConfirm: () => Promise<void> | void) {
+  deleteConfirmData.value = { titulo, mensagem, onConfirm };
 }
 
-async function executarDelete() {
-  if (!deleteConfirmId.value) return;
-  const res = await deleteIdeia(deleteConfirmId.value);
-  if (res) {
-    showToast('Ideia excluída com sucesso!');
-  } else {
-    showToast('Erro ao excluir ideia.', 'error');
-  }
-  deleteConfirmId.value = null;
-  drawerIdeia.value = null;
+async function executarExclusao() {
+  if (!deleteConfirmData.value) return;
+  await deleteConfirmData.value.onConfirm();
+  deleteConfirmData.value = null;
+}
+
+function confirmarDelete(id: string) {
+  confirmarExclusaoGeral('Excluir ideia?', 'Esta ação não pode ser desfeita.', async () => {
+    const res = await deleteIdeia(id);
+    if (res) {
+      showToast('Ideia excluída com sucesso!');
+    } else {
+      showToast('Erro ao excluir ideia.', 'error');
+    }
+    drawerIdeia.value = null;
+  });
 }
 
 // ─── Rede Neural ──────────────────────────────────────────────────────────────
@@ -1522,6 +1546,14 @@ function abrirRedeNeural(ideia: Ideia) {
 
 function abrirRedeNeuralGeral() {
   router.push(`/dashboard/ideas/general-network`);
+}
+
+function abrirFluxograma(ideia: Ideia) {
+  router.push(`/dashboard/ideas/flowchart/${ideia.id}`);
+}
+
+function abrirFluxogramaGeral() {
+  router.push(`/dashboard/ideas/general-flowchart`);
 }
 
 // ─── Drag & Drop (Kanban) ─────────────────────────────────────────────────────
@@ -2814,7 +2846,7 @@ function formatDate(iso: string): string {
 
 .bv-drawer-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   padding: 16px 20px;
   border-top: 1px solid #e2e8f0;
@@ -3176,44 +3208,60 @@ function formatDate(iso: string): string {
 }
 
 /* ─── Notas ────────────────────────────── */
-.bv-notas-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  align-items: start;
-}
-
-.bv-nota-card {
-  border-radius: 10px;
-  padding: 10px 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+.bv-notas-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: box-shadow 0.15s;
 }
 
-.bv-nota-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.bv-nota-item {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  transition: border-color 0.15s;
+  overflow: hidden;
+}
+
+.bv-nota-item:hover { border-color: #93c5fd; }
 
 .bv-nota-view {
   display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.bv-nota-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.7);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.bv-nota-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   gap: 4px;
-  min-height: 60px;
 }
 
 .bv-nota-titulo {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   color: #1e293b;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .bv-nota-conteudo {
-  font-size: 12.5px;
-  color: #334155;
+  font-size: 13px;
+  color: #475569;
   line-height: 1.5;
-  flex: 1;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -3221,133 +3269,71 @@ function formatDate(iso: string): string {
 .bv-nota-actions {
   display: flex;
   gap: 4px;
-  justify-content: flex-end;
-  margin-top: 4px;
   opacity: 0;
   transition: opacity 0.15s;
 }
 
-.bv-nota-card:hover .bv-nota-actions { opacity: 1; }
+.bv-nota-item:hover .bv-nota-actions { opacity: 1; }
 
-.bv-nota-btn {
-  background: rgba(0,0,0,0.06);
+.bv-nota-action-btn {
+  background: none;
   border: none;
-  border-radius: 5px;
   cursor: pointer;
-  padding: 2px 5px;
-  font-size: 12px;
-  transition: background 0.15s;
+  font-size: 14px;
+  padding: 2px 4px;
+  transition: transform 0.15s;
 }
 
-.bv-nota-btn:hover { background: rgba(0,0,0,0.13); }
-
-.bv-nota-edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.bv-nota-input {
-  width: 100%;
-  padding: 5px 8px;
-  background: rgba(255,255,255,0.75);
-  border: 1.5px solid rgba(0,0,0,0.1);
-  border-radius: 6px;
-  font-size: 12px;
-  color: #1e293b;
-  outline: none;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-.bv-nota-textarea {
-  width: 100%;
-  padding: 5px 8px;
-  background: rgba(255,255,255,0.75);
-  border: 1.5px solid rgba(0,0,0,0.1);
-  border-radius: 6px;
-  font-size: 12px;
-  color: #1e293b;
-  outline: none;
-  resize: vertical;
-  font-family: inherit;
-  line-height: 1.45;
-  box-sizing: border-box;
-}
-
-.bv-nota-edit-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  flex-wrap: wrap;
-}
+.bv-nota-action-btn:hover { transform: scale(1.1); }
 
 .bv-cor-group {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .bv-cor-btn {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
-  transition: transform 0.12s, border-color 0.12s;
+  transition: transform 0.15s, border-color 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .bv-cor-btn.active {
-  border-color: #1e293b;
-  transform: scale(1.2);
+  border-color: #0f172a;
+  transform: scale(1.15);
 }
 
 .bv-nota-save-btn {
-  padding: 4px 10px;
-  font-size: 11.5px;
+  padding: 6px 12px;
+  font-size: 12px;
   font-weight: 600;
   background: #3b82f6;
   color: #fff;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, transform 0.15s;
 }
 
-.bv-nota-save-btn:hover { opacity: 0.85; }
+.bv-nota-save-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
 .bv-nota-cancel-btn {
-  padding: 4px 8px;
-  font-size: 11.5px;
-  background: rgba(0,0,0,0.07);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #f1f5f9;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  color: #334155;
-}
-
-.bv-nota-add-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 10px;
-  background: rgba(0,0,0,0.03);
-  border: 2px dashed #e2e8f0;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 12.5px;
-  color: #64748b;
-  font-weight: 600;
-  justify-content: center;
+  color: #475569;
   transition: all 0.15s;
-  align-self: start;
-  min-height: 60px;
 }
 
-.bv-nota-add-btn:hover { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.04); }
-
-.bv-nota-card-new { grid-column: 1 / -1; }
+.bv-nota-cancel-btn:hover { background: #e2e8f0; color: #0f172a; }
 
 /* ─── Links ────────────────────────────── */
 .bv-links-list {

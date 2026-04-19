@@ -23,6 +23,15 @@
       </div>
 
       <div class="nn-topbar-right">
+        <button class="nn-nav-btn nn-nav-flowchart" @click="irParaFluxogramaGeral" title="Fluxograma Geral">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+          Fluxograma Geral
+        </button>
+        <button class="nn-nav-btn nn-nav-neural" @click="irParaRedeNeuralGeral" title="Rede Neural Geral">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Rede Neural Geral
+        </button>
+        <div class="nn-topbar-divider"></div>
         <button class="nn-ctrl-btn" @click="resetZoom" title="Centralizar (Shift+C)">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -110,12 +119,30 @@
               <span v-for="n in 4" :key="n" :class="n <= painelIdeia.score ? 'nn-star-on' : 'nn-star-off'">★</span>
               <span class="nn-panel-score-label">{{ SCORE_LABELS[painelIdeia.score - 1] }}</span>
             </div>
-            <p v-if="painelIdeia.descricao" class="nn-panel-desc">{{ painelIdeia.descricao }}</p>
+            <p v-if="painelIdeia.descricao" class="nn-panel-desc">
+              <strong style="color:#cbd5e1">Descrição &nbsp;</strong> {{ painelIdeia.descricao }}
+            </p>
+            <p v-if="painelIdeia.contexto" class="nn-panel-desc">
+              <strong style="color:#cbd5e1">Contexto &nbsp;</strong> {{ painelIdeia.contexto }}
+            </p>
+            <p v-if="painelIdeia.problema" class="nn-panel-desc">
+              <strong style="color:#cbd5e1">Problema &nbsp;</strong> {{ painelIdeia.problema }}
+            </p>
+            <p v-if="painelIdeia.transformacao" class="nn-panel-desc">
+              <strong style="color:#cbd5e1">Transformação &nbsp;</strong> {{ painelIdeia.transformacao }}
+            </p>
+            <p v-if="painelIdeia.publico_alvo" class="nn-panel-desc">
+              <strong style="color:#cbd5e1">Público-alvo &nbsp;</strong> {{ painelIdeia.publico_alvo }}
+            </p>
             <div v-if="allTags(painelIdeia).length" class="nn-panel-tags">
               <span v-for="t in allTags(painelIdeia).slice(0, 6)" :key="t" class="nn-panel-tag">{{ t }}</span>
             </div>
           </div>
           <div class="nn-panel-footer">
+            <button class="nn-panel-btn-flowchart" @click="abrirFluxogramaDaIdeia(painelIdeia)">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+              Fluxograma da Ideia
+            </button>
             <button class="nn-panel-btn-ghost" @click="voltarEAbrirDrawer(painelIdeia)">
               Ver no Brain Vault
             </button>
@@ -162,6 +189,15 @@ onMounted(async () => {
 function voltar() { router.push('/dashboard/ideas'); }
 function voltarEAbrirDrawer(ideia: Ideia) {
   router.push({ path: '/dashboard/ideas', query: { openDrawer: ideia.id } });
+}
+function abrirFluxogramaDaIdeia(ideia: Ideia) {
+  router.push(`/dashboard/ideas/flowchart/${ideia.id}`);
+}
+function irParaFluxogramaGeral() {
+  router.push('/dashboard/ideas/general-flowchart');
+}
+function irParaRedeNeuralGeral() {
+  router.push('/dashboard/ideas/general-network');
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -719,6 +755,27 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 
 .nn-topbar-right { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 
+.nn-nav-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 8px;
+  font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.nn-nav-btn svg { width: 14px; height: 14px; }
+.nn-nav-neural {
+  background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa;
+}
+.nn-nav-neural:hover {
+  background: rgba(139, 92, 246, 0.25); border-color: rgba(139, 92, 246, 0.55); color: #c4b5fd;
+}
+.nn-nav-flowchart {
+  background: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.3); color: #67e8f9;
+}
+.nn-nav-flowchart:hover {
+  background: rgba(6, 182, 212, 0.25); border-color: rgba(6, 182, 212, 0.55); color: #a5f3fc;
+}
+
 .nn-ctrl-btn {
   display: flex; align-items: center; justify-content: center;
   width: 34px; height: 34px;
@@ -895,6 +952,9 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 .nn-panel-footer {
   padding: 10px 14px;
   border-top: 1px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .nn-panel-btn-ghost {
   width: 100%; padding: 8px; border-radius: 8px;
@@ -903,6 +963,21 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
   cursor: pointer; transition: all 0.15s; text-align: center;
 }
 .nn-panel-btn-ghost:hover { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+
+.nn-panel-btn-flowchart {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 8px; border-radius: 8px;
+  background: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.3);
+  color: #67e8f9; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.nn-panel-btn-flowchart svg { width: 14px; height: 14px; }
+.nn-panel-btn-flowchart:hover {
+  background: rgba(6, 182, 212, 0.22);
+  border-color: rgba(6, 182, 212, 0.55);
+  color: #a5f3fc;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+}
 
 /* ══════════════════════════════════════════════════════════ HINT */
 .nn-hint {

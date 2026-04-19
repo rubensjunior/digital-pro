@@ -109,6 +109,13 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  // Limpeza automática de conexões e relações órfãs por segurança
+  db.exec(`
+    DELETE FROM ideia_correlacoes 
+    WHERE ideia_a_id NOT IN (SELECT id FROM ideias) 
+       OR ideia_b_id NOT IN (SELECT id FROM ideias);
+  `);
 }
 
 // ── Funções Auxiliares de Histórico ───────────────────────────────────────────
@@ -230,6 +237,7 @@ function registerIdeiaHandlers() {
     db.prepare('DELETE FROM ideia_notas WHERE ideia_id = ?').run(id);
     db.prepare('DELETE FROM ideia_links WHERE ideia_id = ?').run(id);
     db.prepare('DELETE FROM ideia_arquivos WHERE ideia_id = ?').run(id);
+    db.prepare('DELETE FROM ideia_correlacoes WHERE ideia_a_id = ? OR ideia_b_id = ?').run(id, id);
     db.prepare('DELETE FROM ideias WHERE id = ?').run(id);
     db.prepare('DELETE FROM ideias_historico WHERE ideia_id = ?').run(id);
     return true;

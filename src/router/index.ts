@@ -8,7 +8,8 @@ import Dashboard from '../views/dashboard/Dashboard.vue';
 import IdeaManager from '../views/dashboard/IdeaManager.vue';
 import IdeaNetworkView from '../views/dashboard/IdeaNetworkView.vue';
 import GeneralNetworkView from '../views/dashboard/GeneralNetworkView.vue';
-
+import GeneralFlowchartView from '../views/dashboard/GeneralFlowchartView.vue';
+import IdeaFlowchartView from '../views/dashboard/IdeaFlowchartView.vue';
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -69,6 +70,8 @@ const router = createRouter({
         { path: 'ideas', component: IdeaManager },
         { path: 'ideas/network/:rootId', component: IdeaNetworkView },
         { path: 'ideas/general-network', component: GeneralNetworkView },
+        { path: 'ideas/flowchart/:rootId', component: IdeaFlowchartView },
+        { path: 'ideas/general-flowchart', component: GeneralFlowchartView },
       ],
     },
   ],
