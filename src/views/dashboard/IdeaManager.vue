@@ -431,355 +431,15 @@
     </Teleport>
 
     <!-- ══════════════════════════════════════════════════════════ DRAWER -->
-    <Teleport to="body">
-      <div v-if="drawerIdeia" class="bv-drawer-overlay" @click.self="fecharDrawer">
-        <div class="bv-drawer">
-          <div class="bv-drawer-header">
-            <div style="display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; width: 100%;">
-              <div style="flex: 1;">
-                <div class="bv-card-tipo-badge" :data-tipo="drawerIdeia.tipo">{{ drawerIdeia.tipo }}</div>
-                <h2 class="bv-drawer-title">{{ drawerIdeia.nome }}</h2>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <button class="bv-modal-close" style="font-size: 16px;" @click="handleToggleFavorita(drawerIdeia)">
-                  {{ drawerIdeia.is_favorita ? '⭐' : '☆' }}
-                </button>
-                <button class="bv-modal-close" @click="fecharDrawer">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="bv-drawer-body">
-
-            <!-- ═══════════════════════════ TABS DO DRAWER -->
-            <div class="bv-drawer-tabs">
-              <button :class="['bv-drawer-tab', { active: drawerTab === 'geral' }]" @click="drawerTab = 'geral'">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Informações
-              </button>
-              <button :class="['bv-drawer-tab', { active: drawerTab === 'doc' }]" @click="drawerTab = 'doc'">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Documentação
-                <span v-if="notas.length + links.length + arquivos.length > 0" class="bv-drawer-tab-badge">{{ notas.length + links.length + arquivos.length }}</span>
-              </button>
-              <button :class="['bv-drawer-tab', { active: drawerTab === 'conexoes' }]" @click="drawerTab = 'conexoes'">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                Conexões
-                <span v-if="correlacoes.length > 0" class="bv-drawer-tab-badge">{{ correlacoes.length }}</span>
-              </button>
-              <button class="bv-drawer-tab bv-drawer-tab-neural" @click="abrirFluxograma(drawerIdeia)" title="Ver como Fluxograma">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
-                Fluxograma
-              </button>
-              <button class="bv-drawer-tab bv-drawer-tab-neural" @click="abrirRedeNeural(drawerIdeia)" title="Ver como Rede Neural">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                Rede Neural
-              </button>
-            </div>
-
-            <!-- ══════════════════════════ ABA: INFORMAÇÕES -->
-            <div v-show="drawerTab === 'geral'" class="bv-drawer-tab-pane">
-
-              <!-- Status + Score -->
-              <div class="bv-drawer-row">
-                <span class="bv-status-badge" :data-status="drawerIdeia.status">{{ statusLabel(drawerIdeia.status) }}</span>
-                <div class="bv-stars">
-                  <span v-for="n in 4" :key="n" :class="n <= drawerIdeia.score ? 'bv-star-on' : 'bv-star-off'">★</span>
-                </div>
-              </div>
-
-              <!-- Mudar status rápido -->
-              <div class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Mover para</div>
-                <div class="bv-status-group">
-                  <button
-                    v-for="s in STATUS_OPTIONS"
-                    :key="s.value"
-                    :class="['bv-status-opt', { active: drawerIdeia.status === s.value }]"
-                    :data-status="s.value"
-                    @click="mudarStatus(drawerIdeia.id, s.value)"
-                    type="button"
-                  >{{ s.label }}</button>
-                </div>
-              </div>
-
-              <!-- Ecossistema -->
-              <div class="bv-drawer-section" v-if="ecosistemaArvore.length > 1 || ideiasFilhas.length > 0">
-                <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
-                <div class="bv-eco-tree">
-                  <div
-                    v-for="no in ecosistemaArvore"
-                    :key="no.id"
-                    class="bv-eco-node"
-                    :class="{
-                      'bv-eco-node-root':    no.depth === 0 && !no.isCurrent,
-                      'bv-eco-node-current': no.isCurrent,
-                      'bv-eco-node-child':   no.depth > 0 && !no.isCurrent,
-                    }"
-                    :style="{ paddingLeft: (no.depth * 20 + 12) + 'px' }"
-                    @click="!no.isCurrent && abrirDrawer(no)"
-                  >
-                    <span v-if="no.depth > 0" class="bv-eco-connector">↳</span>
-                    <span class="bv-eco-dot" :class="{
-                      'bv-eco-dot-root':    no.depth === 0,
-                      'bv-eco-dot-current': no.isCurrent,
-                    }"></span>
-                    <div class="bv-eco-info">
-                      <div v-if="no.relationship_type && no.depth > 0" class="bv-eco-rel">{{ no.relationship_type }}</div>
-                      <div class="bv-eco-nome">{{ no.nome }}<span v-if="no.isCurrent" class="bv-eco-current-badge"> · atual</span></div>
-                      <div class="bv-eco-meta">
-                        <span class="bv-eco-tipo">{{ no.tipo }}</span>
-                        <span class="bv-status-badge bv-status-sm" :data-status="no.status">{{ statusLabel(no.status) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 10px;">
-                  <button class="bv-btn-ghost bv-btn-sm" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
-                    + Nova Derivada
-                  </button>
-                </div>
-              </div>
-              <div class="bv-drawer-section" v-else>
-                <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
-                <div style="display: flex; gap: 8px;">
-                  <button class="bv-btn-ghost" style="flex: 1; justify-content: center;" @click="cadastrarDerivada">
-                    + Criar Ideia Derivada
-                  </button>
-                </div>
-              </div>
-
-              <!-- Campos descritivos -->
-              <div v-if="drawerIdeia.descricao" class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Descrição</div>
-                <p class="bv-drawer-text">{{ drawerIdeia.descricao }}</p>
-              </div>
-              <div v-if="drawerIdeia.contexto" class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Contexto</div>
-                <p class="bv-drawer-text">{{ drawerIdeia.contexto }}</p>
-              </div>
-              <div v-if="drawerIdeia.problema" class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Problema que resolve</div>
-                <p class="bv-drawer-text">{{ drawerIdeia.problema }}</p>
-              </div>
-              <div v-if="drawerIdeia.transformacao" class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Transformação prometida</div>
-                <p class="bv-drawer-text">{{ drawerIdeia.transformacao }}</p>
-              </div>
-              <div v-if="drawerIdeia.publico_alvo" class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Público-alvo</div>
-                <p class="bv-drawer-text">{{ drawerIdeia.publico_alvo }}</p>
-              </div>
-
-              <!-- Tags -->
-              <div v-if="allTags(drawerIdeia).length > 0" class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Tags</div>
-                <div class="bv-drawer-tags">
-                  <span v-for="t in allTags(drawerIdeia)" :key="t" class="bv-tag">{{ t }}</span>
-                </div>
-              </div>
-
-              <!-- Histórico -->
-              <div v-if="historicoIdeia.length > 0" class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Histórico de Alterações</div>
-                <div class="bv-historico-list">
-                  <div v-for="h in historicoIdeia" :key="h.id" class="bv-historico-item">
-                    <div class="bv-historico-date">{{ formatDate(h.created_at) }}</div>
-                    <div class="bv-historico-acao">
-                      <strong>{{ h.acao }}</strong>
-                      <span v-if="h.detalhes" class="bv-historico-detalhes"> — {{ h.detalhes }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bv-drawer-date">Criada em {{ formatDate(drawerIdeia.created_at) }}</div>
-              <div class="bv-drawer-date" v-if="drawerIdeia.last_accessed_at">Último acesso: {{ formatDate(drawerIdeia.last_accessed_at) }}</div>
-
-            </div><!-- /aba geral -->
-
-            <!-- ══════════════════════════ ABA: DOCUMENTAÇÃO -->
-            <div v-show="drawerTab === 'doc'" class="bv-drawer-tab-pane">
-
-              <!-- SUB-ABAS -->
-              <div class="bv-doc-tabs">
-                <button :class="['bv-doc-tab', { active: docTab === 'notas' }]"   @click="docTab = 'notas'">📝 Notas ({{ notas.length }})</button>
-                <button :class="['bv-doc-tab', { active: docTab === 'links' }]"   @click="docTab = 'links'">🔗 Links ({{ links.length }})</button>
-                <button :class="['bv-doc-tab', { active: docTab === 'arquivos' }]" @click="docTab = 'arquivos'">📁 Arquivos ({{ arquivos.length }})</button>
-              </div>
-
-              <!-- NOTAS -->
-              <div v-show="docTab === 'notas'" class="bv-doc-pane">
-                <div class="bv-notas-list">
-                  <div
-                    v-for="nota in notas"
-                    :key="nota.id"
-                    class="bv-nota-item"
-                  >
-                    <div v-if="editingNoteId !== nota.id" class="bv-nota-view" @dblclick="startEditNote(nota)">
-                      <div class="bv-nota-icon" :style="{ backgroundColor: nota.cor || '#e2e8f0' }"></div>
-                      <div class="bv-nota-info">
-                        <div v-if="nota.titulo" class="bv-nota-titulo">{{ nota.titulo }}</div>
-                        <div class="bv-nota-conteudo">{{ nota.conteudo }}</div>
-                      </div>
-                      <div class="bv-nota-actions">
-                        <button class="bv-nota-action-btn" @click.stop="startEditNote(nota)" title="Editar">✏️</button>
-                        <button class="bv-nota-action-btn" @click.stop="deleteNota(nota.id)" title="Excluir">🗑️</button>
-                      </div>
-                    </div>
-                    <div v-else class="bv-link-form" style="margin: 0; border: none; padding: 10px;">
-                      <input v-model="noteEditForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
-                      <textarea v-model="noteEditForm.conteudo" class="bv-doc-input" style="resize:vertical;" rows="3" placeholder="Conteúdo..."/>
-                      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-                        <div class="bv-cor-group">
-                          <button v-for="c in NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: noteEditForm.cor === c}" @click="noteEditForm.cor = c" type="button"/>
-                        </div>
-                        <div style="display:flex;gap:6px">
-                          <button class="bv-nota-save-btn" @click="saveEditNote(nota.id)" type="button">Salvar</button>
-                          <button class="bv-nota-cancel-btn" @click="editingNoteId = null" type="button">Cancelar</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Form de nova nota -->
-                  <div v-if="addingNote" class="bv-link-form">
-                    <input v-model="newNoteForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
-                    <textarea v-model="newNoteForm.conteudo" class="bv-doc-input" style="resize:vertical;" rows="3" placeholder="Escreva sua nota..."/>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-                      <div class="bv-cor-group">
-                        <button v-for="c in NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: newNoteForm.cor === c}" @click="newNoteForm.cor = c" type="button"/>
-                      </div>
-                      <div style="display:flex;gap:6px">
-                        <button class="bv-nota-save-btn" @click="saveNewNote" type="button">Salvar</button>
-                        <button class="bv-nota-cancel-btn" @click="addingNote = false" type="button">Cancelar</button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div v-if="notas.length === 0 && !addingNote" class="bv-doc-empty">Nenhuma nota adicionada</div>
-                </div>
-
-                <!-- Botão + Nota -->
-                <button v-if="!addingNote" class="bv-doc-add-btn" @click="openAddNote" type="button">+ Nova Nota</button>
-              </div>
-
-              <!-- LINKS -->
-              <div v-show="docTab === 'links'" class="bv-doc-pane">
-                <div class="bv-links-list">
-                  <div v-for="link in links" :key="link.id" class="bv-link-item">
-                    <div class="bv-link-icon">🔗</div>
-                    <div class="bv-link-info">
-                      <a class="bv-link-url" :href="link.url" @click.prevent="openExternalLink(link.url)">{{ link.titulo || link.url }}</a>
-                      <div v-if="link.titulo" class="bv-link-sub">{{ link.url }}</div>
-                      <div v-if="link.descricao" class="bv-link-desc">{{ link.descricao }}</div>
-                    </div>
-                    <button class="bv-link-del" @click="deleteLink(link.id)" title="Remover">🗑️</button>
-                  </div>
-
-                  <!-- Form novo link -->
-                  <div v-if="addingLink" class="bv-link-form">
-                    <input v-model="newLinkForm.url" class="bv-doc-input" placeholder="URL *" type="url" />
-                    <input v-model="newLinkForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" type="text" />
-                    <input v-model="newLinkForm.descricao" class="bv-doc-input" placeholder="Descrição breve (opcional)" type="text" />
-                    <span v-if="linkErro" class="bv-doc-error">{{ linkErro }}</span>
-                    <div style="display:flex;gap:6px;margin-top:4px">
-                      <button class="bv-nota-save-btn" @click="saveNewLink" type="button">Salvar</button>
-                      <button class="bv-nota-cancel-btn" @click="addingLink = false; linkErro = ''" type="button">Cancelar</button>
-                    </div>
-                  </div>
-
-                  <div v-if="links.length === 0 && !addingLink" class="bv-doc-empty">Nenhum link adicionado</div>
-                </div>
-                <button v-if="!addingLink" class="bv-doc-add-btn" @click="addingLink = true" type="button">+ Novo Link</button>
-              </div>
-
-              <!-- ARQUIVOS -->
-              <div v-show="docTab === 'arquivos'" class="bv-doc-pane">
-                <input ref="fileInputRef" type="file" style="display:none" @change="onFileSelected" multiple />
-                <div class="bv-files-list">
-                  <div v-for="arq in arquivos" :key="arq.id" class="bv-file-item">
-                    <div class="bv-file-icon">{{ fileIcon(arq.tipo_mime) }}</div>
-                    <div class="bv-file-info">
-                      <div class="bv-file-nome">{{ arq.nome_original }}</div>
-                      <div class="bv-file-meta">{{ formatBytes(arq.tamanho) }}</div>
-                    </div>
-                    <div class="bv-file-actions">
-                      <button class="bv-file-btn" @click="openArquivo(arq.id)" title="Abrir">📂</button>
-                      <button class="bv-file-btn" @click="deleteArquivo(arq.id)" title="Excluir">🗑️</button>
-                    </div>
-                  </div>
-                  <div v-if="arquivos.length === 0 && !uploadando" class="bv-doc-empty">Nenhum arquivo anexado</div>
-                  <div v-if="uploadando" class="bv-upload-progress">
-                    <div class="bv-upload-bar"><div class="bv-upload-fill" :style="{width: uploadProgress + '%'}"></div></div>
-                    <span>Enviando... {{ uploadProgress }}%</span>
-                  </div>
-                </div>
-                <button class="bv-doc-add-btn" @click="fileInputRef?.click()" type="button" :disabled="uploadando">+ Anexar Arquivo</button>
-              </div>
-
-            </div><!-- /aba doc -->
-
-            <!-- ══════════════════════════ ABA: CONEXÕES -->
-            <div v-show="drawerTab === 'conexoes'" class="bv-drawer-tab-pane">
-              <div class="bv-drawer-section">
-                <div class="bv-drawer-section-title">Ideias Correlacionadas</div>
-                <p class="bv-drawer-text" style="margin-bottom: 15px;">Conecte esta ideia a outras de forma livre, criando um Ecossistema Geral.</p>
-                
-                <div class="bv-historico-list" style="margin-bottom: 20px;">
-                  <div v-for="c in correlacoes" :key="c.id" class="bv-historico-item" style="display:flex; justify-content: space-between; align-items: center;">
-                    <div>
-                      <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 4px;">
-                        <span class="bv-card-tipo-badge" :data-tipo="c.correlata_tipo" style="padding: 2px 6px; font-size: 10px;">{{ c.correlata_tipo }}</span>
-                        <strong>{{ c.correlata_nome }}</strong>
-                      </div>
-                      <div class="bv-historico-acao">
-                        <span class="bv-status-badge bv-status-sm" :data-status="c.correlata_status">{{ statusLabel(c.correlata_status) }}</span>
-                        <span v-if="c.descricao" class="bv-historico-detalhes" style="margin-left:8px;"> — {{ c.descricao }}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <button class="bv-btn-ghost bv-btn-sm" @click="abrirDrawer(ideias.find(i => i.id === c.correlata_id)!)" title="Abrir Ideia">↗️</button>
-                      <button class="bv-link-del" @click="deleteCorrelacao(c.id)" title="Desconectar" style="margin-left: 8px;">🗑️</button>
-                    </div>
-                  </div>
-                  <div v-if="correlacoes.length === 0" class="bv-doc-empty">Nenhuma conexão estabelecida.</div>
-                </div>
-
-                <div class="bv-field" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                  <label class="bv-label">Adicionar Conexão</label>
-                  <select v-model="novaCorrelacaoForm.ideia_id" class="bv-input bv-select-field" style="margin-bottom: 10px;">
-                    <option value="">Selecione uma ideia para conectar...</option>
-                    <option v-for="i in ideiasParaConectar" :key="i.id" :value="i.id">
-                      {{ i.nome }} ({{ i.tipo }})
-                    </option>
-                  </select>
-                  <input v-model="novaCorrelacaoForm.descricao" class="bv-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 10px;" />
-                  <button class="bv-btn-primary" style="width: 100%; justify-content: center;" @click="criarCorrelacao" :disabled="!novaCorrelacaoForm.ideia_id">
-                    Conectar Ideia
-                  </button>
-                </div>
-              </div>
-            </div><!-- /aba conexoes -->
-
-          </div><!-- /bv-drawer-body -->
+    <IdeaDetailDrawer
+      ref="ideaDrawerRef"
+      :ideias="ideias"
+      @edit="abrirEdicao"
+      @navigate="(path: string) => router.push(path)"
+      @createDerivada="onCreateDerivada"
+    />
 
 
-          <div class="bv-drawer-footer">
-            <button class="bv-btn-ghost" @click="handleToggleArquivar(drawerIdeia)" type="button">
-              {{ drawerIdeia.is_arquivada ? 'Desarquivar' : 'Arquivar' }}
-            </button>
-            <button class="bv-btn-ghost" @click="handleDuplicar(drawerIdeia)" type="button">Duplicar</button>
-            <button class="bv-btn-danger" @click="confirmarDelete(drawerIdeia.id)" type="button">Excluir</button>
-            <button class="bv-btn-primary" @click="abrirEdicao(drawerIdeia)" type="button">Editar</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
 
     <!-- ══════════════════════════════════════════════════════ CONFIRM DELETE -->
     <Teleport to="body">
@@ -803,7 +463,8 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
-import type { Ideia, IdeiaStatus, IdeiaTipo, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../../types/ideia';
+import type { Ideia, IdeiaStatus, IdeiaTipo } from '../../types/ideia';
+import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 
 // Tipos globais do Electron (preload)
 declare const window: Window & {
@@ -843,14 +504,26 @@ const {
 const router = useRouter();
 const route  = useRoute();
 
+const ideaDrawerRef = ref<InstanceType<typeof IdeaDetailDrawer> | null>(null);
+
+function abrirDrawer(ideia: Ideia) {
+  ideaDrawerRef.value?.abrirDrawer(ideia);
+}
+
 onMounted(async () => {
   await fetchIdeias();
   // Se voltou da rede neural com ?openDrawer=id, abre o drawer daquela ideia
   if (route.query.openDrawer) {
     const ideia = ideias.value.find(i => i.id === route.query.openDrawer);
-    if (ideia) abrirDrawer(ideia);
+    if (ideia) ideaDrawerRef.value?.abrirDrawer(ideia);
   }
 });
+
+function onCreateDerivada(parentId: string) {
+  abrirModal();
+  form.parent_id = parentId;
+  tabAtiva.value = 3;
+}
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const TIPOS: IdeiaTipo[] = ['Produto', 'Promessa', 'Ângulo', 'Headline', 'Hook', 'Big Idea', 'VSL', 'Funil', 'Lançamento', 'Outro'];
@@ -1267,28 +940,7 @@ function cadastrarDerivada() {
   tabAtiva.value = 3;
 }
 
-async function abrirDrawer(ideia: Ideia) {
-  drawerTab.value = 'geral'; // sempre abre na aba Informações
-  drawerIdeia.value = ideia;
-  historicoIdeia.value = await getHistorico(ideia.id);
-  await updateAcesso(ideia.id);
-  // Carrega documentação
-  await carregarDocumentacao(ideia.id);
-  await carregarCorrelacoes(ideia.id);
-}
 
-function fecharDrawer() {
-  drawerIdeia.value = null;
-  drawerTab.value   = 'geral';
-  // Limpa estado de documentação
-  notas.value = [];
-  links.value = [];
-  arquivos.value = [];
-  correlacoes.value = [];
-  addingNote.value = false;
-  addingLink.value = false;
-  editingNoteId.value = null;
-}
 
 // ─── Documentação — Estado ────────────────────────────────────────────────────
 const docTab = ref<'notas' | 'links' | 'arquivos'>('notas');

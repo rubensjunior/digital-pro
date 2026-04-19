@@ -98,57 +98,15 @@
         </div>
       </div>
 
-      <!-- Painel de detalhes (abre ao clicar num nó) -->
-      <Transition name="panel">
-        <div v-if="painelIdeia" class="nn-panel">
-          <div class="nn-panel-header">
-            <span class="nn-panel-orb" :data-status="painelIdeia.status"></span>
-            <div class="nn-panel-titulo">{{ painelIdeia.nome }}</div>
-            <button class="nn-panel-close" @click="painelIdeia = null">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-          <div class="nn-panel-body">
-            <div class="nn-panel-row">
-              <span class="nn-panel-badge" :data-tipo="painelIdeia.tipo">{{ painelIdeia.tipo }}</span>
-              <span class="nn-panel-status" :data-status="painelIdeia.status">{{ statusLabel(painelIdeia.status) }}</span>
-            </div>
-            <div class="nn-panel-stars">
-              <span v-for="n in 4" :key="n" :class="n <= painelIdeia.score ? 'nn-star-on' : 'nn-star-off'">★</span>
-              <span class="nn-panel-score-label">{{ SCORE_LABELS[painelIdeia.score - 1] }}</span>
-            </div>
-            <p v-if="painelIdeia.descricao" class="nn-panel-desc">
-              <strong style="color:#cbd5e1">Descrição &nbsp;</strong> {{ painelIdeia.descricao }}
-            </p>
-            <p v-if="painelIdeia.contexto" class="nn-panel-desc">
-              <strong style="color:#cbd5e1">Contexto &nbsp;</strong> {{ painelIdeia.contexto }}
-            </p>
-            <p v-if="painelIdeia.problema" class="nn-panel-desc">
-              <strong style="color:#cbd5e1">Problema &nbsp;</strong> {{ painelIdeia.problema }}
-            </p>
-            <p v-if="painelIdeia.transformacao" class="nn-panel-desc">
-              <strong style="color:#cbd5e1">Transformação &nbsp;</strong> {{ painelIdeia.transformacao }}
-            </p>
-            <p v-if="painelIdeia.publico_alvo" class="nn-panel-desc">
-              <strong style="color:#cbd5e1">Público-alvo &nbsp;</strong> {{ painelIdeia.publico_alvo }}
-            </p>
-            <div v-if="allTags(painelIdeia).length" class="nn-panel-tags">
-              <span v-for="t in allTags(painelIdeia).slice(0, 6)" :key="t" class="nn-panel-tag">{{ t }}</span>
-            </div>
-          </div>
-          <div class="nn-panel-footer">
-            <button class="nn-panel-btn-flowchart" @click="abrirFluxogramaDaIdeia(painelIdeia)">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
-              Fluxograma da Ideia
-            </button>
-            <button class="nn-panel-btn-ghost" @click="voltarEAbrirDrawer(painelIdeia)">
-              Ver no Brain Vault
-            </button>
-          </div>
-        </div>
-      </Transition>
+      <!-- Drawer de Detalhes -->
+      <IdeaDetailDrawer
+        ref="ideaDrawerRef"
+        :ideias="ideias"
+        :show-brain-vault-link="true"
+        @edit="(ideia) => voltarEAbrirDrawer(ideia)"
+        @navigate="(path) => router.push(path)"
+        @createDerivada="(parentId) => voltarEAbrirDrawer({ id: parentId } as any)"
+      />
 
       <!-- Hint inicial -->
       <div v-if="!loading && nosGrafo.length > 0 && !hintDismissed" class="nn-hint" @click="hintDismissed = true">
@@ -164,6 +122,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useIdeias } from '../../composables/useIdeias';
 import type { Ideia, IdeiaStatus } from '../../types/ideia';
+import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 
 // ─── Router & Dados ───────────────────────────────────────────────────────────
 const route  = useRoute();
@@ -408,7 +367,7 @@ const hoveredId  = ref<string | null>(null);
 const draggedNo  = ref<GrafoNo | null>(null);
 const isPanning  = ref(false);
 const panStart   = ref({ x: 0, y: 0 });
-const painelIdeia = ref<Ideia | null>(null);
+const ideaDrawerRef = ref<InstanceType<typeof IdeaDetailDrawer> | null>(null);
 
 const tooltip = ref({
   visible: false, x: 0, y: 0,
@@ -494,7 +453,7 @@ function onCanvasClick(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
   const r = c.getBoundingClientRect();
   const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
-  if (no) painelIdeia.value = no.ideia;
+  if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
 }
 
 function onCanvasDblClick(e: MouseEvent) {
@@ -563,8 +522,9 @@ function drawCanvas() {
 
   // ── Arestas ──
   for (const a of arestas.value) {
+    const drawerIdeiaId = ideaDrawerRef.value?.drawerIdeia?.id;
     const isHov = hoveredId.value === a.origem.id || hoveredId.value === a.destino.id;
-    const isPainel = painelIdeia.value?.id === a.origem.id || painelIdeia.value?.id === a.destino.id;
+    const isPainel = drawerIdeiaId === a.origem.id || drawerIdeiaId === a.destino.id;
     const alpha = isHov || isPainel ? 'ee' : '44';
     const c1 = STATUS_COLORS[a.origem.ideia.status] || '#4b5563';
     const c2 = STATUS_COLORS[a.destino.ideia.status] || '#4b5563';
@@ -607,11 +567,12 @@ function drawCanvas() {
   }
 
   // ── Nós ──
+  const drawerIdeiaId = ideaDrawerRef.value?.drawerIdeia?.id;
   for (const no of nosGrafo.value) {
     const r = no.radius;
     const col = STATUS_COLORS[no.ideia.status] || '#3b82f6';
     const isHov = hoveredId.value === no.id;
-    const isPainelNode = painelIdeia.value?.id === no.id;
+    const isPainelNode = drawerIdeiaId === no.id;
     const pulse = no.isCentral ? Math.sin(tick * 0.055) * 5 : 0;
 
     // Aura
