@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import type { Ideia, CreateIdeiaPayload, UpdateIdeiaPayload, IdeiaRaw } from '../types/ideia';
 import { parseIdeia } from '../types/ideia';
 

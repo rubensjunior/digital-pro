@@ -54,6 +54,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAll: (ideia_id: string) => ipcRenderer.invoke('ideias:correlacoes:getAll', ideia_id),
     getAllTodos: () => ipcRenderer.invoke('ideias:correlacoes:getAllTodos'),
     create: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:correlacoes:create', payload),
+    update: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:correlacoes:update', payload),
     delete: (id: string) => ipcRenderer.invoke('ideias:correlacoes:delete', id),
   },
 });

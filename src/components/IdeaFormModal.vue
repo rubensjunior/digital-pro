@@ -4,7 +4,7 @@
       <div class="bv-modal" @click.stop>
         <div class="bv-modal-header">
           <div class="bv-modal-header-left">
-            <div class="bv-modal-header-icon">🧠</div>
+            <div class="bv-modal-header-icon">💡</div>
             <div>
               <h2>{{ editando ? 'Editar Ideia' : 'Nova Ideia' }}</h2>
               <p class="bv-modal-header-sub">{{ editando ? 'Atualize os dados da ideia' : 'Capture e classifique sua ideia' }}</p>

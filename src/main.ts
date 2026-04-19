@@ -1,6 +1,5 @@
-import { app, BrowserWindow, ipcMain, shell, protocol, net } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, protocol } from 'electron';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
@@ -430,6 +429,17 @@ function registerIdeiaHandlers() {
       id,
       ideia_a_id: payload.ideia_a_id,
       ideia_b_id: payload.ideia_b_id,
+      descricao: payload.descricao ?? null
+    });
+    return true;
+  });
+
+  ipcMain.handle('ideias:correlacoes:update', (_, payload: { id: string; descricao?: string }) => {
+    db.prepare(`
+      UPDATE ideia_correlacoes SET descricao = @descricao
+      WHERE id = @id
+    `).run({
+      id: payload.id,
       descricao: payload.descricao ?? null
     });
     return true;

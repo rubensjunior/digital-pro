@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="drawer.drawerIdeia.value" class="bv-drawer-overlay" @click.self="drawer.fecharDrawer()">
+    <div v-if="drawer.drawerIdeia.value" class="bv-drawer-overlay" @mousedown.self="onOverlayMouseDown" @mouseup.self="onOverlayMouseUp">
       <div class="bv-drawer">
         <div class="bv-drawer-header">
           <div style="display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; width: 100%;">
@@ -9,7 +9,7 @@
               <h2 class="bv-drawer-title">{{ drawer.drawerIdeia.value.nome }}</h2>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="bv-modal-close" style="font-size: 16px;" @click="drawer.handleToggleFavorita(drawer.drawerIdeia.value!)">
+              <button class="bv-modal-close" style="font-size: 16px;" @click="drawer.handleToggleFavorita()">
                 {{ drawer.drawerIdeia.value.is_favorita ? '⭐' : '☆' }}
               </button>
               <button class="bv-modal-close" @click="drawer.fecharDrawer()">
@@ -299,21 +299,34 @@
               <div class="bv-drawer-section-title">Ideias Correlacionadas</div>
               <p class="bv-drawer-text" style="margin-bottom: 15px;">Conecte esta ideia a outras de forma livre, criando um Ecossistema Geral.</p>
               
-              <div class="bv-historico-list" style="margin-bottom: 20px;">
-                <div v-for="c in drawer.correlacoes.value" :key="c.id" class="bv-historico-item" style="display:flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 4px;">
-                      <span class="bv-card-tipo-badge" :data-tipo="c.correlata_tipo" style="padding: 2px 6px; font-size: 10px;">{{ c.correlata_tipo }}</span>
-                      <strong>{{ c.correlata_nome }}</strong>
+              <div class="bv-cor-list" style="margin-bottom: 20px;">
+                <div v-for="c in drawer.correlacoes.value" :key="c.id" class="bv-cor-item">
+                  <div v-if="drawer.editingCorrelacaoId.value !== c.id" style="display:flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                        <span class="bv-card-tipo-badge" :data-tipo="c.correlata_tipo" style="padding: 2px 6px; font-size: 10px;">{{ c.correlata_tipo }}</span>
+                        <strong style="font-size: 13px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ c.correlata_nome }}</strong>
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="bv-status-badge bv-status-sm" :data-status="c.correlata_status">{{ drawer.statusLabel(c.correlata_status as any) }}</span>
+                        <span v-if="c.descricao" class="bv-historico-detalhes" style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;"> — {{ c.descricao }}</span>
+                      </div>
                     </div>
-                    <div class="bv-historico-acao">
-                      <span class="bv-status-badge bv-status-sm" :data-status="c.correlata_status">{{ drawer.statusLabel(c.correlata_status as any) }}</span>
-                      <span v-if="c.descricao" class="bv-historico-detalhes" style="margin-left:8px;"> — {{ c.descricao }}</span>
+                    <div class="bv-cor-actions">
+                      <button class="bv-nota-action-btn" @click="abrirIdeiaCorrelata(c.correlata_id!)" title="Abrir Ideia">↗️</button>
+                      <button class="bv-nota-action-btn" @click="drawer.startEditCorrelacao(c)" title="Editar">✏️</button>
+                      <button class="bv-nota-action-btn" @click="drawer.deleteCorrelacao(c.id)" title="Desconectar">🗑️</button>
                     </div>
                   </div>
-                  <div>
-                    <button class="bv-btn-ghost bv-btn-sm" @click="abrirIdeiaCorrelata(c.correlata_id!)" title="Abrir Ideia">↗️</button>
-                    <button class="bv-link-del" @click="drawer.deleteCorrelacao(c.id)" title="Desconectar" style="margin-left: 8px;">🗑️</button>
+                  
+                  <!-- Form de edição inline -->
+                  <div v-else class="bv-link-form" style="margin: 0; border: none; padding: 0; background: transparent;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 8px;">Editando conexão com: {{ c.correlata_nome }}</div>
+                    <input v-model="drawer.correlacaoEditForm.descricao" class="bv-doc-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 8px;" />
+                    <div style="display:flex; gap:6px; justify-content: flex-end;">
+                      <button class="bv-nota-save-btn" @click="drawer.saveEditCorrelacao(c.id)" type="button">Salvar</button>
+                      <button class="bv-nota-cancel-btn" @click="drawer.editingCorrelacaoId.value = null" type="button">Cancelar</button>
+                    </div>
                   </div>
                 </div>
                 <div v-if="drawer.correlacoes.value.length === 0" class="bv-doc-empty">Nenhuma conexão estabelecida.</div>
@@ -372,7 +385,7 @@
 <script setup lang="ts">
 import { ref, toRef } from 'vue';
 import { useIdeiaDrawer, type DrawerCallbacks } from '../composables/useIdeiaDrawer';
-import type { Ideia, IdeiaStatus, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../types/ideia';
+import type { Ideia, IdeiaStatus } from '../types/ideia';
 import { useIdeias } from '../composables/useIdeias';
 import RichTextEditor from './RichTextEditor.vue';
 import ConfirmModal from './ConfirmModal.vue';
@@ -820,6 +833,13 @@ defineExpose({
 .bv-upload-bar { width: 100%; height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
 .bv-upload-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 99px; transition: width 0.3s ease; }
 .bv-upload-progress span { font-size: 11.5px; color: #64748b; }
+
+/* Connections */
+.bv-cor-list { display: flex; flex-direction: column; gap: 6px; }
+.bv-cor-item { display: flex; flex-direction: column; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 9px; transition: border-color 0.15s; padding: 10px 12px; }
+.bv-cor-item:hover { border-color: #93c5fd; }
+.bv-cor-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.bv-cor-item:hover .bv-cor-actions { opacity: 1; pointer-events: auto; }
 
 /* Fields (for connections tab) */
 .bv-field { display: flex; flex-direction: column; gap: 8px; }
