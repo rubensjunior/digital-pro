@@ -31,12 +31,43 @@ function initDatabase() {
   const dbPath = path.join(app.getPath('userData'), 'brainvault.db');
   db = new Database(dbPath);
 
+  // Evolução 5: Workspaces & Data-Driven Taxonomy
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workspaces (
+      id         TEXT PRIMARY KEY,
+      name       TEXT NOT NULL,
+      icon       TEXT,
+      color      TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS workspace_tipos (
+      id           TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL,
+      label        TEXT NOT NULL,
+      grupo        TEXT,
+      icon         TEXT,
+      color        TEXT,
+      created_at   TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS workspace_status (
+      id           TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL,
+      label        TEXT NOT NULL,
+      grupo        TEXT,
+      meta_status  TEXT NOT NULL DEFAULT 'in_progress',
+      color        TEXT,
+      order_index  INTEGER DEFAULT 0,
+      created_at   TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS ideias (
       id             TEXT PRIMARY KEY,
+      workspace_id   TEXT NOT NULL DEFAULT 'default_workspace',
       nome           TEXT NOT NULL,
       tipo           TEXT NOT NULL,
-      status         TEXT NOT NULL DEFAULT 'bruta',
+      status         TEXT NOT NULL,
       score          INTEGER NOT NULL DEFAULT 1,
       descricao      TEXT,
       contexto       TEXT,
@@ -63,6 +94,9 @@ function initDatabase() {
   // Evolução 3: Hierarquia de Ideias
   try { db.exec('ALTER TABLE ideias ADD COLUMN parent_id TEXT;'); } catch (e) { /* ignore */ }
   try { db.exec('ALTER TABLE ideias ADD COLUMN relationship_type TEXT;'); } catch (e) { /* ignore */ }
+
+  // Evolução 5.1: Chave de Workspace
+  try { db.exec('ALTER TABLE ideias ADD COLUMN workspace_id TEXT NOT NULL DEFAULT "default_workspace";'); } catch (e) { /* ignore */ }
 
   // Evolução 2: Tabela de histórico
   db.exec(`
@@ -121,6 +155,98 @@ function initDatabase() {
     WHERE ideia_a_id NOT IN (SELECT id FROM ideias) 
        OR ideia_b_id NOT IN (SELECT id FROM ideias);
   `);
+
+  runDataMigration();
+}
+
+function runDataMigration() {
+  const countRes = db.prepare('SELECT count(*) as c FROM workspaces').get() as { c: number };
+  if (countRes.c === 0) {
+    const defaultWorkspaceId = 'default_workspace';
+    db.prepare('INSERT INTO workspaces (id, name, color) VALUES (?, ?, ?)').run(defaultWorkspaceId, 'Meu Cofre de Ideias', '#3b82f6');
+
+    console.log('Semeadura Inicial: Iniciando migração de tipos e status...');
+
+    // Tipos Legados
+    const TIPOS_AGRUPADOS = [
+      { label: '📣 Marketing & Copywriting', options: ['Produto', 'Promessa', 'Ângulo de Venda', 'Headline', 'Hook (Gancho)', 'Big Idea', 'VSL (Vídeo de Vendas)', 'Funil de Vendas', 'Lançamento', 'Copywriting', 'Criativo (Anúncio)', 'Lead Magnet (Isca)', 'E-mail Marketing'] },
+      { label: '📺 Publicidade & Social Media', options: ['Campanha Publicitária', 'Roteiro', 'Storyboard', 'Briefing', 'Mídia Kit', 'Planejamento de Mídia', 'Post Social Media', 'Newsletter'] },
+      { label: '💻 Programação & Tecnologia', options: ['POC (Proof of Concept)', 'Nova Feature', 'Bugfix (Correção)', 'Refatoração', 'Arquitetura de Software', 'API / Integração', 'Interface (UI/UX)', 'Automação / Script', 'Banco de Dados', 'DevOps / Infraestrutura'] },
+      { label: '📊 Gestão & Projetos', options: ['Planejamento Estratégico', 'Sprint / Roadmap', 'Tarefa (Task)', 'Processo / Workflow', 'Insight de Negócio', 'KPI / Métrica', 'OKR (Objetivos)'] },
+      { label: '🚀 SaaS & Produto', options: ['Onboarding de Usuário', 'Retenção / Churn', 'Pricing / Monetização', 'User Experience (UX)', 'MVP (Minimum Viable Product)', 'Feature Request'] },
+      { label: '⚖️ Jurídico & Documentação', options: ['Peça Processual', 'Contrato', 'Parecer Técnico', 'Petição', 'Documento / Anexo', 'Planilha de Dados'] },
+      { label: '🏢 Administrativo & Financeiro', options: ['Nota Fiscal / Recibo', 'Orçamento / Proposta', 'Relatório Financeiro', 'Ata de Reunião', 'Protocolo / Cadastro', 'Gestão de Custos'] },
+      { label: '📚 Estudos & Pesquisa', options: ['Revisão de Conteúdo', 'Resumo / Nota de Estudo', 'Teoria / Conceito', 'Método / Framework', 'Citação / Referência', 'Insight de Leitura', 'Curso / Treinamento'] },
+      { label: '🖋️ Outros', options: ['Insight / Ideia Solta', 'Pessoal / Meta', 'Outro'] }
+    ];
+
+    const tipoMap = new Map<string, string>();
+    for (const grupo of TIPOS_AGRUPADOS) {
+      for (const opt of grupo.options) {
+        const tId = crypto.randomUUID();
+        db.prepare('INSERT INTO workspace_tipos (id, workspace_id, label, grupo) VALUES (?, ?, ?, ?)').run(tId, defaultWorkspaceId, opt, grupo.label);
+        tipoMap.set(opt, tId);
+      }
+    }
+
+    // Status Legados (Mapeamento livre para meta_status)
+    const STATUS_AGRUPADOS = [
+      { label: 'Fluxo de Ideia (Geral)', options: [
+        { value: 'bruta', label: 'Bruta (Capturada)', meta: 'backlog' },
+        { value: 'pesquisa', label: 'Em Pesquisa / Estudo', meta: 'in_progress' },
+        { value: 'validada', label: 'Validada (Pronta)', meta: 'done' },
+        { value: 'nao_validada', label: 'Não Validada / Descartada', meta: 'archived' },
+        { value: 'escalada', label: 'Escalada (Em Escala)', meta: 'done' },
+        { value: 'arquivada', label: 'Arquivada', meta: 'archived' }
+      ]},
+      { label: '💻 Desenvolvimento & Projetos', options: [
+        { value: 'backlog', label: 'Backlog', meta: 'backlog' },
+        { value: 'em_desenvolvimento', label: 'Em Desenvolvimento', meta: 'in_progress' },
+        { value: 'em_teste', label: 'Em Teste (QA)', meta: 'review' },
+        { value: 'implementado', label: 'Implementado / Em Produção', meta: 'done' },
+        { value: 'pausado', label: 'Pausado / Bloqueado', meta: 'backlog' }
+      ]},
+      { label: '📝 Produção & Conteúdo', options: [
+        { value: 'rascunho', label: 'Rascunho / Draft', meta: 'backlog' },
+        { value: 'em_revisao', label: 'Em Revisão', meta: 'review' },
+        { value: 'aprovado', label: 'Aprovado / Pronto', meta: 'done' },
+        { value: 'publicado', label: 'Publicado / Finalizado', meta: 'done' }
+      ]},
+      { label: '⚖️ Jurídico & Administrativo', options: [
+        { value: 'pendente', label: 'Pendente', meta: 'backlog' },
+        { value: 'em_analise', label: 'Em Análise', meta: 'review' },
+        { value: 'assinado_deferido', label: 'Assinado / Deferido', meta: 'done' },
+        { value: 'cancelado_indeferido', label: 'Cancelado / Indeferido', meta: 'archived' }
+      ]}
+    ];
+
+    const statusMap = new Map<string, string>();
+    let order_index = 0;
+    for (const grupo of STATUS_AGRUPADOS) {
+      for (const opt of grupo.options) {
+        const sId = crypto.randomUUID();
+        db.prepare('INSERT INTO workspace_status (id, workspace_id, label, grupo, meta_status, order_index) VALUES (?, ?, ?, ?, ?, ?)').run(sId, defaultWorkspaceId, opt.label, grupo.label, opt.meta, order_index++);
+        statusMap.set(opt.value, sId); // map based on old exact string value like 'em_desenvolvimento'
+      }
+    }
+
+    // Migrar Tabela 'ideias'
+    const ideias = db.prepare('SELECT id, tipo, status FROM ideias').all() as {id: string, tipo: string, status: string}[];
+    const updateStmt = db.prepare('UPDATE ideias SET tipo = ?, status = ? WHERE id = ?');
+    
+    // Outro fallback for lost items
+    const fallbackTipo = tipoMap.get('Outro') || Array.from(tipoMap.values())[0];
+    const fallbackStatus = statusMap.get('bruta') || Array.from(statusMap.values())[0];
+
+    db.transaction(() => {
+      for (const i of ideias) {
+        const newTipoId = tipoMap.get(i.tipo) || fallbackTipo;
+        const newStatusId = statusMap.get(i.status) || fallbackStatus;
+        updateStmt.run(newTipoId, newStatusId, i.id);
+      }
+    })();
+    console.log(`Migração Completa: ${ideias.length} ideias atualizadas para IDs dinâmicos.`);
+  }
 }
 
 // ── Funções Auxiliares de Histórico ───────────────────────────────────────────
@@ -140,8 +266,70 @@ function logHistorico(ideia_id: string, acao: string, detalhes?: string) {
 
 // ─── IPC Handlers — Brain Vault ───────────────────────────────────────────────
 function registerIdeiaHandlers() {
-  // GET ALL
-  ipcMain.handle('ideias:getAll', () => {
+  // ─── Workspaces e Taxonomia ────────────────────────────────────────────────
+  ipcMain.handle('workspaces:getAll', () => {
+    return db.prepare('SELECT * FROM workspaces ORDER BY created_at ASC').all();
+  });
+  ipcMain.handle('workspaces:create', (_, payload: { name: string; color?: string; icon?: string }) => {
+    const id = crypto.randomUUID();
+    db.prepare('INSERT INTO workspaces (id, name, color, icon) VALUES (?, ?, ?, ?)').run(id, payload.name, payload.color ?? null, payload.icon ?? null);
+    return db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
+  });
+  ipcMain.handle('workspaces:update', (_, payload: { id: string; name: string; color?: string; icon?: string }) => {
+    db.prepare('UPDATE workspaces SET name = ?, color = ?, icon = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(payload.name, payload.color ?? null, payload.icon ?? null, payload.id);
+    return db.prepare('SELECT * FROM workspaces WHERE id = ?').get(payload.id);
+  });
+  
+  ipcMain.handle('workspaces:delete', (_, id: string) => {
+    db.prepare('DELETE FROM workspaces WHERE id = ?').run(id);
+    return true;
+  });
+  
+  ipcMain.handle('taxonomia:tipos:getAll', (_, workspace_id: string) => {
+    return db.prepare('SELECT * FROM workspace_tipos WHERE workspace_id = ? ORDER BY label ASC').all(workspace_id);
+  });
+
+  ipcMain.handle('taxonomia:tipos:create', (_, payload: { workspace_id: string; label: string; color?: string; icon?: string }) => {
+    const id = crypto.randomUUID();
+    db.prepare('INSERT INTO workspace_tipos (id, workspace_id, label, color, icon) VALUES (?, ?, ?, ?, ?)').run(id, payload.workspace_id, payload.label, payload.color ?? null, payload.icon ?? null);
+    return db.prepare('SELECT * FROM workspace_tipos WHERE id = ?').get(id);
+  });
+  
+  ipcMain.handle('taxonomia:tipos:update', (_, payload: { id: string; label: string; color?: string; icon?: string }) => {
+    db.prepare('UPDATE workspace_tipos SET label = ?, color = ?, icon = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(payload.label, payload.color ?? null, payload.icon ?? null, payload.id);
+    return db.prepare('SELECT * FROM workspace_tipos WHERE id = ?').get(payload.id);
+  });
+
+  ipcMain.handle('taxonomia:tipos:delete', (_, id: string) => {
+    db.prepare('DELETE FROM workspace_tipos WHERE id = ?').run(id);
+    return true;
+  });
+
+  ipcMain.handle('taxonomia:status:getAll', (_, workspace_id: string) => {
+    return db.prepare('SELECT * FROM workspace_status WHERE workspace_id = ? ORDER BY order_index ASC').all(workspace_id);
+  });
+
+  ipcMain.handle('taxonomia:status:create', (_, payload: { workspace_id: string; label: string; color?: string; grouping?: string; order_index?: number }) => {
+    const id = crypto.randomUUID();
+    db.prepare('INSERT INTO workspace_status (id, workspace_id, label, color, grouping, order_index) VALUES (?, ?, ?, ?, ?, ?)').run(id, payload.workspace_id, payload.label, payload.color ?? null, payload.grouping ?? null, payload.order_index ?? 0);
+    return db.prepare('SELECT * FROM workspace_status WHERE id = ?').get(id);
+  });
+
+  ipcMain.handle('taxonomia:status:update', (_, payload: { id: string; label: string; color?: string; grouping?: string; order_index?: number }) => {
+    db.prepare('UPDATE workspace_status SET label = ?, color = ?, grouping = ?, order_index = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(payload.label, payload.color ?? null, payload.grouping ?? null, payload.order_index ?? 0, payload.id);
+    return db.prepare('SELECT * FROM workspace_status WHERE id = ?').get(payload.id);
+  });
+
+  ipcMain.handle('taxonomia:status:delete', (_, id: string) => {
+    db.prepare('DELETE FROM workspace_status WHERE id = ?').run(id);
+    return true;
+  });
+
+  // GET ALL (Com Soft Boundary / Filtro)
+  ipcMain.handle('ideias:getAll', (_, workspace_id?: string) => {
+    if (workspace_id) {
+      return db.prepare('SELECT * FROM ideias WHERE workspace_id = ? ORDER BY created_at DESC').all(workspace_id);
+    }
     return db.prepare('SELECT * FROM ideias ORDER BY created_at DESC').all();
   });
 
@@ -157,9 +345,10 @@ function registerIdeiaHandlers() {
       const now = new Date().toISOString();
       const row = {
         id,
+        workspace_id: payload.workspace_id ?? 'default_workspace',
         nome: payload.nome ?? '',
-        tipo: payload.tipo ?? 'Outro',
-        status: payload.status ?? 'bruta',
+        tipo: payload.tipo ?? '',
+        status: payload.status ?? '',
         score: payload.score ?? 1,
         descricao: payload.descricao ?? null,
         contexto: payload.contexto ?? null,
@@ -182,13 +371,13 @@ function registerIdeiaHandlers() {
 
       db.prepare(`
         INSERT INTO ideias (
-          id, nome, tipo, status, score,
+          id, workspace_id, nome, tipo, status, score,
           descricao, contexto, problema, transformacao, publico_alvo,
           tags_avatar, tags_nicho, tags_dor, tags_desejo, tags_mecanismo,
           is_arquivada, is_favorita, parent_id, relationship_type, last_accessed_at,
           created_at, updated_at
         ) VALUES (
-          @id, @nome, @tipo, @status, @score,
+          @id, @workspace_id, @nome, @tipo, @status, @score,
           @descricao, @contexto, @problema, @transformacao, @publico_alvo,
           @tags_avatar, @tags_nicho, @tags_dor, @tags_desejo, @tags_mecanismo,
           @is_arquivada, @is_favorita, @parent_id, @relationship_type, @last_accessed_at,

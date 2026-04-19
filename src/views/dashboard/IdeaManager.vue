@@ -9,19 +9,13 @@
 
     <div class="bv-header">
       <div class="bv-header-text">
-        <h1 class="bv-title">
-          <span class="bv-title-icon">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-          </span>
-          Brain Vault
-        </h1>
-        <p class="bv-subtitle">
+        <p class="bv-subtitle" style="margin-top: -12px;">
+          <strong>Workspace Atual:</strong>
           {{ ideias.length }} ideia{{ ideias.length !== 1 ? 's' : '' }} registrada{{ ideias.length !== 1 ? 's' : '' }}
           · {{ porStatus.validada.length }} validada{{ porStatus.validada.length !== 1 ? 's' : '' }}
           · {{ porStatus.escalada.length }} escalada{{ porStatus.escalada.length !== 1 ? 's' : '' }}
         </p>
       </div>
-      <!-- Botões removidos aqui pois agora estão no subheader do layout -->
     </div>
 
     <!-- ════════════════════════════════════════════ METRICS -->
@@ -94,15 +88,15 @@
 
       <select v-model="filtro.tipo" class="bv-select">
         <option value="">Todos os tipos</option>
-        <optgroup v-for="grupo in TIPOS_AGRUPADOS" :key="grupo.label" :label="grupo.label">
-          <option v-for="t in grupo.options" :key="t" :value="t">{{ t }}</option>
+        <optgroup v-for="grupo in tiposAgrupados" :key="grupo.label" :label="grupo.label">
+          <option v-for="t in grupo.options" :key="t.id" :value="t.id">{{ t.label }}</option>
         </optgroup>
       </select>
 
       <select v-model="filtro.status" class="bv-select">
         <option value="">Todos os status</option>
-        <optgroup v-for="grupo in statusFiltrados" :key="grupo.label" :label="grupo.label">
-          <option v-for="s in grupo.options" :key="s.value" :value="s.value">{{ s.label }}</option>
+        <optgroup v-for="grupo in statusAgrupados" :key="grupo.label" :label="grupo.label">
+          <option v-for="s in grupo.options" :key="s.id" :value="s.id">{{ s.label }}</option>
         </optgroup>
       </select>
 
@@ -179,7 +173,7 @@
               <svg v-if="ideia.is_favorita" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
               <svg v-else fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
             </span>
-            <div class="bv-card-tipo-badge" :data-tipo="ideia.tipo">{{ ideia.tipo }}</div>
+            <div class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(ideia.tipo) || undefined }">{{ getTipoLabel(ideia.tipo) }}</div>
             <div v-if="(ideia as any).relationship_type && (ideia as any).depth > 0" class="bv-card-rel-badge">
               {{ (ideia as any).relationship_type }}
             </div>
@@ -200,7 +194,7 @@
           </div>
         </div>
         <div class="bv-card-right">
-          <span class="bv-status-badge" :data-status="ideia.status">{{ statusLabel(ideia.status) }}</span>
+          <span class="bv-status-badge" :style="{ backgroundColor: getStatusColor(ideia.status) || undefined }">{{ statusLabel(ideia.status) }}</span>
           <div class="bv-stars">
             <template v-for="n in 4" :key="n">
               <svg :class="n <= ideia.score ? 'bv-star-on' : 'bv-star-off'" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
@@ -238,7 +232,7 @@ import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
 import { useBus } from '../../composables/useBus';
 import type { Ideia, IdeiaStatus, IdeiaTipo } from '../../types/ideia';
-import { TIPOS_AGRUPADOS, STATUS_AGRUPADOS, getStatusGroupsForTipo, getStatusLabel as getStatusLabelHelper } from '../../types/ideia';
+import { useTaxonomy } from '../../composables/useTaxonomy';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 import IdeaFormModal from '../../components/IdeaFormModal.vue';
 
@@ -317,23 +311,7 @@ const filtro = reactive({
   apenasFavoritas: false, emArquivo: false, ordenacao: 'nova' 
 });
 
-const statusFiltrados = computed(() => {
-  const tipo = filtro.tipo;
-  if (!tipo) return STATUS_AGRUPADOS;
-
-  const grupoTipo = TIPOS_AGRUPADOS.find(g => g.options.includes(tipo as IdeiaTipo))?.label || '';
-  const gruposParaMostrar = ['Geral'];
-
-  if (grupoTipo.includes('Programação') || grupoTipo.includes('SaaS') || grupoTipo.includes('Gestão')) {
-    gruposParaMostrar.push('Desenvolvimento');
-  } else if (grupoTipo.includes('Marketing') || grupoTipo.includes('Publicidade')) {
-    gruposParaMostrar.push('Produção');
-  } else if (grupoTipo.includes('Jurídico') || grupoTipo.includes('Administrativo')) {
-    gruposParaMostrar.push('Jurídico');
-  }
-
-  return STATUS_AGRUPADOS.filter(g => gruposParaMostrar.some(keyword => g.label.includes(keyword)));
-});
+const { tiposAgrupados, statusAgrupados, getStatusLabel: getStatusLabelHelper, getTipoLabel, getStatusColor, getTipoColor } = useTaxonomy();
 
 const ideiasFilradas = computed(() => {
   const archMap = new Map<string, boolean>();
@@ -414,10 +392,10 @@ const listaHierarquica = computed(() => {
 });
 
 const porStatus = computed(() => ({
-  validada: ideias.value.filter(i => i.status === 'validada'),
-  escalada: ideias.value.filter(i => i.status === 'escalada'),
-  em_teste: ideias.value.filter(i => i.status === 'em_teste'),
-  bruta: ideias.value.filter(i => i.status === 'bruta'),
+  validada: ideias.value.filter(i => getStatusLabelHelper(i.status).toLowerCase().includes('validada')),
+  escalada: ideias.value.filter(i => getStatusLabelHelper(i.status).toLowerCase().includes('escalada')),
+  em_teste: ideias.value.filter(i => getStatusLabelHelper(i.status).toLowerCase().includes('teste')),
+  bruta: ideias.value.filter(i => getStatusLabelHelper(i.status).toLowerCase().includes('bruta')),
 }));
 
 // Removidas referências exclusivas do Kanban global
@@ -463,7 +441,7 @@ function allTags(ideia: Ideia): string[] {
   ];
 }
 
-function statusLabel(status: IdeiaStatus): string {
+function statusLabel(status: string): string {
   return getStatusLabelHelper(status);
 }
 

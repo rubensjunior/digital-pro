@@ -42,8 +42,8 @@
               <label class="bv-label">Tipo *</label>
               <select v-model="form.tipo" :class="['bv-input bv-select-field', { 'has-error': formErros.tipo }]" @change="formErros.tipo = false">
                 <option value="">Selecione o tipo</option>
-                <optgroup v-for="grupo in TIPOS_AGRUPADOS" :key="grupo.label" :label="grupo.label">
-                  <option v-for="t in grupo.options" :key="t" :value="t">{{ t }}</option>
+                <optgroup v-for="grupo in tiposAgrupados" :key="grupo.label" :label="grupo.label">
+                  <option v-for="t in grupo.options" :key="t.id" :value="t.id">{{ t.label }}</option>
                 </optgroup>
               </select>
               <span v-if="formErros.tipo" class="bv-error-msg">Tipo é obrigatório</span>
@@ -52,8 +52,8 @@
             <div class="bv-field">
               <label class="bv-label">Status</label>
               <select v-model="form.status" class="bv-input bv-select-field">
-                <optgroup v-for="grupo in statusFiltrados" :key="grupo.label" :label="grupo.label">
-                  <option v-for="s in grupo.options" :key="s.value" :value="s.value">{{ s.label }}</option>
+                <optgroup v-for="grupo in statusAgrupados" :key="grupo.label" :label="grupo.label">
+                  <option v-for="s in grupo.options" :key="s.id" :value="s.id">{{ s.label }}</option>
                 </optgroup>
               </select>
             </div>
@@ -175,8 +175,10 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
 import type { Ideia, IdeiaStatus, IdeiaTipo } from '../types/ideia';
-import { TIPOS_AGRUPADOS, STATUS_AGRUPADOS, getStatusGroupsForTipo } from '../types/ideia';
 import { useIdeias } from '../composables/useIdeias';
+import { useTaxonomy } from '../composables/useTaxonomy';
+
+const { tiposAgrupados, statusAgrupados } = useTaxonomy();
 
 const props = defineProps<{
   ideias: Ideia[];
@@ -199,7 +201,7 @@ const labelsAdaptativos = computed(() => {
   if (!tipo) return defaultLabels;
 
   // Encontrar o grupo ao qual o tipo pertence
-  const grupo = TIPOS_AGRUPADOS.find(g => g.options.includes(tipo as IdeiaTipo))?.label || '';
+  const grupo = tiposAgrupados.value.find(g => g.options.some((t: any) => t.id === tipo))?.label || '';
 
   if (grupo.includes('Programação')) {
     return {
@@ -251,10 +253,6 @@ const labelsAdaptativos = computed(() => {
 
   // Padrão (Marketing/Geral)
   return defaultLabels;
-});
-
-const statusFiltrados = computed(() => {
-  return getStatusGroupsForTipo(form.tipo as IdeiaTipo);
 });
 
 const defaultLabels = {

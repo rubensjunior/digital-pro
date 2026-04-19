@@ -5,7 +5,7 @@
         <div class="bv-drawer-header">
           <div style="display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; width: 100%;">
             <div style="flex: 1;">
-              <div class="bv-card-tipo-badge" :data-tipo="drawer.drawerIdeia.value.tipo">{{ drawer.drawerIdeia.value.tipo }}</div>
+              <div class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(drawer.drawerIdeia.value.tipo) || undefined }">{{ getTipoLabel(drawer.drawerIdeia.value.tipo) }}</div>
               <h2 class="bv-drawer-title">{{ drawer.drawerIdeia.value.nome }}</h2>
             </div>
             <div style="display: flex; gap: 8px;">
@@ -57,9 +57,9 @@
             <div class="bv-drawer-row">
               <span 
                 class="bv-status-badge" 
-                :data-status="drawer.drawerIdeia.value.status"
+                :style="{ backgroundColor: getStatusColor(drawer.drawerIdeia.value.status) || undefined }"
               >
-                {{ drawer.statusLabel(drawer.drawerIdeia.value.status) }}
+                {{ getStatusLabel(drawer.drawerIdeia.value.status) }}
               </span>
               <div class="bv-stars">
                 <span v-for="n in 4" :key="n" :class="n <= drawer.drawerIdeia.value.score ? 'bv-star-on' : 'bv-star-off'">★</span>
@@ -92,8 +92,8 @@
                     <div v-if="no.relationship_type && no.depth > 0" class="bv-eco-rel">{{ no.relationship_type }}</div>
                     <div class="bv-eco-nome">{{ no.nome }}<span v-if="no.isCurrent" class="bv-eco-current-badge"> · atual</span></div>
                     <div class="bv-eco-meta">
-                      <span class="bv-eco-tipo">{{ no.tipo }}</span>
-                      <span class="bv-status-badge bv-status-sm" :data-status="no.status">{{ drawer.statusLabel(no.status) }}</span>
+                      <span class="bv-eco-tipo">{{ getTipoLabel(no.tipo) }}</span>
+                      <span class="bv-status-badge bv-status-sm" :style="{ backgroundColor: getStatusColor(no.status) || undefined }">{{ getStatusLabel(no.status) }}</span>
                     </div>
                   </div>
                 </div>
@@ -327,11 +327,11 @@
                   <div v-if="drawer.editingCorrelacaoId.value !== c.id" style="display:flex; justify-content: space-between; align-items: center;">
                     <div style="flex: 1; min-width: 0;">
                       <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 4px;">
-                        <span class="bv-card-tipo-badge" :data-tipo="c.correlata_tipo" style="padding: 2px 6px; font-size: 10px;">{{ c.correlata_tipo }}</span>
+                        <span class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(c.correlata_tipo!) || undefined, padding: '2px 6px', fontSize: '10px' }">{{ getTipoLabel(c.correlata_tipo!) }}</span>
                         <strong style="font-size: 13px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ c.correlata_nome }}</strong>
                       </div>
                       <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="bv-status-badge bv-status-sm" :data-status="c.correlata_status">{{ drawer.statusLabel(c.correlata_status as any) }}</span>
+                        <span class="bv-status-badge bv-status-sm" :style="{ backgroundColor: getStatusColor(c.correlata_status!) || undefined }">{{ getStatusLabel(c.correlata_status!) }}</span>
                         <span v-if="c.descricao" class="bv-historico-detalhes" style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;"> — {{ c.descricao }}</span>
                       </div>
                     </div>
@@ -366,7 +366,7 @@
                 <select v-model="drawer.novaCorrelacaoForm.ideia_id" class="bv-input bv-select-field" style="margin-bottom: 10px;">
                   <option value="">Selecione uma ideia para conectar...</option>
                   <option v-for="i in drawer.ideiasParaConectar.value" :key="i.id" :value="i.id">
-                    {{ i.nome }} ({{ i.tipo }})
+                    {{ i.nome }} ({{ getTipoLabel(i.tipo) }})
                   </option>
                 </select>
                 <input v-model="drawer.novaCorrelacaoForm.descricao" class="bv-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 10px;" />
@@ -419,6 +419,7 @@ import { useIdeias } from '../composables/useIdeias';
 import RichTextEditor from './RichTextEditor.vue';
 import ConfirmModal from './ConfirmModal.vue';
 import NoteViewModal from './NoteViewModal.vue';
+import { useTaxonomy } from '../composables/useTaxonomy';
 
 const props = defineProps<{
   ideias: Ideia[];
@@ -432,6 +433,7 @@ const emit = defineEmits<{
   (e: 'createDerivada', parentId: string): void;
 }>();
 
+const { getTipoLabel, getTipoColor, getStatusLabel, getStatusColor } = useTaxonomy();
 const { updateStatus, getHistorico, updateAcesso, toggleFavorita, toggleArquivada, duplicarIdeia, deleteIdeia } = useIdeias();
 
 const fileInputRefEl = ref<HTMLInputElement | null>(null);

@@ -3,7 +3,9 @@
     <!-- Main Header Area -->
     <div class="layout-header">
       <!-- Espaçador para compensar a titlebar customizada do Electron (32px) -->
-      <div class="titlebar-spacer"></div>
+      <div class="titlebar-spacer">
+        <span class="top-version">v1.0.0</span>
+      </div>
 
       <!-- Header Row 1: Primary Nav (Dark) -->
       <header class="header-primary">
@@ -12,15 +14,42 @@
             <div class="brand">
               <div class="brand-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <span class="brand-name">RKS Digital PRO</span>
+              <span class="brand-name">Digital PRO</span>
+            </div>
+
+            <div class="workspace-area">
+              <div class="workspace-select-wrapper" v-if="workspaces.length > 0">
+                <div class="workspace-color-dot" :style="{ background: currentWorkspace?.color || '#ef4444' }">
+                  {{ currentWorkspace?.name?.charAt(0).toUpperCase() || 'W' }}
+                </div>
+                <select v-model="currentWorkspaceId" class="workspace-select">
+                  <option v-for="w in workspaces" :key="w.id" :value="w.id">{{ w.name }}</option>
+                </select>
+              </div>
+
+              <div class="workspace-actions">
+                <button class="metronic-header-btn gear" @click="handleOpenWorkspaceSettings" title="Configurar Cofre Atual">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+                <button class="metronic-header-btn add" @click="handleCreateWorkspace" title="Novo Cofre">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                </button>
+              </div>
             </div>
           </div>
 
           <div class="header-right">
+            <!-- Notifications -->
+            <button class="icon-btn notification-btn" title="Notificações">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span class="notification-dot"></span>
+            </button>
+
             <!-- Theme toggle -->
             <button @click="toggleTheme" class="icon-btn" title="Alternar tema">
               <svg v-if="isDark" fill="currentColor" viewBox="0 0 20 20">
@@ -79,27 +108,7 @@
             <!-- Ações dinâmicas injetadas se estiver no Brain Vault -->
             <template v-if="route.path.includes('/ideas')">
               <div class="subheader-actions">
-                <!-- Toggle de Visualização (Lista/Kanban) - Apenas na raiz do Brain Vault -->
-                <div v-if="route.path === '/dashboard/ideas'" class="view-toggle-group">
-                  <button 
-                    class="toggle-action-btn" 
-                    :class="{ active: (route.query.v || 'lista') === 'lista' }"
-                    @click="handleAction('setViewLista')"
-                    title="Ver como Lista"
-                  >
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                  </button>
-                  <button 
-                    class="toggle-action-btn" 
-                    :class="{ active: route.query.v === 'kanban' }"
-                    @click="handleAction('setViewKanban')"
-                    title="Ver como Kanban"
-                  >
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
-                  </button>
-                </div>
-
-                <div v-if="route.path === '/dashboard/ideas'" class="action-divider"></div>
+                <!-- Botões secundários -->
 
                 <button class="action-btn-secondary" @click="handleAction('abrirFluxogramaGeral')" title="Ver como Fluxograma">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
@@ -127,6 +136,8 @@
       </div>
       <router-view v-else />
     </main>
+    
+    <WorkspaceSettingsModal ref="workspaceSettingsModalRef" />
   </div>
 </template>
 
@@ -136,12 +147,34 @@ import { useRouter, useRoute } from 'vue-router';
 import { useTheme } from '../composables/useTheme';
 import { supabase } from '../lib/supabase';
 import { useBus } from '../composables/useBus';
+import { useWorkspaces } from '../composables/useWorkspaces';
+import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal.vue';
 
 const router = useRouter();
 const route = useRoute();
 const { isDark, toggleTheme } = useTheme();
 const { emit } = useBus();
+const { workspaces, currentWorkspaceId, fetchWorkspaces, createWorkspace } = useWorkspaces();
 const userName = ref('');
+const workspaceSettingsModalRef = ref<InstanceType<typeof WorkspaceSettingsModal> | null>(null);
+
+const currentWorkspace = computed(() => workspaces.value.find(w => w.id === currentWorkspaceId.value));
+
+function handleOpenWorkspaceSettings() {
+  workspaceSettingsModalRef.value?.abrirModal(currentWorkspaceId.value || undefined);
+}
+
+async function handleCreateWorkspace() {
+  const count = workspaces.value.length + 1;
+  const ws = await createWorkspace(`Cofre ${count}`, '#009ef7', '');
+  if (ws) {
+    currentWorkspaceId.value = ws.id;
+    // Abre as configurações direto para o user personalizar
+    setTimeout(() => {
+      workspaceSettingsModalRef.value?.abrirModal(ws.id);
+    }, 100);
+  }
+}
 
 const userInitial = computed(() =>
   userName.value ? userName.value.charAt(0).toUpperCase() : '?'
@@ -219,6 +252,7 @@ async function checkSubscription(): Promise<void> {
 
 // ─── Lifecycle ────────────────────────────────────────────
 onMounted(async () => {
+  await fetchWorkspaces();
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (user) {
@@ -275,17 +309,17 @@ function handleAction(action: string) {
   --header-primary-h: 64px;
   --header-secondary-h: 52px;
   --subheader-h: 84px;
-  --bg: #f8fafc;
+  --bg: #f5f8fa;
   --surface: #ffffff;
-  --border: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --accent: #3b82f6;
+  --border: #e4e6ef;
+  --text-primary: #181c32;
+  --text-secondary: #a1a5b7;
+  --accent: #009ef7;
   
-  --header-dark-bg: #1e1e2d;
-  --header-dark-text: #a2a3b7;
+  --header-dark-bg: #151521;
+  --header-dark-text: #a1a5b7;
   --header-dark-text-active: #ffffff;
-  --header-border-dark: rgba(255,255,255,0.08);
+  --header-border-dark: rgba(255,255,255,0.05);
 
   display: flex;
   flex-direction: column;
@@ -313,6 +347,20 @@ function handleAction(action: string) {
 .titlebar-spacer {
   height: 32px;
   background: var(--header-dark-bg);
+  border-bottom: 1px solid var(--header-border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 30px;
+  -webkit-app-region: drag;
+}
+
+.top-version {
+  font-size: 11px;
+  color: #565674;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  -webkit-app-region: no-drag;
 }
 
 .header-primary {
@@ -321,7 +369,6 @@ function handleAction(action: string) {
   border-bottom: 1px solid var(--header-border-dark);
   display: flex;
   align-items: center;
-  padding: 0 30px;
 }
 
 .header-content {
@@ -330,6 +377,12 @@ function handleAction(action: string) {
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+}
+
+.header-left {
+  display: flex;
   align-items: center;
 }
 
@@ -340,22 +393,124 @@ function handleAction(action: string) {
 }
 
 .brand-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.brand-icon svg { width: 18px; height: 18px; color: #fff; }
+.brand-icon svg { width: 30px; height: 30px; color: #a1a5b7; transform: rotate(-15deg); }
 
 .brand-name {
   font-size: 15px;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.01em;
+}
+
+.workspace-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-left: 1px solid var(--header-border-dark);
+  padding-left: 24px;
+  margin-left: 24px;
+}
+
+.workspace-select-wrapper {
+  display: flex;
+  align-items: center;
+  background: #1e1e2d;
+  border-radius: 8px;
+  padding: 8px 12px;
+  position: relative;
+  min-width: 220px;
+}
+
+.workspace-color-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  position: absolute;
+  left: 10px;
+  pointer-events: none;
+}
+
+.workspace-select {
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-left: 38px;
+  padding-right: 36px;
+  width: 100%;
+  height: 30px;
+  
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23a1a5b7' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+}
+
+.workspace-select option {
+  background: #151521;
+  color: #ffffff;
+}
+
+.workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metronic-header-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.metronic-header-btn.add {
+  background: #1e1e2d;
+  color: #a1a5b7;
+}
+
+.metronic-header-btn.add:hover {
+  background: #009ef7;
+  color: #ffffff;
+}
+
+.metronic-header-btn.gear {
+  background: transparent;
+  color: #a1a5b7;
+}
+
+.metronic-header-btn.gear:hover {
+  background: rgba(255,255,255,0.05);
+  color: #ffffff;
+}
+
+.metronic-header-btn svg {
+  width: 22px;
+  height: 22px;
 }
 
 .header-right {
@@ -399,11 +554,9 @@ function handleAction(action: string) {
 
 .header-secondary {
   height: var(--header-secondary-h);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--header-dark-bg);
   display: flex;
   align-items: center;
-  padding: 0 30px;
 }
 
 .nav-content {
@@ -413,6 +566,7 @@ function handleAction(action: string) {
   display: flex;
   gap: 8px;
   height: 100%;
+  padding: 0 30px;
 }
 
 .nav-tab {
@@ -422,7 +576,7 @@ function handleAction(action: string) {
   height: 100%;
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: #a1a5b7;
   text-decoration: none;
   position: relative;
   transition: all 0.2s;
@@ -432,17 +586,17 @@ function handleAction(action: string) {
   padding-left: 0;
 }
 
-.nav-tab:hover { color: var(--accent); background: rgba(59,130,246,0.03); }
-.tab-active { color: var(--accent) !important; }
+.nav-tab:hover { color: #ffffff; background: transparent; }
+.tab-active { color: #ffffff !important; }
 .tab-active::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 16px;
   right: 16px;
-  height: 3px;
-  background: var(--accent);
-  border-radius: 3px 3px 0 0;
+  height: 2px;
+  background: #009ef7;
+  border-radius: 2px 2px 0 0;
 }
 
 .nav-tab:first-child.tab-active::after {
@@ -456,7 +610,6 @@ function handleAction(action: string) {
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 30px;
 }
 
 .subheader-content {
@@ -466,6 +619,7 @@ function handleAction(action: string) {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 30px;
 }
 
 .subheader-left { display: flex; flex-direction: column; }
@@ -553,7 +707,6 @@ function handleAction(action: string) {
 .page-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0 30px;
   max-width: 100%;
   width: 100%;
   position: relative;
@@ -563,7 +716,7 @@ function handleAction(action: string) {
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 30px 0;
+  padding: 30px;
 }
 
 .page-content.no-padding {
@@ -580,6 +733,13 @@ function handleAction(action: string) {
 }
 .icon-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
 .icon-btn svg { width: 20px; height: 20px; }
+
+.notification-btn { position: relative; margin-right: 4px; }
+.notification-dot {
+  position: absolute; top: 6px; right: 8px;
+  width: 6px; height: 6px; background: #f1416c; border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--header-dark-bg);
+}
 </style>
 
 

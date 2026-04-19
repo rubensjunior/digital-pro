@@ -12,9 +12,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
     electron: () => process.versions.electron,
   },
 
+  // ─── Brain Vault — Workspaces / Config ────────────────────────────────────
+  workspaces: {
+    getAll: () => ipcRenderer.invoke('workspaces:getAll'),
+    create: (payload: Record<string, unknown>) => ipcRenderer.invoke('workspaces:create', payload),
+    update: (payload: Record<string, unknown>) => ipcRenderer.invoke('workspaces:update', payload),
+    delete: (id: string) => ipcRenderer.invoke('workspaces:delete', id),
+  },
+  taxonomia: {
+    tipos: {
+      getAll: (workspace_id: string) => ipcRenderer.invoke('taxonomia:tipos:getAll', workspace_id),
+      create: (payload: Record<string, unknown>) => ipcRenderer.invoke('taxonomia:tipos:create', payload),
+      update: (payload: Record<string, unknown>) => ipcRenderer.invoke('taxonomia:tipos:update', payload),
+      delete: (id: string) => ipcRenderer.invoke('taxonomia:tipos:delete', id),
+    },
+    status: {
+      getAll: (workspace_id: string) => ipcRenderer.invoke('taxonomia:status:getAll', workspace_id),
+      create: (payload: Record<string, unknown>) => ipcRenderer.invoke('taxonomia:status:create', payload),
+      update: (payload: Record<string, unknown>) => ipcRenderer.invoke('taxonomia:status:update', payload),
+      delete: (id: string) => ipcRenderer.invoke('taxonomia:status:delete', id),
+    }
+  },
+
   // ─── Brain Vault — Ideias ─────────────────────────────────────────────────
   ideias: {
-    getAll: () => ipcRenderer.invoke('ideias:getAll'),
+    getAll: (workspace_id?: string) => ipcRenderer.invoke('ideias:getAll', workspace_id),
     getHistorico: (id: string) => ipcRenderer.invoke('ideias:getHistorico', id),
     create: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:create', payload),
     update: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:update', payload),

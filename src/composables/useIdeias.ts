@@ -1,21 +1,29 @@
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import type { Ideia, CreateIdeiaPayload, UpdateIdeiaPayload, IdeiaRaw } from '../types/ideia';
 import { parseIdeia } from '../types/ideia';
-
+import { useWorkspaces } from './useWorkspaces';
 // ─── Estado global reativo (singleton por instância do app) ──────────────────
 const ideias = ref<Ideia[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-// ─── Composable ───────────────────────────────────────────────────────────────
 export function useIdeias() {
+
+  const { currentWorkspaceId } = useWorkspaces();
+
+  // Recarrega ideias sempre que o Workspace ativo for alterado
+  watch(currentWorkspaceId, (newId) => {
+    if (newId) fetchIdeias();
+  });
 
   // ── Buscar todas as ideias ──────────────────────────────────────────────────
   async function fetchIdeias() {
+    if (!currentWorkspaceId.value) return; // Não carrega sem workspace ativo
+    
     loading.value = true;
     error.value = null;
     try {
-      const raw: IdeiaRaw[] = await window.electronAPI.ideias.getAll();
+      const raw: IdeiaRaw[] = await window.electronAPI.ideias.getAll(currentWorkspaceId.value);
       ideias.value = raw.map(parseIdeia);
     } catch (e) {
       error.value = 'Erro ao carregar ideias.';
@@ -28,7 +36,8 @@ export function useIdeias() {
   // ── Criar ideia ─────────────────────────────────────────────────────────────
   async function createIdeia(payload: CreateIdeiaPayload): Promise<Ideia | null> {
     try {
-      const raw: IdeiaRaw = await window.electronAPI.ideias.create(payload as unknown as Record<string, unknown>);
+      const finalPayload = { ...payload, workspace_id: currentWorkspaceId.value };
+      const raw: IdeiaRaw = await window.electronAPI.ideias.create(finalPayload as unknown as Record<string, unknown>);
       const nova = parseIdeia(raw);
       ideias.value.unshift(nova);
       return nova;
