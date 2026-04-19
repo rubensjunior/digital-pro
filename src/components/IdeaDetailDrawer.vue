@@ -57,9 +57,6 @@
               <span 
                 class="bv-status-badge" 
                 :data-status="drawer.drawerIdeia.value.status"
-                @click="irParaFluxoStatus()"
-                style="cursor: pointer;"
-                title="Ver no Kanban do Fluxo"
               >
                 {{ drawer.statusLabel(drawer.drawerIdeia.value.status) }}
               </span>
@@ -68,23 +65,6 @@
               </div>
             </div>
 
-            <!-- Mudar status rápido -->
-            <div class="bv-drawer-section">
-              <div class="bv-drawer-section-title">Status / Fluxo de Trabalho</div>
-              <div v-for="grupo in drawer.statusOptions.value" :key="grupo.label" class="bv-status-category">
-                <div class="bv-status-category-label">{{ grupo.label }}</div>
-                <div class="bv-status-group">
-                  <button
-                    v-for="s in grupo.options"
-                    :key="s.value"
-                    :class="['bv-status-opt', { active: drawer.drawerIdeia.value.status === s.value }]"
-                    :data-status="s.value"
-                    @click="mudarStatusENavegar(s.value)"
-                    type="button"
-                  >{{ s.label }}</button>
-                </div>
-              </div>
-            </div>
 
             <!-- Ecossistema -->
             <div class="bv-drawer-section" v-if="drawer.ecosistemaArvore.value.length > 1 || drawer.ideiasFilhas.value.length > 0">
@@ -121,6 +101,9 @@
                 <button class="bv-btn-ghost bv-btn-sm" style="flex: 1; justify-content: center;" @click="drawer.cadastrarDerivada()">
                   + Nova Derivada
                 </button>
+                <button class="bv-btn-primary bv-btn-sm" style="flex: 1; justify-content: center;" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawer.drawerIdeia.value!.id}`)">
+                  👁️ Admin Kanban
+                </button>
               </div>
             </div>
             <div class="bv-drawer-section" v-else>
@@ -128,6 +111,9 @@
               <div style="display: flex; gap: 8px;">
                 <button class="bv-btn-ghost" style="flex: 1; justify-content: center;" @click="drawer.cadastrarDerivada()">
                   + Criar Ideia Derivada
+                </button>
+                <button class="bv-btn-primary" style="flex: 1; justify-content: center;" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawer.drawerIdeia.value!.id}`)">
+                  👁️ Admin Kanban
                 </button>
               </div>
             </div>
@@ -475,26 +461,7 @@ function abrirIdeiaCorrelata(id: string) {
   if (ideia) drawer.abrirDrawer(ideia);
 }
 
-function irParaFluxoStatus() {
-  if (!drawer.drawerIdeia.value) return;
-  const tipo = drawer.drawerIdeia.value.tipo;
-  const status = drawer.drawerIdeia.value.status;
-  // Navega para o Kanban filtrado pelo tipo desta ideia
-  emit('navigate', `/dashboard/ideas?v=kanban&tipo=${encodeURIComponent(tipo)}`);
-  drawer.fecharDrawer();
-}
 
-async function mudarStatusENavegar(novoStatus: IdeiaStatus) {
-  if (!drawer.drawerIdeia.value) return;
-  const id = drawer.drawerIdeia.value.id;
-  const tipo = drawer.drawerIdeia.value.tipo;
-  
-  await drawer.mudarStatus(id, novoStatus);
-  
-  // Após mudar o status, "joga" o usuário para o Kanban do fluxo correspondente
-  emit('navigate', `/dashboard/ideas?v=kanban&tipo=${encodeURIComponent(tipo)}`);
-  drawer.fecharDrawer();
-}
 
 // Expõe para o componente pai
 defineExpose({
@@ -723,38 +690,6 @@ defineExpose({
 .bv-status-badge[data-status="nao_validada"] { background: rgba(239,68,68,0.12); color: #ef4444; }
 .bv-status-sm { font-size: 9px !important; padding: 1px 6px !important; border-radius: 4px !important; }
 
-.bv-status-group { display: flex; gap: 6px; flex-wrap: wrap; }
-.bv-status-opt {
-  display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px;
-  border-radius: 10px; border: 1.5px solid #e2e8f0; background: #ffffff;
-  color: #64748b; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
-}
-.bv-status-opt:hover { border-color: #cbd5e1; color: #1e293b; background: #f8fafc; }
-.bv-status-opt[data-status="bruta"].active    { background: rgba(100,116,139,0.1); border-color: #64748b; color: #334155; font-weight: 600; }
-.bv-status-opt[data-status="em_teste"].active { background: rgba(234,179,8,0.1);  border-color: #eab308; color: #a16207; font-weight: 600; }
-.bv-status-opt[data-status="validada"].active { background: rgba(34,197,94,0.1);  border-color: #22c55e; color: #15803d; font-weight: 600; }
-.bv-status-opt[data-status="nao_validada"].active { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #dc2626; font-weight: 600; }
-.bv-status-opt[data-status="escalada"].active { background: rgba(59,130,246,0.1); border-color: #3b82f6; color: #1d4ed8; font-weight: 600; }
-
-/* Status Variados (Desenvolvimento / Produção / Jurídico) */
-.bv-status-opt[data-status="backlog"].active,
-.bv-status-opt[data-status="rascunho"].active,
-.bv-status-opt[data-status="pendente"].active { background: rgba(100,116,139,0.1); border-color: #64748b; color: #334155; font-weight: 600; }
-
-.bv-status-opt[data-status="em_desenvolvimento"].active,
-.bv-status-opt[data-status="em_revisao"].active,
-.bv-status-opt[data-status="em_analise"].active { background: rgba(59,130,246,0.1); border-color: #3b82f6; color: #1d4ed8; font-weight: 600; }
-
-.bv-status-opt[data-status="implementado"].active,
-.bv-status-opt[data-status="publicado"].active,
-.bv-status-opt[data-status="aprovado"].active,
-.bv-status-opt[data-status="assinado_deferido"].active { background: rgba(34,197,94,0.1); border-color: #22c55e; color: #15803d; font-weight: 600; }
-
-.bv-status-opt[data-status="pausado"].active,
-.bv-status-opt[data-status="cancelado_indeferido"].active { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #dc2626; font-weight: 600; }
-
-.bv-status-category { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
-.bv-status-category-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px; }
 
 /* ═══════════════════════════════════ STARS & TAGS */
 .bv-stars { display: flex; gap: 1px; font-size: 14px; }

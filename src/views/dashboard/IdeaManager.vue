@@ -130,7 +130,7 @@
     </div>
 
     <!-- ════════════════════════════════════════════ LISTA -->
-    <div v-else-if="view === 'lista'" class="bv-list">
+    <div v-else class="bv-list">
       <div
         v-for="ideia in listaHierarquica"
         :key="ideia.id"
@@ -184,54 +184,6 @@
       </div>
     </div>
 
-    <!-- ════════════════════════════════════════════ KANBAN -->
-    <div v-else class="bv-kanban">
-      <div
-        v-for="col in colunasVisiveis"
-        :key="col.status"
-        class="bv-kanban-col"
-        :data-status="col.status"
-        @dragover.prevent
-        @drop="onDrop($event, col.status)"
-      >
-        <div class="bv-kanban-col-header">
-          <span class="bv-kanban-col-dot" :data-status="col.status"></span>
-          <span class="bv-kanban-col-title">{{ col.label }}</span>
-          <span class="bv-kanban-col-count">{{ porStatusKanban[col.status].length }}</span>
-        </div>
-
-        <div
-          v-for="ideia in porStatusKanban[col.status]"
-          :key="ideia.id"
-          class="bv-kanban-card"
-          draggable="true"
-          @dragstart="onDragStart($event, ideia.id)"
-          @dblclick="abrirDrawer(ideia)"
-        >
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <div class="bv-kanban-card-tipo">{{ ideia.tipo }}</div>
-            <span class="bv-fav-star" :class="{ 'is-fav': ideia.is_favorita }" @click.stop="handleToggleFavorita(ideia)">
-              {{ ideia.is_favorita ? '⭐' : '☆' }}
-            </span>
-          </div>
-          <div class="bv-kanban-card-nome">{{ ideia.nome }}</div>
-          <div v-if="ideia.descricao" class="bv-kanban-card-desc">{{ ideia.descricao }}</div>
-          <div class="bv-kanban-card-footer">
-            <div class="bv-stars bv-stars-sm">
-              <span v-for="n in 4" :key="n" :class="n <= ideia.score ? 'bv-star-on' : 'bv-star-off'">★</span>
-            </div>
-            <div class="bv-kanban-tags">
-              <span v-for="t in allTags(ideia).slice(0,2)" :key="t" class="bv-tag bv-tag-sm">{{ t }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="porStatusKanban[col.status].length === 0" class="bv-kanban-empty">
-          Arraste ideias aqui
-        </div>
-      </div>
-    </div>
-
     <!-- ════════════════════════════════════════════ MODAL -->
     <IdeaFormModal
       ref="ideaFormRef"
@@ -264,7 +216,7 @@ import IdeaFormModal from '../../components/IdeaFormModal.vue';
 // ─── Composable ───────────────────────────────────────────────────────────────────
 const { 
   ideias, loading, fetchIdeias, 
-  updateStatus, toggleFavorita, toggleArquivada, duplicarIdeia 
+  toggleFavorita, toggleArquivada, duplicarIdeia 
 } = useIdeias();
 
 const router = useRouter();
@@ -323,15 +275,9 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
   toastTimeout = setTimeout(() => { toast.visible = false; }, 3000);
 }
 
-// ─── View mode ───────────────────────────────────────────────────────────────
-const view = ref<'lista' | 'kanban'>('lista');
-
 // Sincronizar view com parâmetro da URL
 watch(() => route.query, (q) => {
   console.log('IdeiaManager: Mudança de filtros detectada:', q);
-  if (q.v === 'kanban') view.value = 'kanban';
-  else view.value = 'lista';
-
   if (q.tipo) filtro.tipo = q.tipo as string;
   if (q.status) filtro.status = q.status as string;
 }, { immediate: true, deep: true });
@@ -445,29 +391,7 @@ const porStatus = computed(() => ({
   bruta: ideias.value.filter(i => i.status === 'bruta'),
 }));
 
-const porStatusKanban = computed(() => {
-  const res: Record<string, Ideia[]> = {};
-  colunasVisiveis.value.forEach(col => {
-    res[col.status] = ideiasFilradas.value.filter(i => i.status === col.status);
-  });
-  return res;
-});
-
-const colunasVisiveis = computed(() => {
-  const grupos = getStatusGroupsForTipo(filtro.tipo as IdeiaTipo);
-  const cols: { status: IdeiaStatus; label: string }[] = [];
-  
-  grupos.forEach(g => {
-    g.options.forEach(opt => {
-      // Evita duplicados (como 'validada' que pode estar em mais de um grupo se a lógica mudar no futuro)
-      if (!cols.some(c => c.status === opt.value)) {
-        cols.push({ status: opt.value, label: opt.label.split(' (')[0] });
-      }
-    });
-  });
-
-  return cols;
-});
+// Removidas referências exclusivas do Kanban global
 
 const taxaSucesso = computed(() => {
   if (ideias.value.length === 0) return 0;
@@ -501,19 +425,7 @@ async function handleToggleArquivar(ideia: Ideia) {
 function abrirRedeNeuralGeral() { router.push(`/dashboard/ideas/general-network`); }
 function abrirFluxogramaGeral() { router.push(`/dashboard/ideas/general-flowchart`); }
 
-// ─── Drag & Drop ─────────────────────────────────────────────────────────────
-const draggedId = ref<string | null>(null);
-function onDragStart(event: DragEvent, id: string) {
-  draggedId.value = id;
-  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-}
-async function onDrop(event: DragEvent, novoStatus: IdeiaStatus) {
-  event.preventDefault();
-  if (!draggedId.value) return;
-  await updateStatus(draggedId.value, novoStatus);
-  draggedId.value = null;
-}
-
+// Não há mais Drag & Drop no Manager
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function allTags(ideia: Ideia): string[] {
   return [

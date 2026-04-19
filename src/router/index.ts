@@ -10,6 +10,7 @@ import IdeaNetworkView from '../views/dashboard/IdeaNetworkView.vue';
 import GeneralNetworkView from '../views/dashboard/GeneralNetworkView.vue';
 import GeneralFlowchartView from '../views/dashboard/GeneralFlowchartView.vue';
 import IdeaFlowchartView from '../views/dashboard/IdeaFlowchartView.vue';
+import IdeaKanbanView from '../views/dashboard/IdeaKanbanView.vue';
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -95,6 +96,7 @@ const router = createRouter({
         { path: 'ideas/general-network', component: GeneralNetworkView },
         { path: 'ideas/flowchart/:rootId', component: IdeaFlowchartView },
         { path: 'ideas/general-flowchart', component: GeneralFlowchartView },
+        { path: 'ideas/kanban/:id', component: IdeaKanbanView },
       ],
     },
   ],
