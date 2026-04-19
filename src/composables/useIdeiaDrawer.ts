@@ -1,5 +1,6 @@
 import { ref, reactive, computed, type Ref } from 'vue';
 import type { Ideia, IdeiaStatus, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../types/ideia';
+import { getStatusGroupsForTipo, getStatusLabel as getStatusLabelHelper } from '../types/ideia';
 
 // ─── Tipos de callback que o componente hospedeiro fornece ─────────────────────
 export interface DrawerCallbacks {
@@ -375,14 +376,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   }
 
   function statusLabel(status: IdeiaStatus): string {
-    const map: Record<IdeiaStatus, string> = {
-      bruta: 'Bruta',
-      em_teste: 'Em Teste',
-      validada: 'Validada',
-      nao_validada: 'Não Validada',
-      escalada: 'Escalada',
-    };
-    return map[status] ?? status;
+    return getStatusLabelHelper(status);
   }
 
   function formatDate(iso: string): string {
@@ -457,13 +451,10 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
   // ─── Constantes ──────────────────────────────────────────────────────────────
   const NOTE_COLORS = ['#fef9c3', '#fce7f3', '#dbeafe', '#dcfce7', '#ffe4e6', '#ede9fe', '#f1f5f9'];
-  const STATUS_OPTIONS = [
-    { value: 'bruta' as IdeiaStatus, label: 'Bruta' },
-    { value: 'em_teste' as IdeiaStatus, label: 'Em Teste' },
-    { value: 'validada' as IdeiaStatus, label: 'Validada' },
-    { value: 'nao_validada' as IdeiaStatus, label: 'Não Validada' },
-    { value: 'escalada' as IdeiaStatus, label: 'Escalada' },
-  ];
+  const statusOptions = computed(() => {
+    if (!drawerIdeia.value) return [];
+    return getStatusGroupsForTipo(drawerIdeia.value.tipo);
+  });
 
   return {
     // Estado
@@ -531,6 +522,6 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
     // Constantes
     NOTE_COLORS,
-    STATUS_OPTIONS,
+    statusOptions,
   };
 }

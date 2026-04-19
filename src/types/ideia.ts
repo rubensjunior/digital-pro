@@ -67,6 +67,34 @@ export const STATUS_AGRUPADOS: { label: string; options: { value: IdeiaStatus; l
   }
 ];
 
+export function getStatusLabel(status: IdeiaStatus): string {
+  for (const grupo of STATUS_AGRUPADOS) {
+    const opt = grupo.options.find(o => o.value === status);
+    if (opt) return opt.label.split(' (')[0]; // Remove details like "(Capturada)" if present for simplicity
+  }
+  return status;
+}
+
+export function getStatusGroupsForTipo(tipo?: IdeiaTipo) {
+  if (!tipo) {
+    return STATUS_AGRUPADOS.filter(g => g.label.includes('Geral'));
+  }
+
+  const grupoTipo = TIPOS_AGRUPADOS.find(g => g.options.includes(tipo))?.label || '';
+  
+  const gruposParaMostrar = ['Geral'];
+
+  if (grupoTipo.includes('Programação') || grupoTipo.includes('SaaS') || grupoTipo.includes('Gestão')) {
+    gruposParaMostrar.push('Desenvolvimento');
+  } else if (grupoTipo.includes('Marketing') || grupoTipo.includes('Publicidade')) {
+    gruposParaMostrar.push('Produção');
+  } else if (grupoTipo.includes('Jurídico') || grupoTipo.includes('Administrativo')) {
+    gruposParaMostrar.push('Jurídico');
+  }
+
+  return STATUS_AGRUPADOS.filter(g => gruposParaMostrar.some(keyword => g.label.includes(keyword)));
+}
+
 export type IdeiaTipo =
   // Marketing & Copywriting
   | 'Produto'

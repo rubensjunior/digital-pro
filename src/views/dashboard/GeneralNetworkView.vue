@@ -37,11 +37,6 @@
       </div>
 
       <div class="nn-topbar-right">
-        <button class="nn-nav-btn nn-nav-flowchart" @click="irParaFluxogramaGeral" title="Fluxograma Geral">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
-          Fluxograma Geral
-        </button>
-        <div class="nn-topbar-divider"></div>
         <button class="nn-ctrl-btn" @click="resetZoom" title="Centralizar (Shift+C)">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

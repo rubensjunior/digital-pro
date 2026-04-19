@@ -19,22 +19,7 @@
           · {{ porStatus.escalada.length }} escalada{{ porStatus.escalada.length !== 1 ? 's' : '' }}
         </p>
       </div>
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <button class="bv-btn-flowchart" @click="abrirFluxogramaGeral()" title="Ver como Fluxograma">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
-          Fluxograma Geral
-        </button>
-        <button class="bv-btn-neural" @click="abrirRedeNeuralGeral()" title="Ver como Rede Neural">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-          Rede Neural Geral
-        </button>
-        <button class="bv-btn-primary" @click="abrirModal()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          Nova Ideia
-        </button>
-      </div>
+      <!-- Botões removidos aqui pois agora estão no subheader do layout -->
     </div>
 
     <!-- ════════════════════════════════════════════ METRICS -->
@@ -125,20 +110,6 @@
         <input type="checkbox" v-model="filtro.emArquivo" />
         🗃️ Ver Arquivo
       </label>
-
-      <!-- View toggle -->
-      <div class="bv-view-toggle">
-        <button :class="['bv-toggle-btn', { active: view === 'lista' }]" @click="view = 'lista'" title="Lista">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-          </svg>
-        </button>
-        <button :class="['bv-toggle-btn', { active: view === 'kanban' }]" @click="view = 'kanban'" title="Kanban">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
-          </svg>
-        </button>
-      </div>
     </div>
 
     <!-- ════════════════════════════════════════════ LOADING -->
@@ -173,8 +144,7 @@
             v-for="(isAncestorLast, i) in (ideia as any).lineage.slice(1, -1)" 
             v-show="!isAncestorLast"
             :key="'anc-' + i"
-            class="bv-tree-vline" 
-            :style="{ left: (((i + 1) - Number((ideia as any).depth)) * 28 - 14) + 'px' }"
+            class="bv-tree-vline" :style="{ left: (((Number(i) + 1) - Number((ideia as any).depth)) * 28 - 14) + 'px' }"
           ></div>
           <div class="bv-tree-elbow"></div>
           <div v-if="!(ideia as any).isLast" class="bv-tree-vline-continue"></div>
@@ -256,7 +226,7 @@
           </div>
         </div>
 
-        <div v-if="porStatus[col.status].length === 0" class="bv-kanban-empty">
+        <div v-if="porStatusKanban[col.status].length === 0" class="bv-kanban-empty">
           Arraste ideias aqui
         </div>
       </div>
@@ -282,11 +252,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
+import { useBus } from '../../composables/useBus';
 import type { Ideia, IdeiaStatus, IdeiaTipo } from '../../types/ideia';
-import { TIPOS_AGRUPADOS, STATUS_AGRUPADOS } from '../../types/ideia';
+import { TIPOS_AGRUPADOS, STATUS_AGRUPADOS, getStatusGroupsForTipo, getStatusLabel as getStatusLabelHelper } from '../../types/ideia';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 import IdeaFormModal from '../../components/IdeaFormModal.vue';
 
@@ -306,12 +277,27 @@ function abrirDrawer(ideia: Ideia) {
   ideaDrawerRef.value?.abrirDrawer(ideia);
 }
 
+const { on, off } = useBus();
+
 onMounted(async () => {
   await fetchIdeias();
+
+  // Escutar eventos do layout
+  on('abrirModalNovaIdeia', abrirModal);
+  on('abrirFluxogramaGeral', abrirFluxogramaGeral);
+  on('abrirRedeNeuralGeral', abrirRedeNeuralGeral);
+
   if (route.query.openDrawer) {
     const ideia = ideias.value.find(i => i.id === route.query.openDrawer);
     if (ideia) ideaDrawerRef.value?.abrirDrawer(ideia);
   }
+});
+
+onUnmounted(() => {
+  // Limpar listeners para evitar vazamento de memória ou chamadas duplas
+  off('abrirModalNovaIdeia', abrirModal);
+  off('abrirFluxogramaGeral', abrirFluxogramaGeral);
+  off('abrirRedeNeuralGeral', abrirRedeNeuralGeral);
 });
 
 function onCreateDerivada(parentId: string) {
@@ -339,6 +325,16 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 
 // ─── View mode ───────────────────────────────────────────────────────────────
 const view = ref<'lista' | 'kanban'>('lista');
+
+// Sincronizar view com parâmetro da URL
+watch(() => route.query, (q) => {
+  console.log('IdeiaManager: Mudança de filtros detectada:', q);
+  if (q.v === 'kanban') view.value = 'kanban';
+  else view.value = 'lista';
+
+  if (q.tipo) filtro.tipo = q.tipo as string;
+  if (q.status) filtro.status = q.status as string;
+}, { immediate: true, deep: true });
 
 // ─── Filtros ─────────────────────────────────────────────────────────────────
 const filtro = reactive({ 
@@ -451,21 +447,27 @@ const porStatus = computed(() => ({
 
 const porStatusKanban = computed(() => {
   const res: Record<string, Ideia[]> = {};
-  ['bruta', 'backlog', 'em_desenvolvimento', 'em_teste', 'validada', 'escalada', 'arquivada'].forEach(s => {
-    res[s] = ideiasFilradas.value.filter(i => i.status === s);
+  colunasVisiveis.value.forEach(col => {
+    res[col.status] = ideiasFilradas.value.filter(i => i.status === col.status);
   });
   return res;
 });
 
-const colunasVisiveis = computed(() => [
-  { status: 'bruta' as IdeiaStatus,    label: 'Bruta' },
-  { status: 'backlog' as IdeiaStatus,  label: 'Backlog' },
-  { status: 'em_desenvolvimento' as IdeiaStatus, label: 'Em Desenv.' },
-  { status: 'em_teste' as IdeiaStatus, label: 'Testando' },
-  { status: 'validada' as IdeiaStatus, label: 'Validada' },
-  { status: 'escalada' as IdeiaStatus, label: 'Escalada' },
-  { status: 'arquivada' as IdeiaStatus, label: 'Arquivada' },
-]);
+const colunasVisiveis = computed(() => {
+  const grupos = getStatusGroupsForTipo(filtro.tipo as IdeiaTipo);
+  const cols: { status: IdeiaStatus; label: string }[] = [];
+  
+  grupos.forEach(g => {
+    g.options.forEach(opt => {
+      // Evita duplicados (como 'validada' que pode estar em mais de um grupo se a lógica mudar no futuro)
+      if (!cols.some(c => c.status === opt.value)) {
+        cols.push({ status: opt.value, label: opt.label.split(' (')[0] });
+      }
+    });
+  });
+
+  return cols;
+});
 
 const taxaSucesso = computed(() => {
   if (ideias.value.length === 0) return 0;
@@ -521,12 +523,7 @@ function allTags(ideia: Ideia): string[] {
 }
 
 function statusLabel(status: IdeiaStatus): string {
-  const map: Record<string, string> = {
-    bruta: 'Bruta', em_teste: 'Em Teste', validada: 'Validada',
-    nao_validada: 'Não Validada', escalada: 'Escalada',
-    backlog: 'Backlog', em_desenvolvimento: 'Em Desenv.', arquivada: 'Arquivada'
-  };
-  return map[status] ?? status;
+  return getStatusLabelHelper(status);
 }
 
 function formatDate(iso: string): string {
@@ -540,9 +537,6 @@ function formatDate(iso: string): string {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
 }
 
 .bv-toast {
@@ -596,129 +590,6 @@ function formatDate(iso: string): string {
   color: var(--text-secondary);
   margin: 0;
 }
-
-/* ──────────────────────────────────────────────── Buttons */
-.bv-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-end));
-  color: #fff;
-  border: none;
-  border-radius: 9px;
-  font-size: 13.5px;
-  font-weight: 600;
-  padding: 9px 16px;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.bv-btn-primary:hover { opacity: 0.9; }
-.bv-btn-primary:active { transform: scale(0.97); }
-.bv-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.bv-btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  font-size: 13.5px;
-  font-weight: 500;
-  padding: 9px 16px;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.bv-btn-ghost:hover {
-  background: var(--border);
-  color: var(--text-primary);
-}
-
-.bv-btn-neural {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.3);
-  color: #8b5cf6; border-radius: 9px; font-size: 13.5px; font-weight: 600;
-  padding: 9px 16px; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
-}
-.bv-btn-neural:hover {
-  background: rgba(139, 92, 246, 0.16); border-color: rgba(139, 92, 246, 0.5);
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
-}
-
-.bv-btn-flowchart {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.3);
-  color: #06b6d4; border-radius: 9px; font-size: 13.5px; font-weight: 600;
-  padding: 9px 16px; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
-}
-.bv-btn-flowchart:hover {
-  background: rgba(6, 182, 212, 0.16); border-color: rgba(6, 182, 212, 0.5);
-  box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
-}
-
-/* ──────────────────────────────────────────────── Metrics */
-.bv-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.bv-metric-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.bv-metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-}
-
-.bv-metric-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.bv-metric-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.bv-metric-icon { font-size: 14px; }
-
-.bv-metric-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.bv-metric-trend {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-}
-
-.bv-trend-up { color: #10b981; }
-.bv-trend-flat { color: #8b5cf6; }
 
 /* ──────────────────────────────────────────────── Toolbar */
 .bv-toolbar {
@@ -778,36 +649,10 @@ function formatDate(iso: string): string {
   font-size: 12.5px;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0 4px;
+  white-space: nowrap;
 }
 
-.bv-view-toggle {
-  display: flex;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 2px;
-}
-
-.bv-toggle-btn {
-  background: none;
-  border: none;
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.bv-toggle-btn.active {
-  background: var(--border);
-  color: var(--accent);
-}
-
-.bv-toggle-btn svg { width: 18px; height: 18px; }
+.bv-toggle-label:hover { color: var(--text-primary); }
 
 /* ──────────────────────────────────────────────── List & Cards */
 .bv-list {
@@ -948,7 +793,30 @@ function formatDate(iso: string): string {
 .bv-status-badge {
   font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px;
 }
-.bv-status-badge[data-status="validada"] { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.bv-status-badge[data-status="bruta"],
+.bv-status-badge[data-status="backlog"],
+.bv-status-badge[data-status="rascunho"],
+.bv-status-badge[data-status="pendente"] { background: rgba(100,116,139,0.12); color: #94a3b8; }
+
+.bv-status-badge[data-status="em_teste"] { background: rgba(234,179,8,0.12);   color: #eab308; }
+
+.bv-status-badge[data-status="em_desenvolvimento"],
+.bv-status-badge[data-status="em_revisao"],
+.bv-status-badge[data-status="em_analise"] { background: rgba(59,130,246,0.12); color: #60a5fa; }
+
+.bv-status-badge[data-status="validada"],
+.bv-status-badge[data-status="implementado"],
+.bv-status-badge[data-status="publicado"],
+.bv-status-badge[data-status="aprovado"],
+.bv-status-badge[data-status="assinado_deferido"] { background: rgba(34,197,94,0.12); color: #22c55e; }
+
+.bv-status-badge[data-status="escalada"] { background: rgba(59,130,246,0.12);  color: #60a5fa; }
+
+.bv-status-badge[data-status="nao_validada"],
+.bv-status-badge[data-status="pausado"],
+.bv-status-badge[data-status="cancelado_indeferido"] { background: rgba(239,68,68,0.12); color: #ef4444; }
+
+.bv-status-badge[data-status="arquivada"] { background: rgba(100,116,139,0.12); color: #94a3b8; opacity: 0.6; }
 
 .bv-stars { display: flex; gap: 2px; margin: 4px 0; }
 .bv-star-on { color: #f59e0b; }

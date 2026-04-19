@@ -175,7 +175,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
 import type { Ideia, IdeiaStatus, IdeiaTipo } from '../types/ideia';
-import { TIPOS_AGRUPADOS, STATUS_AGRUPADOS } from '../types/ideia';
+import { TIPOS_AGRUPADOS, STATUS_AGRUPADOS, getStatusGroupsForTipo } from '../types/ideia';
 import { useIdeias } from '../composables/useIdeias';
 
 const props = defineProps<{
@@ -254,25 +254,7 @@ const labelsAdaptativos = computed(() => {
 });
 
 const statusFiltrados = computed(() => {
-  const tipo = form.tipo;
-  if (!tipo) {
-    // Se não tiver tipo, mostra apenas o grupo Geral para não poluir
-    return STATUS_AGRUPADOS.filter(g => g.label.includes('Geral'));
-  }
-
-  const grupoTipo = TIPOS_AGRUPADOS.find(g => g.options.includes(tipo as IdeiaTipo))?.label || '';
-  
-  const gruposParaMostrar = ['Geral'];
-
-  if (grupoTipo.includes('Programação') || grupoTipo.includes('SaaS') || grupoTipo.includes('Gestão')) {
-    gruposParaMostrar.push('Desenvolvimento');
-  } else if (grupoTipo.includes('Marketing') || grupoTipo.includes('Publicidade')) {
-    gruposParaMostrar.push('Produção');
-  } else if (grupoTipo.includes('Jurídico') || grupoTipo.includes('Administrativo')) {
-    gruposParaMostrar.push('Jurídico');
-  }
-
-  return STATUS_AGRUPADOS.filter(g => gruposParaMostrar.some(keyword => g.label.includes(keyword)));
+  return getStatusGroupsForTipo(form.tipo as IdeiaTipo);
 });
 
 const defaultLabels = {

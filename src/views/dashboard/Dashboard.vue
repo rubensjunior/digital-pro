@@ -75,7 +75,7 @@ const features = [
 
 <style scoped>
 .dashboard-view {
-  max-width: 1100px;
+  /* Alinhado via .page-container no layout */
 }
 
 /* Header */
