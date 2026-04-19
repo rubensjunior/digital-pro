@@ -219,7 +219,7 @@
     <!-- ══════════════════════════════════════════════════════════ KANBAN -->
     <div v-else class="bv-kanban">
       <div
-        v-for="col in COLUNAS"
+        v-for="col in colunasVisiveis"
         :key="col.status"
         class="bv-kanban-col"
         :data-status="col.status"
@@ -229,11 +229,11 @@
         <div class="bv-kanban-col-header">
           <span class="bv-kanban-col-dot" :data-status="col.status"></span>
           <span class="bv-kanban-col-title">{{ col.label }}</span>
-          <span class="bv-kanban-col-count">{{ porStatus[col.status].length }}</span>
+          <span class="bv-kanban-col-count">{{ porStatusKanban[col.status].length }}</span>
         </div>
 
         <div
-          v-for="ideia in porStatus[col.status]"
+          v-for="ideia in porStatusKanban[col.status]"
           :key="ideia.id"
           class="bv-kanban-card"
           draggable="true"
@@ -398,12 +398,13 @@ const STATUS_OPTIONS = [
   { value: 'nao_validada' as IdeiaStatus, label: 'Não Validada' },
   { value: 'escalada' as IdeiaStatus, label: 'Escalada' },
 ];
-const COLUNAS = [
+const COLUNAS: { status: IdeiaStatus; label: string }[] = [
   { status: 'bruta' as IdeiaStatus,    label: 'Bruta' },
   { status: 'backlog' as IdeiaStatus,  label: 'Backlog' },
   { status: 'em_desenvolvimento' as IdeiaStatus, label: 'Em Desenv.' },
   { status: 'em_teste' as IdeiaStatus, label: 'Testando' },
   { status: 'validada' as IdeiaStatus, label: 'Validada' },
+  { status: 'escalada' as IdeiaStatus, label: 'Escalada' },
   { status: 'arquivada' as IdeiaStatus, label: 'Arquivada' },
 ];
 const TAG_GROUPS = [
@@ -526,14 +527,42 @@ const listaHierarquica = computed(() => {
   return arr;
 });
 
-// Kanban status arrays
-const porStatus = computed(() => ({
-  bruta:     ideiasFilradas.value.filter(i => i.status === 'bruta'),
-  em_teste:  ideiasFilradas.value.filter(i => i.status === 'em_teste'),
-  validada:  ideiasFilradas.value.filter(i => i.status === 'validada'),
-  nao_validada: ideiasFilradas.value.filter(i => i.status === 'nao_validada'),
-  escalada:  ideiasFilradas.value.filter(i => i.status === 'escalada'),
-}));
+// Agrupamento para métricas gerais (todas as ideias)
+const porStatus = computed(() => {
+  const map: Record<string, Ideia[]> = {};
+  ['bruta', 'em_teste', 'validada', 'nao_validada', 'escalada', 'backlog', 'em_desenvolvimento', 'arquivada'].forEach(s => {
+    map[s] = [];
+  });
+
+  ideiasFilradas.value.forEach(ideia => {
+    if (!map[ideia.status]) map[ideia.status] = [];
+    map[ideia.status].push(ideia);
+  });
+  return map;
+});
+
+// Agrupamento específico para o Kanban (somente ideias principais)
+const porStatusKanban = computed(() => {
+  const map: Record<string, Ideia[]> = {};
+  COLUNAS.forEach(col => {
+    map[col.status] = [];
+  });
+
+  ideiasFilradas.value.forEach(ideia => {
+    // FILTRO: Somente ideias principais no Kanban
+    if (ideia.parent_id) return;
+
+    if (!map[ideia.status]) {
+      map[ideia.status] = [];
+    }
+    map[ideia.status].push(ideia);
+  });
+  return map;
+});
+
+const colunasVisiveis = computed(() => {
+  return COLUNAS.filter(col => porStatusKanban.value[col.status]?.length > 0);
+});
 
 const taxaSucesso = computed(() => {
   if (ideiasFilradas.value.length === 0) return 0;
@@ -1546,18 +1575,38 @@ function formatDate(iso: string): string {
 
 /* ═══════════════════════════════════════════════════════════════ KANBAN */
 .bv-kanban {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 4px 24px;
   align-items: start;
+  min-height: calc(100vh - 350px);
+  /* Custom scrollbar for better look */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.bv-kanban::-webkit-scrollbar {
+  height: 8px;
+}
+.bv-kanban::-webkit-scrollbar-track {
+  background: transparent;
+}
+.bv-kanban::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+.bv-kanban::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 .bv-kanban-col {
+  flex: 0 0 320px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
-  min-height: 200px;
+  min-height: 100%;
   transition: background 0.15s;
 }
 
