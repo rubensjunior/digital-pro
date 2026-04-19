@@ -11,6 +11,20 @@
           Voltar ao Brain Vault
         </button>
         <div class="nn-topbar-divider"></div>
+        <button class="nn-back-btn" style="padding: 8px;" @click="reorganizar" title="Reorganizar Vista">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+        <button class="nn-back-btn" style="padding: 8px;" @click="toggleCollapseAll" :title="allExpanded ? 'Colapsar Tudo' : 'Expandir Tudo'">
+          <svg v-if="allExpanded" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V5m0 4H5m4 0L4 4m11 5V5m0 4h4m-4 0l5-5M9 15v4m0-4H5m4 0l-5 5m11-5v4m0-4h4m-4 0l5 5"/>
+          </svg>
+          <svg v-else fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+          </svg>
+        </button>
+        <div class="nn-topbar-divider"></div>
         <span class="nn-topbar-orb" data-status="bruta" style="background:#3b82f6;color:#3b82f6;"></span>
         <div class="nn-topbar-info">
           <span class="nn-topbar-title">Ecossistema Geral</span>
@@ -62,6 +76,7 @@
         @wheel.prevent="onWheel"
         @click="onCanvasClick"
         @dblclick="onCanvasDblClick"
+        @contextmenu.prevent="handleContextMenu"
       ></canvas>
 
       <!-- Loading state -->
@@ -120,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useIdeias } from '../../composables/useIdeias';
 import type { Ideia, IdeiaStatus, IdeiaCorrelacao } from '../../types/ideia';
@@ -133,7 +148,22 @@ const { ideias, loading, fetchIdeias } = useIdeias();
 
 // ─── Estado de Colapso ────────────────────────────────────────────────────────
 const expandedNodes = reactive(new Set<string>());
+const allExpanded = computed(() => expandedNodes.size > 0);
 let cachedCorrelacoes: IdeiaCorrelacao[] = [];
+
+function reorganizar() {
+  nosGrafo.value = [];
+  construirGrafo(cachedCorrelacoes);
+}
+
+function toggleCollapseAll() {
+  if (allExpanded.value) {
+    expandedNodes.clear();
+  } else {
+    ideias.value.forEach(i => expandedNodes.add(i.id));
+  }
+  construirGrafo(cachedCorrelacoes);
+}
 
 async function handleIdeiaSaved() {
   await fetchIdeias();
@@ -497,6 +527,20 @@ function onCanvasDblClick(e: MouseEvent) {
   const r = c.getBoundingClientRect();
   const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
   if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
+}
+
+function handleContextMenu(e: MouseEvent) {
+  const c = canvasEl.value; if (!c) return;
+  const r = c.getBoundingClientRect();
+  const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
+
+  // No nível Geral, o Control+Botão Direito não faz nada para não sair da feature
+  if (e.ctrlKey) return;
+
+  // Botão Direito Simples: Entrar na ideia
+  if (no) {
+    abrirRedeNeuralDaIdeia(no.ideia);
+  }
 }
 
 // ─── Renderização ─────────────────────────────────────────────────────────────

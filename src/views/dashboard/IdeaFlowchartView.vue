@@ -10,6 +10,26 @@
           </svg>
           Voltar ao Brain Vault
         </button>
+        <button class="nn-back-btn" @click="subirNivel" title="Subir Nível">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+          </svg>
+          Subir Nível
+        </button>
+        <div class="nn-topbar-divider"></div>
+        <button class="nn-back-btn" style="padding: 8px;" @click="reorganizar" title="Reorganizar Vista">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+        <button class="nn-back-btn" style="padding: 8px;" @click="toggleCollapseAll" :title="allCollapsed ? 'Expandir Tudo' : 'Colapsar Tudo'">
+          <svg v-if="allCollapsed" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+          </svg>
+          <svg v-else fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V5m0 4H5m4 0L4 4m11 5V5m0 4h4m-4 0l5-5M9 15v4m0-4H5m4 0l-5 5m11-5v4m0-4h4m-4 0l5 5"/>
+          </svg>
+        </button>
         <div class="nn-topbar-divider"></div>
         <span class="nn-topbar-orb" :data-status="rootIdeia?.status"></span>
         <div class="nn-topbar-info">
@@ -66,6 +86,7 @@
         @wheel.prevent="onWheel"
         @click="onCanvasClick"
         @dblclick="onCanvasDblClick"
+        @contextmenu.prevent="handleContextMenu"
       ></canvas>
 
       <!-- Loading state -->
@@ -109,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useIdeias } from '../../composables/useIdeias';
 import type { Ideia, IdeiaStatus } from '../../types/ideia';
@@ -124,8 +145,31 @@ const { ideias, loading, fetchIdeias } = useIdeias();
 const rootId = computed(() => route.params.rootId as string);
 const rootIdeia = computed(() => ideias.value.find(i => i.id === rootId.value) ?? null);
 
+const hasValidParent = computed(() => {
+  const pid = rootIdeia.value?.parent_id;
+  if (!pid || pid === 'null' || pid === 'undefined') return false;
+  const pai = ideias.value.find(i => i.id === pid && !i.is_arquivada);
+  return !!pai;
+});
+
 // ─── Estado de Colapso ────────────────────────────────────────────────────────
 const collapsedNodes = reactive(new Set<string>());
+const allCollapsed = computed(() => collapsedNodes.size > 0);
+
+function reorganizar() {
+  construirGrafo(rootId.value);
+}
+
+function toggleCollapseAll() {
+  if (allCollapsed.value) {
+    collapsedNodes.clear();
+  } else {
+    ideias.value.forEach(i => {
+      if (i.id !== rootId.value) collapsedNodes.add(i.id);
+    });
+  }
+  construirGrafo(rootId.value);
+}
 
 async function handleIdeiaSaved() {
   await fetchIdeias();
@@ -144,7 +188,26 @@ onMounted(async () => {
   animFrame = requestAnimationFrame(drawCanvas);
 });
 
+watch(rootId, async (newVal, oldVal) => {
+  if (newVal && newVal !== oldVal) {
+    collapsedNodes.clear();
+    hoveredId.value = null;
+    camX.value = 0; camY.value = 0; scale.value = 1;
+    construirGrafo(newVal);
+  }
+});
+
 function voltar() { router.push('/dashboard/ideas'); }
+function subirNivel() {
+  if (hasValidParent.value) {
+    abrirFluxogramaDaIdeia({ id: rootIdeia.value!.parent_id } as Ideia);
+  } else {
+    irParaFluxogramaGeral();
+  }
+}
+function abrirFluxogramaDaIdeia(ideia: Ideia) {
+  router.push(`/dashboard/ideas/flowchart/${ideia.id}`);
+}
 function voltarEAbrirDrawer(ideia: Ideia) {
   router.push({ path: '/dashboard/ideas', query: { openDrawer: ideia.id } });
 }
@@ -413,6 +476,24 @@ function onCanvasDblClick(e: MouseEvent) {
   const r = c.getBoundingClientRect();
   const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
   if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
+}
+
+function handleContextMenu(e: MouseEvent) {
+  const c = canvasEl.value; if (!c) return;
+  const r = c.getBoundingClientRect();
+  const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
+
+  // Control + Botão Direito: Somente para subir de nível
+  if (e.ctrlKey) {
+    subirNivel();
+    return;
+  }
+
+  // Botão Direito Simples: Entrar na ideia (se houver uma sob o mouse)
+  if (no) {
+    abrirFluxogramaDaIdeia(no.ideia);
+  }
+  // No fundo, o botão direito simples não faz mais nada para evitar navegação acidental
 }
 
 // ─── Renderização ─────────────────────────────────────────────────────────────

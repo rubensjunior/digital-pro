@@ -20,7 +20,7 @@
         </p>
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
-        <button class="bv-btn-neural" @click="abrirFluxogramaGeral()" title="Ver como Fluxograma">
+        <button class="bv-btn-flowchart" @click="abrirFluxogramaGeral()" title="Ver como Fluxograma">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
           Fluxograma Geral
         </button>
@@ -1074,6 +1074,28 @@ function formatDate(iso: string): string {
 .bv-btn-ghost:hover {
   background: var(--border);
   color: var(--text-primary);
+}
+
+.bv-btn-neural {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #8b5cf6; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  padding: 9px 16px; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+.bv-btn-neural:hover {
+  background: rgba(139, 92, 246, 0.16); border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
+}
+
+.bv-btn-flowchart {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.3);
+  color: #06b6d4; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  padding: 9px 16px; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+.bv-btn-flowchart:hover {
+  background: rgba(6, 182, 212, 0.16); border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
 }
 
 .bv-btn-danger {
