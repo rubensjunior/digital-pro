@@ -20,12 +20,12 @@
         </p>
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
-        <button class="bv-btn-neural" @click="abrirFluxogramaGeral()" title="Ver como Fluxograma" style="padding: 0 10px;">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
+        <button class="bv-btn-neural" @click="abrirFluxogramaGeral()" title="Ver como Fluxograma">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
           Fluxograma Geral
         </button>
-        <button class="bv-btn-neural" @click="abrirRedeNeuralGeral()" title="Ver como Rede Neural" style="padding: 0 10px;">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <button class="bv-btn-neural" @click="abrirRedeNeuralGeral()" title="Ver como Rede Neural">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           Rede Neural Geral
         </button>
         <button class="bv-btn-primary" @click="abrirModal()">
@@ -166,7 +166,7 @@
         class="bv-card"
         :class="{ 'bv-card-sub': (ideia as any).depth > 0 }"
         :style="(ideia as any).depth > 0 ? { marginLeft: ((ideia as any).depth * 28) + 'px' } : {}"
-        @click="abrirDrawer(ideia)"
+        @dblclick="abrirDrawer(ideia)"
       >
         <template v-if="(ideia as any).depth > 0">
           <div 
@@ -174,7 +174,7 @@
             v-show="!isAncestorLast"
             :key="'anc-' + i"
             class="bv-tree-vline" 
-            :style="{ left: (((i + 1) - (ideia as any).depth) * 28 - 14) + 'px' }"
+            :style="{ left: (((i + 1) - Number((ideia as any).depth)) * 28 - 14) + 'px' }"
           ></div>
           <div class="bv-tree-elbow"></div>
           <div v-if="!(ideia as any).isLast" class="bv-tree-vline-continue"></div>
@@ -238,7 +238,7 @@
           class="bv-kanban-card"
           draggable="true"
           @dragstart="onDragStart($event, ideia.id)"
-          @click="abrirDrawer(ideia)"
+          @dblclick="abrirDrawer(ideia)"
         >
           <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <div class="bv-kanban-card-tipo">{{ ideia.tipo }}</div>
@@ -265,170 +265,11 @@
     </div>
 
     <!-- ══════════════════════════════════════════════════════════ MODAL -->
-    <Teleport to="body">
-      <div v-if="modalAberto" class="bv-overlay" @click.self="fecharModal">
-        <div class="bv-modal" @click.stop>
-          <div class="bv-modal-header">
-            <div class="bv-modal-header-left">
-              <div class="bv-modal-header-icon">🧠</div>
-              <div>
-                <h2>{{ editando ? 'Editar Ideia' : 'Nova Ideia' }}</h2>
-                <p class="bv-modal-header-sub">{{ editando ? 'Atualize os dados da ideia' : 'Capture e classifique sua ideia' }}</p>
-              </div>
-            </div>
-            <button class="bv-modal-close" @click="fecharModal">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-
-          <!-- Abas -->
-          <div class="bv-tabs">
-            <button
-              v-for="(tab, i) in TABS"
-              :key="i"
-              :class="['bv-tab', { 'bv-tab-active': tabAtiva === i }]"
-              @click="tabAtiva = i"
-            >
-              {{ tab }}
-            </button>
-          </div>
-
-          <div class="bv-modal-body">
-            <!-- ABA 1 — Identificação -->
-            <div v-show="tabAtiva === 0" class="bv-tab-pane">
-              <div class="bv-field">
-                <label class="bv-label">Nome da ideia *</label>
-                <input v-model="form.nome" :class="['bv-input', { 'has-error': formErros.nome }]" placeholder="Ex: Método das 3 Perguntas" type="text" @input="formErros.nome = false" />
-                <span v-if="formErros.nome" class="bv-error-msg">Nome é obrigatório</span>
-              </div>
-
-              <div class="bv-field">
-                <label class="bv-label">Tipo *</label>
-                <select v-model="form.tipo" :class="['bv-input bv-select-field', { 'has-error': formErros.tipo }]" @change="formErros.tipo = false">
-                  <option value="">Selecione o tipo</option>
-                  <option v-for="t in TIPOS" :key="t" :value="t">{{ t }}</option>
-                </select>
-                <span v-if="formErros.tipo" class="bv-error-msg">Tipo é obrigatório</span>
-              </div>
-
-              <div class="bv-field">
-                <label class="bv-label">Status</label>
-                <div class="bv-status-group">
-                  <button
-                    v-for="s in STATUS_OPTIONS"
-                    :key="s.value"
-                    :class="['bv-status-opt', { active: form.status === s.value }]"
-                    :data-status="s.value"
-                    @click="form.status = s.value"
-                    type="button"
-                  >
-                    <span class="bv-status-dot" :data-status="s.value"></span>
-                    {{ s.label }}
-                  </button>
-                </div>
-              </div>
-
-              <div class="bv-field">
-                <label class="bv-label">Score de Potencial</label>
-                <div class="bv-score-wrap">
-                  <div class="bv-score-group">
-                    <button
-                      v-for="n in 4"
-                      :key="n"
-                      class="bv-score-star"
-                      :class="{ active: n <= form.score }"
-                      @click="form.score = n"
-                      type="button"
-                    >★</button>
-                  </div>
-                  <span class="bv-score-badge" :data-score="form.score">{{ SCORE_LABELS[form.score - 1] }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- ABA 2 — Descrição -->
-            <div v-show="tabAtiva === 1" class="bv-tab-pane">
-              <div class="bv-field">
-                <label class="bv-label">Descrição geral</label>
-                <textarea v-model="form.descricao" class="bv-textarea" rows="3" placeholder="Descreva a ideia em poucas palavras..."/>
-              </div>
-              <div class="bv-field">
-                <label class="bv-label">Contexto</label>
-                <textarea v-model="form.contexto" class="bv-textarea" rows="2" placeholder="De onde surgiu essa ideia?"/>
-              </div>
-              <div class="bv-field">
-                <label class="bv-label">Problema que resolve</label>
-                <textarea v-model="form.problema" class="bv-textarea" rows="2" placeholder="Qual dor esta ideia ataca?"/>
-              </div>
-              <div class="bv-field">
-                <label class="bv-label">Transformação prometida</label>
-                <textarea v-model="form.transformacao" class="bv-textarea" rows="2" placeholder="Qual o resultado esperado?"/>
-              </div>
-              <div class="bv-field">
-                <label class="bv-label">Público-alvo</label>
-                <input v-model="form.publico_alvo" class="bv-input" placeholder="Ex: Iniciantes em tráfego pago" type="text"/>
-              </div>
-            </div>
-
-            <!-- ABA 3 — Tags -->
-            <div v-show="tabAtiva === 2" class="bv-tab-pane">
-              <div v-for="tagGroup in TAG_GROUPS" :key="tagGroup.key" class="bv-field">
-                <label class="bv-label">{{ tagGroup.label }}</label>
-                <div class="bv-chips-input">
-                  <span
-                    v-for="tag in (form as any)[tagGroup.key]"
-                    :key="tag"
-                    class="bv-chip"
-                  >
-                    {{ tag }}
-                    <button @click="removeTag(tagGroup.key, tag)" type="button">×</button>
-                  </span>
-                  <input
-                    :placeholder="tagGroup.placeholder"
-                    class="bv-chips-field"
-                    @keydown.enter.prevent="addTag(tagGroup.key, $event)"
-                    @keydown.tab.prevent="addTag(tagGroup.key, $event)"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- ABA 4 — Ecossistema -->
-            <div v-show="tabAtiva === 3" class="bv-tab-pane">
-              <div class="bv-field">
-                <label class="bv-label">Ideia Principal (Opcional)</label>
-                <select v-model="form.parent_id" class="bv-input bv-select-field">
-                  <option value="">Nenhuma (Esta é uma ideia principal)</option>
-                  <option v-for="i in opcoesPaiDisponiveis" :key="i.id" :value="i.id">
-                    {{ i.nome }}
-                  </option>
-                </select>
-                <span class="bv-drawer-text" style="font-size: 11px;">A qual ideia macro esta ideia pertence?</span>
-              </div>
-              <div class="bv-field" v-if="form.parent_id">
-                <label class="bv-label">Tipo de Relação *</label>
-                <select v-model="form.relationship_type" class="bv-input bv-select-field">
-                  <option value="">Selecione o tipo de relação</option>
-                  <option v-for="rel in RELATIONSHIP_TYPES" :key="rel" :value="rel">{{ rel }}</option>
-                </select>
-              </div>
-            </div>
-
-          </div>
-
-            <div class="bv-modal-footer">
-              <button class="bv-btn-ghost" @click="fecharModal" type="button">Cancelar</button>
-              <div class="bv-footer-acoes">
-                <button class="bv-btn-primary" @click="salvar(true)" type="button">
-                  {{ editando ? 'Salvar alterações' : 'Salvar' }}
-                </button>
-              </div>
-            </div>
-        </div>
-      </div>
-    </Teleport>
+    <IdeaFormModal
+      ref="ideaFormRef"
+      :ideias="ideias"
+      @saved="fetchIdeias"
+    />
 
     <!-- ══════════════════════════════════════════════════════════ DRAWER -->
     <IdeaDetailDrawer
@@ -463,8 +304,9 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
-import type { Ideia, IdeiaStatus, IdeiaTipo } from '../../types/ideia';
+import type { Ideia, IdeiaStatus, IdeiaTipo, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../../types/ideia';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
+import IdeaFormModal from '../../components/IdeaFormModal.vue';
 
 // Tipos globais do Electron (preload)
 declare const window: Window & {
@@ -505,6 +347,7 @@ const router = useRouter();
 const route  = useRoute();
 
 const ideaDrawerRef = ref<InstanceType<typeof IdeaDetailDrawer> | null>(null);
+const ideaFormRef = ref<InstanceType<typeof IdeaFormModal> | null>(null);
 
 function abrirDrawer(ideia: Ideia) {
   ideaDrawerRef.value?.abrirDrawer(ideia);
@@ -520,9 +363,26 @@ onMounted(async () => {
 });
 
 function onCreateDerivada(parentId: string) {
-  abrirModal();
-  form.parent_id = parentId;
-  tabAtiva.value = 3;
+  ideaFormRef.value?.abrirModal(parentId);
+}
+
+function abrirModal() {
+  ideaFormRef.value?.abrirModal();
+}
+
+function abrirEdicao(ideia: Ideia) {
+  ideaFormRef.value?.abrirEdicao(ideia);
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+const toast = reactive({ visible: false, message: '', type: 'success' });
+let toastTimeout: ReturnType<typeof setTimeout> | null = null;
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  toast.message = msg;
+  toast.type = type;
+  toast.visible = true;
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { toast.visible = false; }, 3000);
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -604,23 +464,7 @@ const ideiasFilradas = computed(() => {
   return list;
 });
 
-const opcoesPaiDisponiveis = computed(() => {
-  if (!editando.value) return ideias.value;
-  
-  // Coleta todos os descendentes da ideia sendo editada (para não criar ciclos)
-  const getDescendentes = (id: string): Set<string> => {
-    const result = new Set<string>();
-    const filhos = ideias.value.filter(i => i.parent_id === id);
-    for (const filho of filhos) {
-      result.add(filho.id);
-      getDescendentes(filho.id).forEach(d => result.add(d));
-    }
-    return result;
-  };
-  
-  const descendentes = getDescendentes(editando.value);
-  return ideias.value.filter(i => i.id !== editando.value && !descendentes.has(i.id));
-});
+// Removed opcoesPaiDisponiveis
 
 const expandedIdeas = ref<string[]>([]);
 const toggleExpand = (id: string) => {
@@ -684,155 +528,7 @@ const deAltoPotencial = computed(() => {
   return ideiasFilradas.value.filter(i => i.score >= 3).length;
 });
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
-const modalAberto = ref(false);
-const editando = ref<string | null>(null);
-const tabAtiva = ref(0);
 
-const formVazio = () => ({
-  nome: '',
-  tipo: '' as IdeiaTipo | '',
-  status: 'bruta' as IdeiaStatus,
-  score: 2,
-  descricao: '',
-  contexto: '',
-  problema: '',
-  transformacao: '',
-  publico_alvo: '',
-  tags_avatar: [] as string[],
-  tags_nicho: [] as string[],
-  tags_dor: [] as string[],
-  tags_desejo: [] as string[],
-  tags_mecanismo: [] as string[],
-  parent_id: '',
-  relationship_type: '',
-});
-
-const form = reactive(formVazio());
-const formErros = reactive({ nome: false, tipo: false });
-
-const toast = reactive({ visible: false, message: '', type: 'success' });
-let toastTimeout: ReturnType<typeof setTimeout> | null = null;
-
-function showToast(msg: string, type: 'success' | 'error' = 'success') {
-  toast.message = msg;
-  toast.type = type;
-  toast.visible = true;
-  if (toastTimeout) clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => { toast.visible = false; }, 3000);
-}
-
-function abrirModal() {
-  Object.assign(form, formVazio());
-  formErros.nome = false;
-  formErros.tipo = false;
-  editando.value = null;
-  tabAtiva.value = 0;
-  modalAberto.value = true;
-}
-
-function abrirEdicao(ideia: Ideia) {
-  Object.assign(form, {
-    nome: ideia.nome,
-    tipo: ideia.tipo,
-    status: ideia.status,
-    score: ideia.score,
-    descricao: ideia.descricao ?? '',
-    contexto: ideia.contexto ?? '',
-    problema: ideia.problema ?? '',
-    transformacao: ideia.transformacao ?? '',
-    publico_alvo: ideia.publico_alvo ?? '',
-    tags_avatar: [...ideia.tags_avatar],
-    tags_nicho: [...ideia.tags_nicho],
-    tags_dor: [...ideia.tags_dor],
-    tags_desejo: [...ideia.tags_desejo],
-    tags_mecanismo: [...ideia.tags_mecanismo],
-    parent_id: ideia.parent_id ?? '',
-    relationship_type: ideia.relationship_type ?? '',
-  });
-  formErros.nome = false;
-  formErros.tipo = false;
-  editando.value = ideia.id;
-  tabAtiva.value = 0;
-  drawerIdeia.value = null;
-  modalAberto.value = true;
-}
-
-function fecharModal() {
-  modalAberto.value = false;
-  editando.value = null;
-}
-
-async function salvar(fechar: boolean = true) {
-  formErros.nome = !form.nome.trim();
-  formErros.tipo = !form.tipo;
-
-  if (formErros.nome || formErros.tipo) {
-    showToast('Preencha os campos obrigatórios.', 'error');
-    tabAtiva.value = 0; // Volta para aba 0 se houver erro
-    return;
-  }
-
-  const payload = {
-    nome: form.nome.trim(),
-    tipo: form.tipo as IdeiaTipo,
-    status: form.status,
-    score: form.score,
-    descricao: form.descricao || undefined,
-    contexto: form.contexto || undefined,
-    problema: form.problema || undefined,
-    transformacao: form.transformacao || undefined,
-    publico_alvo: form.publico_alvo || undefined,
-    tags_avatar: [...form.tags_avatar],
-    tags_nicho: [...form.tags_nicho],
-    tags_dor: [...form.tags_dor],
-    tags_desejo: [...form.tags_desejo],
-    tags_mecanismo: [...form.tags_mecanismo],
-    parent_id: form.parent_id || null,
-    relationship_type: form.relationship_type || null,
-  };
-
-  if (editando.value) {
-    const res = await updateIdeia({ id: editando.value, ...payload });
-    if (res) {
-      showToast('Ideia atualizada com sucesso!');
-      fecharModal();
-    } else {
-      showToast('Erro ao atualizar ideia.', 'error');
-    }
-  } else {
-    const res = await createIdeia(payload);
-    if (res) {
-      showToast('Ideia salva com sucesso!');
-      if (fechar) {
-        fecharModal();
-      } else {
-        Object.assign(form, formVazio());
-        tabAtiva.value = 0;
-      }
-    } else {
-      showToast('Erro ao criar ideia.', 'error');
-    }
-  }
-}
-
-// ─── Tags (chips input) ───────────────────────────────────────────────────────
-function addTag(key: string, event: Event) {
-  const input = event.target as HTMLInputElement;
-  const val = input.value.trim();
-  if (!val) return;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const arr: string[] = (form as any)[key];
-  if (!arr.includes(val)) arr.push(val);
-  input.value = '';
-}
-
-function removeTag(key: string, tag: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const arr: string[] = (form as any)[key];
-  const idx = arr.indexOf(tag);
-  if (idx !== -1) arr.splice(idx, 1);
-}
 
 // ─── Drawer ───────────────────────────────────────────────────────────────────
 const drawerIdeia = ref<Ideia | null>(null);
@@ -935,9 +631,7 @@ const ecosistemaArvore = computed(() => {
 
 function cadastrarDerivada() {
   if (!drawerIdeia.value) return;
-  abrirModal();
-  form.parent_id = drawerIdeia.value.id;
-  tabAtiva.value = 3;
+  ideaFormRef.value?.abrirModal(drawerIdeia.value.id);
 }
 
 
@@ -1149,14 +843,17 @@ async function handleToggleArquivar(ideia: Ideia) {
     drawerIdeia.value = { ...drawerIdeia.value, is_arquivada: novoEstado };
   }
   showToast(novoEstado ? 'Ideia arquivada.' : 'Ideia desarquivada.');
-  if (novoEstado) fecharDrawer();
+}
+
+function fecharDrawer() {
+  // Apenas limpa a variável obsoleta. A gaveta lida com seu próprio estado.
+  drawerIdeia.value = null;
 }
 
 async function handleDuplicar(ideia: Ideia) {
   const copia = await duplicarIdeia(ideia);
   if (copia) {
     showToast('Ideia duplicada com sucesso!');
-    fecharDrawer();
   }
 }
 

@@ -99,9 +99,15 @@
         ref="ideaDrawerRef"
         :ideias="ideias"
         :show-brain-vault-link="true"
-        @edit="(ideia) => voltarEAbrirDrawer(ideia)"
+        @edit="(ideia) => ideaFormRef?.abrirEdicao(ideia)"
         @navigate="(path) => router.push(path)"
-        @createDerivada="(parentId) => voltarEAbrirDrawer({ id: parentId } as any)"
+        @createDerivada="(parentId) => ideaFormRef?.abrirModal(parentId)"
+      />
+
+      <IdeaFormModal
+        ref="ideaFormRef"
+        :ideias="ideias"
+        @saved="handleIdeiaSaved"
       />
 
       <!-- Hint inicial -->
@@ -114,21 +120,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useIdeias } from '../../composables/useIdeias';
 import type { Ideia, IdeiaStatus, IdeiaCorrelacao } from '../../types/ideia';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
+import IdeaFormModal from '../../components/IdeaFormModal.vue';
 
 // ─── Router & Dados ───────────────────────────────────────────────────────────
 const router = useRouter();
 const { ideias, loading, fetchIdeias } = useIdeias();
 
+// ─── Estado de Colapso ────────────────────────────────────────────────────────
+const expandedNodes = reactive(new Set<string>());
+let cachedCorrelacoes: IdeiaCorrelacao[] = [];
+
+async function handleIdeiaSaved() {
+  await fetchIdeias();
+  const api = (window as any).electronAPI;
+  cachedCorrelacoes = await api.correlacoes.getAllTodos();
+  construirGrafo(cachedCorrelacoes);
+}
+
 onMounted(async () => {
   await fetchIdeias();
   
   const api = (window as any).electronAPI;
-  const correlacoes = await api.correlacoes.getAllTodos();
+  cachedCorrelacoes = await api.correlacoes.getAllTodos();
 
   await nextTick(); // garante que o DOM está pronto
   if (canvasEl.value && canvasWrap.value) {
@@ -137,7 +155,7 @@ onMounted(async () => {
     canvasEl.value.height = Math.floor(height);
   }
 
-  construirGrafo(correlacoes);
+  construirGrafo(cachedCorrelacoes);
   animFrame = requestAnimationFrame(drawCanvas);
 });
 
@@ -181,6 +199,7 @@ interface GrafoNo {
   x: number; y: number; vx: number; vy: number;
   radius: number; depth: number; parentId: string | null;
   isCentral: boolean; relType: string | null;
+  hasChildren: boolean;
 }
 interface Aresta { origem: GrafoNo; destino: GrafoNo; label: string; }
 interface Particula { arestaIdx: number; t: number; speed: number; alpha: number; }
@@ -191,46 +210,79 @@ const particulas = ref<Particula[]>([]);
 const hintDismissed = ref(false);
 
 function construirGrafo(correlacoes: IdeiaCorrelacao[]) {
-  // Pega apenas ideias principais de forma robusta (mesma lógica da lista)
+  const oldNos = new Map(nosGrafo.value.map(n => [n.id, n]));
+  const nos: GrafoNo[] = [];
+  const added = new Set<string>();
+
   const mapList = new Map(ideias.value.map(i => [i.id, i]));
-  const todos = ideias.value.filter(i => {
+  const roots = ideias.value.filter(i => {
     if (i.is_arquivada) return false;
-    // Sem pai definido (mesmo que seja string vazia ou magic strings)
     if (!i.parent_id || i.parent_id === 'null' || i.parent_id === 'undefined') return true;
-    // Ou o pai foi deletado/arquivado
     const pai = mapList.get(i.parent_id);
     if (!pai || pai.is_arquivada) return true;
-    
     return false;
   });
-  const nos: GrafoNo[] = [];
 
-  todos.forEach(ideia => {
-    const isCentral = false; 
+  function addNo(ideia: Ideia, parentId: string | null, depth: number, relType: string | null) {
+    if (added.has(ideia.id)) return;
+    added.add(ideia.id);
+    
+    const filhos = ideias.value.filter(i => i.parent_id === ideia.id && !i.is_arquivada);
+    const hasChildren = filhos.length > 0;
+
+    const isCentral = depth === 0; 
     const radius = Math.max(22, 18 + ideia.score * 5);
     
-    // Distribuição inicial mais concentrada
-    const nx = (Math.random() - 0.5) * 400;
-    const ny = (Math.random() - 0.5) * 400;
+    let nx, ny, vx, vy;
+    const old = oldNos.get(ideia.id);
+    if (old) {
+      nx = old.x; ny = old.y; vx = old.vx; vy = old.vy;
+    } else {
+      if (parentId) {
+         const p = nos.find(n => n.id === parentId);
+         if (p) {
+           nx = p.x + (Math.random() - 0.5) * 60;
+           ny = p.y + (Math.random() - 0.5) * 60;
+         } else {
+           nx = (Math.random() - 0.5) * 400; ny = (Math.random() - 0.5) * 400;
+         }
+      } else {
+         nx = (Math.random() - 0.5) * 400; ny = (Math.random() - 0.5) * 400;
+      }
+      vx = 0; vy = 0;
+    }
 
     nos.push({ 
       id: ideia.id, 
       ideia, 
       x: nx, 
       y: ny, 
-      vx: 0, 
-      vy: 0, 
+      vx, 
+      vy, 
       radius, 
-      depth: 0, 
-      parentId: null, 
+      depth, 
+      parentId, 
       isCentral, 
-      relType: null 
+      relType,
+      hasChildren
     });
-  });
+
+    if (expandedNodes.has(ideia.id)) {
+      filhos.forEach(f => addNo(f, ideia.id, depth + 1, f.relationship_type || null));
+    }
+  }
+
+  roots.forEach(r => addNo(r, null, 0, null));
 
   const as: Aresta[] = [];
   
-  // Adiciona correlações explícitas (many-to-many)
+  for (const n of nos) {
+    if (n.parentId) {
+      const pai = nos.find(p => p.id === n.parentId);
+      if (pai) as.push({ origem: pai, destino: n, label: n.relType || '' });
+    }
+  }
+
   for (const corr of correlacoes) {
     const origem = nos.find(n => n.id === corr.ideia_a_id);
     const destino = nos.find(n => n.id === corr.ideia_b_id);
@@ -249,6 +301,12 @@ function construirGrafo(correlacoes: IdeiaCorrelacao[]) {
   nosGrafo.value   = nos;
   arestas.value    = as;
   particulas.value = ps;
+}
+
+function toggleCollapse(id: string) {
+  if (expandedNodes.has(id)) expandedNodes.delete(id);
+  else expandedNodes.add(id);
+  construirGrafo(cachedCorrelacoes);
 }
 
 // ─── Física ───────────────────────────────────────────────────────────────────
@@ -328,6 +386,7 @@ const draggedNo  = ref<GrafoNo | null>(null);
 const isPanning  = ref(false);
 const panStart   = ref({ x: 0, y: 0 });
 const ideaDrawerRef = ref<InstanceType<typeof IdeaDetailDrawer> | null>(null);
+const ideaFormRef = ref<InstanceType<typeof IdeaFormModal> | null>(null);
 
 const tooltip = ref({
   visible: false, x: 0, y: 0,
@@ -340,6 +399,16 @@ function getNoAtPos(sx: number, sy: number, w: number, h: number): GrafoNo | nul
     const s = W2S(no.x, no.y, w, h);
     const dx = sx - s.x, dy = sy - s.y;
     if (Math.sqrt(dx * dx + dy * dy) <= no.radius * scale.value + 6) return no;
+  }
+  return null;
+}
+
+function getToggleBtnAtPos(sx: number, sy: number, w: number, h: number): GrafoNo | null {
+  for (const no of nosGrafo.value) {
+    if (!no.hasChildren) continue;
+    const s = W2S(no.x, no.y + no.radius + 24, w, h);
+    const dx = sx - s.x, dy = sy - s.y;
+    if (Math.sqrt(dx * dx + dy * dy) <= 7 * scale.value + 4) return no;
   }
   return null;
 }
@@ -361,15 +430,20 @@ function onMouseMove(e: MouseEvent) {
     panStart.value = { x: e.clientX, y: e.clientY };
     return;
   }
+  const btn = getToggleBtnAtPos(sx, sy, c.width, c.height);
   const no = getNoAtPos(sx, sy, c.width, c.height);
-  if (no) {
-    hoveredId.value = no.id;
-    tooltip.value = {
-      visible: true,
-      x: Math.min(sx + 18, c.width - 250), y: Math.max(sy - 10, 10),
-      nome: no.ideia.nome, tipo: no.ideia.tipo, status: no.ideia.status,
-      statusLabel: STATUS_LABEL_MAP[no.ideia.status], score: no.ideia.score, rel: no.relType || '',
-    };
+  if (btn || no) {
+    hoveredId.value = (btn || no)!.id;
+    if (no) {
+      tooltip.value = {
+        visible: true,
+        x: Math.min(sx + 18, c.width - 250), y: Math.max(sy - 10, 10),
+        nome: no.ideia.nome, tipo: no.ideia.tipo, status: no.ideia.status,
+        statusLabel: STATUS_LABEL_MAP[no.ideia.status], score: no.ideia.score, rel: no.relType || '',
+      };
+    } else {
+      tooltip.value.visible = false;
+    }
     c.style.cursor = 'pointer';
   } else {
     hoveredId.value = null; tooltip.value.visible = false;
@@ -412,15 +486,17 @@ function onWheel(e: WheelEvent) {
 function onCanvasClick(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
   const r = c.getBoundingClientRect();
-  const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
-  if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  
+  const btn = getToggleBtnAtPos(sx, sy, c.width, c.height);
+  if (btn) { toggleCollapse(btn.id); return; }
 }
 
 function onCanvasDblClick(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
   const r = c.getBoundingClientRect();
   const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
-  if (no) voltarEAbrirDrawer(no.ideia);
+  if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
 }
 
 // ─── Renderização ─────────────────────────────────────────────────────────────
@@ -573,6 +649,29 @@ function drawCanvas() {
       ctx.font = `${Math.max(7, r * 0.3)}px serif`;
       ctx.fillStyle = '#fbbf24cc'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       ctx.fillText('★'.repeat(no.ideia.score) + '☆'.repeat(4 - no.ideia.score), no.x, no.y + r + pulse + 7);
+    }
+
+    // ── Botão [+] / [-] para expandir/colapsar ──
+    if (no.hasChildren && scale.value >= 0.35) {
+      const btnR = 7;
+      const btnX = no.x;
+      const btnY = no.y + r + 24;
+      
+      const isExpanded = expandedNodes.has(no.id);
+
+      ctx.beginPath();
+      ctx.arc(btnX, btnY, btnR, 0, Math.PI * 2);
+      ctx.fillStyle = '#1e293b';
+      ctx.fill();
+      ctx.strokeStyle = col + '99';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(isExpanded ? '−' : '+', btnX, btnY);
     }
   }
 

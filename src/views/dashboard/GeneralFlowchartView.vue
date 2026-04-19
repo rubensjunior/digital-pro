@@ -84,9 +84,15 @@
         ref="ideaDrawerRef"
         :ideias="ideias"
         :show-brain-vault-link="true"
-        @edit="(ideia) => voltarEAbrirDrawer(ideia)"
+        @edit="(ideia) => ideaFormRef?.abrirEdicao(ideia)"
         @navigate="(path) => router.push(path)"
-        @createDerivada="(parentId) => voltarEAbrirDrawer({ id: parentId } as any)"
+        @createDerivada="(parentId) => ideaFormRef?.abrirModal(parentId)"
+      />
+
+      <IdeaFormModal
+        ref="ideaFormRef"
+        :ideias="ideias"
+        @saved="handleIdeiaSaved"
       />
 
       <!-- Hint inicial -->
@@ -104,14 +110,22 @@ import { useRouter } from 'vue-router';
 import { useIdeias } from '../../composables/useIdeias';
 import type { Ideia, IdeiaStatus, IdeiaCorrelacao } from '../../types/ideia';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
+import IdeaFormModal from '../../components/IdeaFormModal.vue';
 
 // ─── Router & Dados ───────────────────────────────────────────────────────────
 const router = useRouter();
 const { ideias, loading, fetchIdeias } = useIdeias();
 
 // ─── Estado de Colapso ────────────────────────────────────────────────────────
-const collapsedNodes = reactive(new Set<string>());
+const expandedNodes = reactive(new Set<string>());
 let cachedCorrelacoes: IdeiaCorrelacao[] = [];
+
+async function handleIdeiaSaved() {
+  await fetchIdeias();
+  const api = (window as any).electronAPI;
+  cachedCorrelacoes = await api.correlacoes.getAllTodos();
+  construirGrafo(cachedCorrelacoes);
+}
 
 onMounted(async () => {
   await fetchIdeias();
@@ -198,7 +212,7 @@ function construirGrafo(correlacoes: IdeiaCorrelacao[]) {
   function getSize(id: string, visited = new Set<string>()): number {
     if (visited.has(id)) return NODE_W;
     visited.add(id);
-    if (collapsedNodes.has(id)) return NODE_W;
+    if (!expandedNodes.has(id)) return NODE_W;
     const filhos = todos.filter(i => i.parent_id === id && !i.is_arquivada);
     if (!filhos.length) return NODE_W;
     return filhos.reduce((s, f) => s + getSize(f.id, visited), 0) + (filhos.length - 1) * NODE_PAD_X;
@@ -224,7 +238,7 @@ function construirGrafo(correlacoes: IdeiaCorrelacao[]) {
       hasChildren,
     });
 
-    if (!hasChildren || collapsedNodes.has(id)) return;
+    if (!hasChildren || !expandedNodes.has(id)) return;
 
     const totalReq = allFilhos.reduce((s, f) => s + getSize(f.id, new Set()), 0) + (allFilhos.length - 1) * NODE_PAD_X;
     let currX = (minX + maxX) / 2 - totalReq / 2;
@@ -288,8 +302,8 @@ function construirGrafo(correlacoes: IdeiaCorrelacao[]) {
 }
 
 function toggleCollapse(id: string) {
-  if (collapsedNodes.has(id)) collapsedNodes.delete(id);
-  else collapsedNodes.add(id);
+  if (expandedNodes.has(id)) expandedNodes.delete(id);
+  else expandedNodes.add(id);
   construirGrafo(cachedCorrelacoes);
 }
 
@@ -326,6 +340,7 @@ const draggedNo  = ref<GrafoNo | null>(null);
 const isPanning  = ref(false);
 const panStart   = ref({ x: 0, y: 0 });
 const ideaDrawerRef = ref<InstanceType<typeof IdeaDetailDrawer> | null>(null);
+const ideaFormRef = ref<InstanceType<typeof IdeaFormModal> | null>(null);
 
 function getNoAtPos(sx: number, sy: number, cW: number, cH: number): GrafoNo | null {
   for (const no of nosGrafo.value) {
@@ -415,16 +430,13 @@ function onCanvasClick(e: MouseEvent) {
 
   const btn = getToggleBtnAtPos(sx, sy, c.width, c.height);
   if (btn) { toggleCollapse(btn.id); return; }
-
-  const no = getNoAtPos(sx, sy, c.width, c.height);
-  if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
 }
 
 function onCanvasDblClick(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
   const r = c.getBoundingClientRect();
   const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
-  if (no) voltarEAbrirDrawer(no.ideia);
+  if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
 }
 
 // ─── Renderização ─────────────────────────────────────────────────────────────
@@ -630,7 +642,7 @@ function drawCanvas() {
       const btnX = no.x;
       const btnY = no.y + no.h / 2 + 10;
       const btnR = 9;
-      const isCollapsed = collapsedNodes.has(no.id);
+      const isCollapsed = !expandedNodes.has(no.id);
 
       ctx.beginPath();
       ctx.arc(btnX, btnY, btnR, 0, Math.PI * 2);

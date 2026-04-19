@@ -103,9 +103,15 @@
         ref="ideaDrawerRef"
         :ideias="ideias"
         :show-brain-vault-link="true"
-        @edit="(ideia) => voltarEAbrirDrawer(ideia)"
+        @edit="(ideia) => ideaFormRef?.abrirEdicao(ideia)"
         @navigate="(path) => router.push(path)"
-        @createDerivada="(parentId) => voltarEAbrirDrawer({ id: parentId } as any)"
+        @createDerivada="(parentId) => ideaFormRef?.abrirModal(parentId)"
+      />
+
+      <IdeaFormModal
+        ref="ideaFormRef"
+        :ideias="ideias"
+        @saved="handleIdeiaSaved"
       />
 
       <!-- Hint inicial -->
@@ -123,6 +129,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useIdeias } from '../../composables/useIdeias';
 import type { Ideia, IdeiaStatus } from '../../types/ideia';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
+import IdeaFormModal from '../../components/IdeaFormModal.vue';
 
 // ─── Router & Dados ───────────────────────────────────────────────────────────
 const route  = useRoute();
@@ -131,6 +138,11 @@ const { ideias, loading, fetchIdeias } = useIdeias();
 
 const rootId = computed(() => route.params.rootId as string);
 const rootIdeia = computed(() => ideias.value.find(i => i.id === rootId.value) ?? null);
+
+async function handleIdeiaSaved() {
+  await fetchIdeias();
+  construirGrafo(rootId.value);
+}
 
 onMounted(async () => {
   await fetchIdeias();
@@ -368,6 +380,7 @@ const draggedNo  = ref<GrafoNo | null>(null);
 const isPanning  = ref(false);
 const panStart   = ref({ x: 0, y: 0 });
 const ideaDrawerRef = ref<InstanceType<typeof IdeaDetailDrawer> | null>(null);
+const ideaFormRef = ref<InstanceType<typeof IdeaFormModal> | null>(null);
 
 const tooltip = ref({
   visible: false, x: 0, y: 0,
@@ -451,16 +464,13 @@ function onWheel(e: WheelEvent) {
 
 function onCanvasClick(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
-  const r = c.getBoundingClientRect();
-  const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
-  if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
 }
 
 function onCanvasDblClick(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
   const r = c.getBoundingClientRect();
   const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
-  if (no) voltarEAbrirDrawer(no.ideia);
+  if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
 }
 
 // ─── Renderização ─────────────────────────────────────────────────────────────
