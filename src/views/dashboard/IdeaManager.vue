@@ -91,16 +91,16 @@
 
       <select v-model="filtro.tipo" class="bv-select">
         <option value="">Todos os tipos</option>
-        <option v-for="t in TIPOS" :key="t" :value="t">{{ t }}</option>
+        <optgroup v-for="grupo in TIPOS_AGRUPADOS" :key="grupo.label" :label="grupo.label">
+          <option v-for="t in grupo.options" :key="t" :value="t">{{ t }}</option>
+        </optgroup>
       </select>
 
       <select v-model="filtro.status" class="bv-select">
         <option value="">Todos os status</option>
-        <option value="bruta">Bruta</option>
-        <option value="em_teste">Em Teste</option>
-        <option value="validada">Validada</option>
-        <option value="nao_validada">Não Validada</option>
-        <option value="escalada">Escalada</option>
+        <optgroup v-for="grupo in statusFiltrados" :key="grupo.label" :label="grupo.label">
+          <option v-for="s in grupo.options" :key="s.value" :value="s.value">{{ s.label }}</option>
+        </optgroup>
       </select>
 
       <select v-model="filtro.score" class="bv-select">
@@ -305,6 +305,7 @@ import { ref, computed, onMounted, reactive } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
 import type { Ideia, IdeiaStatus, IdeiaTipo, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../../types/ideia';
+import { TIPOS_AGRUPADOS, STATUS_AGRUPADOS } from '../../types/ideia';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 import IdeaFormModal from '../../components/IdeaFormModal.vue';
 
@@ -386,7 +387,6 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
-const TIPOS: IdeiaTipo[] = ['Produto', 'Promessa', 'Ângulo', 'Headline', 'Hook', 'Big Idea', 'VSL', 'Funil', 'Lançamento', 'Outro'];
 const TABS = ['Identificação', 'Descrição', 'Tags', 'Ecossistema'];
 const NOTE_COLORS = ['#fef9c3', '#fce7f3', '#dbeafe', '#dcfce7', '#ffe4e6', '#ede9fe', '#f1f5f9'];
 const SCORE_LABELS = ['Baixo', 'Médio', 'Alto', 'Muito alto'];
@@ -400,10 +400,11 @@ const STATUS_OPTIONS = [
 ];
 const COLUNAS = [
   { status: 'bruta' as IdeiaStatus,    label: 'Bruta' },
-  { status: 'em_teste' as IdeiaStatus, label: 'Em Teste' },
+  { status: 'backlog' as IdeiaStatus,  label: 'Backlog' },
+  { status: 'em_desenvolvimento' as IdeiaStatus, label: 'Em Desenv.' },
+  { status: 'em_teste' as IdeiaStatus, label: 'Testando' },
   { status: 'validada' as IdeiaStatus, label: 'Validada' },
-  { status: 'nao_validada' as IdeiaStatus, label: 'Não Validada' },
-  { status: 'escalada' as IdeiaStatus, label: 'Escalada' },
+  { status: 'arquivada' as IdeiaStatus, label: 'Arquivada' },
 ];
 const TAG_GROUPS = [
   { key: 'tags_avatar',    label: 'Avatar',    placeholder: 'Ex: iniciante  — Enter para adicionar' },
@@ -418,6 +419,24 @@ const view = ref<'lista' | 'kanban'>('lista');
 
 // ─── Filtros ──────────────────────────────────────────────────────────────────
 const filtro = reactive({ busca: '', tipo: '', status: '', score: '', apenasFavoritas: false, emArquivo: false, ordenacao: 'nova' });
+
+const statusFiltrados = computed(() => {
+  const tipo = filtro.tipo;
+  if (!tipo) return STATUS_AGRUPADOS;
+
+  const grupoTipo = TIPOS_AGRUPADOS.find(g => g.options.includes(tipo as IdeiaTipo))?.label || '';
+  const gruposParaMostrar = ['Geral'];
+
+  if (grupoTipo.includes('Programação') || grupoTipo.includes('SaaS') || grupoTipo.includes('Gestão')) {
+    gruposParaMostrar.push('Desenvolvimento');
+  } else if (grupoTipo.includes('Marketing') || grupoTipo.includes('Publicidade')) {
+    gruposParaMostrar.push('Produção');
+  } else if (grupoTipo.includes('Jurídico') || grupoTipo.includes('Administrativo')) {
+    gruposParaMostrar.push('Jurídico');
+  }
+
+  return STATUS_AGRUPADOS.filter(g => gruposParaMostrar.some(keyword => g.label.includes(keyword)));
+});
 
 const ideiasFilradas = computed(() => {
   const archMap = new Map<string, boolean>();

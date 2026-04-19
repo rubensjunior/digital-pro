@@ -1,18 +1,213 @@
 // ─── Tipos de Ideia ──────────────────────────────────────────────────────────
 
-export type IdeiaStatus = 'bruta' | 'em_teste' | 'validada' | 'nao_validada' | 'escalada';
+export type IdeiaStatus = 
+  // Fluxo Geral
+  | 'bruta' 
+  | 'pesquisa' 
+  | 'validada' 
+  | 'nao_validada' 
+  | 'escalada' 
+  | 'arquivada'
+  // Desenvolvimento
+  | 'backlog' 
+  | 'em_desenvolvimento' 
+  | 'em_teste' 
+  | 'implementado' 
+  | 'pausado'
+  // Produção
+  | 'rascunho' 
+  | 'em_revisao' 
+  | 'aprovado' 
+  | 'publicado'
+  // Jurídico
+  | 'pendente' 
+  | 'em_analise' 
+  | 'assinado_deferido' 
+  | 'cancelado_indeferido';
+
+export const STATUS_AGRUPADOS: { label: string; options: { value: IdeiaStatus; label: string }[] }[] = [
+  {
+    label: '🧠 Fluxo de Ideia (Geral)',
+    options: [
+      { value: 'bruta', label: 'Bruta (Capturada)' },
+      { value: 'pesquisa', label: 'Em Pesquisa / Estudo' },
+      { value: 'validada', label: 'Validada (Pronta)' },
+      { value: 'nao_validada', label: 'Não Validada / Descartada' },
+      { value: 'escalada', label: 'Escalada (Em Escala)' },
+      { value: 'arquivada', label: 'Arquivada' }
+    ]
+  },
+  {
+    label: '💻 Desenvolvimento & Projetos',
+    options: [
+      { value: 'backlog', label: 'Backlog' },
+      { value: 'em_desenvolvimento', label: 'Em Desenvolvimento' },
+      { value: 'em_teste', label: 'Em Teste (QA)' },
+      { value: 'implementado', label: 'Implementado / Em Produção' },
+      { value: 'pausado', label: 'Pausado / Bloqueado' }
+    ]
+  },
+  {
+    label: '📝 Produção & Conteúdo',
+    options: [
+      { value: 'rascunho', label: 'Rascunho / Draft' },
+      { value: 'em_revisao', label: 'Em Revisão' },
+      { value: 'aprovado', label: 'Aprovado / Pronto' },
+      { value: 'publicado', label: 'Publicado / Finalizado' }
+    ]
+  },
+  {
+    label: '⚖️ Jurídico & Administrativo',
+    options: [
+      { value: 'pendente', label: 'Pendente' },
+      { value: 'em_analise', label: 'Em Análise' },
+      { value: 'assinado_deferido', label: 'Assinado / Deferido' },
+      { value: 'cancelado_indeferido', label: 'Cancelado / Indeferido' }
+    ]
+  }
+];
 
 export type IdeiaTipo =
+  // Marketing & Copywriting
   | 'Produto'
   | 'Promessa'
-  | 'Ângulo'
+  | 'Ângulo de Venda'
   | 'Headline'
-  | 'Hook'
+  | 'Hook (Gancho)'
   | 'Big Idea'
-  | 'VSL'
-  | 'Funil'
+  | 'VSL (Vídeo de Vendas)'
+  | 'Funil de Vendas'
   | 'Lançamento'
+  | 'Copywriting'
+  | 'Criativo (Anúncio)'
+  | 'Lead Magnet (Isca)'
+  | 'E-mail Marketing'
+  // Publicidade & Social Media
+  | 'Campanha Publicitária'
+  | 'Roteiro'
+  | 'Storyboard'
+  | 'Briefing'
+  | 'Mídia Kit'
+  | 'Planejamento de Mídia'
+  | 'Post Social Media'
+  | 'Newsletter'
+  // Programação & Tecnologia
+  | 'POC (Proof of Concept)'
+  | 'Nova Feature'
+  | 'Bugfix (Correção)'
+  | 'Refatoração'
+  | 'Arquitetura de Software'
+  | 'API / Integração'
+  | 'Interface (UI/UX)'
+  | 'Automação / Script'
+  | 'Banco de Dados'
+  | 'DevOps / Infraestrutura'
+  // Gestão & Projetos
+  | 'Planejamento Estratégico'
+  | 'Sprint / Roadmap'
+  | 'Tarefa (Task)'
+  | 'Processo / Workflow'
+  | 'Insight de Negócio'
+  | 'KPI / Métrica'
+  | 'OKR (Objetivos)'
+  // SaaS & Produto
+  | 'Onboarding de Usuário'
+  | 'Retenção / Churn'
+  | 'Pricing / Monetização'
+  | 'User Experience (UX)'
+  | 'MVP (Minimum Viable Product)'
+  | 'Feature Request'
+  // Jurídico & Documentação
+  | 'Peça Processual'
+  | 'Contrato'
+  | 'Parecer Técnico'
+  | 'Petição'
+  | 'Documento / Anexo'
+  | 'Planilha de Dados'
+  // Administrativo & Financeiro
+  | 'Nota Fiscal / Recibo'
+  | 'Orçamento / Proposta'
+  | 'Relatório Financeiro'
+  | 'Ata de Reunião'
+  | 'Protocolo / Cadastro'
+  | 'Gestão de Custos'
+  // Estudos & Pesquisa
+  | 'Revisão de Conteúdo'
+  | 'Resumo / Nota de Estudo'
+  | 'Teoria / Conceito'
+  | 'Método / Framework'
+  | 'Citação / Referência'
+  | 'Insight de Leitura'
+  | 'Curso / Treinamento'
+  // Outros
+  | 'Insight / Ideia Solta'
+  | 'Pessoal / Meta'
   | 'Outro';
+
+export const TIPOS_AGRUPADOS: { label: string; options: IdeiaTipo[] }[] = [
+  {
+    label: '📣 Marketing & Copywriting',
+    options: [
+      'Produto', 'Promessa', 'Ângulo de Venda', 'Headline', 'Hook (Gancho)', 'Big Idea', 
+      'VSL (Vídeo de Vendas)', 'Funil de Vendas', 'Lançamento', 'Copywriting', 
+      'Criativo (Anúncio)', 'Lead Magnet (Isca)', 'E-mail Marketing'
+    ]
+  },
+  {
+    label: '📺 Publicidade & Social Media',
+    options: [
+      'Campanha Publicitária', 'Roteiro', 'Storyboard', 'Briefing', 'Mídia Kit', 
+      'Planejamento de Mídia', 'Post Social Media', 'Newsletter'
+    ]
+  },
+  {
+    label: '💻 Programação & Tecnologia',
+    options: [
+      'POC (Proof of Concept)', 'Nova Feature', 'Bugfix (Correção)', 'Refatoração', 
+      'Arquitetura de Software', 'API / Integração', 'Interface (UI/UX)', 
+      'Automação / Script', 'Banco de Dados', 'DevOps / Infraestrutura'
+    ]
+  },
+  {
+    label: '📊 Gestão & Projetos',
+    options: [
+      'Planejamento Estratégico', 'Sprint / Roadmap', 'Tarefa (Task)', 
+      'Processo / Workflow', 'Insight de Negócio', 'KPI / Métrica', 'OKR (Objetivos)'
+    ]
+  },
+  {
+    label: '🚀 SaaS & Produto',
+    options: [
+      'Onboarding de Usuário', 'Retenção / Churn', 'Pricing / Monetização', 
+      'User Experience (UX)', 'MVP (Minimum Viable Product)', 'Feature Request'
+    ]
+  },
+  {
+    label: '⚖️ Jurídico & Documentação',
+    options: [
+      'Peça Processual', 'Contrato', 'Parecer Técnico', 'Petição', 
+      'Documento / Anexo', 'Planilha de Dados'
+    ]
+  },
+  {
+    label: '🏢 Administrativo & Financeiro',
+    options: [
+      'Nota Fiscal / Recibo', 'Orçamento / Proposta', 'Relatório Financeiro', 
+      'Ata de Reunião', 'Protocolo / Cadastro', 'Gestão de Custos'
+    ]
+  },
+  {
+    label: '📚 Estudos & Pesquisa',
+    options: [
+      'Revisão de Conteúdo', 'Resumo / Nota de Estudo', 'Teoria / Conceito', 
+      'Método / Framework', 'Citação / Referência', 'Insight de Leitura', 'Curso / Treinamento'
+    ]
+  },
+  {
+    label: '🖋️ Outros',
+    options: ['Insight / Ideia Solta', 'Pessoal / Meta', 'Outro']
+  }
+];
 
 export type IdeiaRelationshipType = 
   | 'Complementa' 

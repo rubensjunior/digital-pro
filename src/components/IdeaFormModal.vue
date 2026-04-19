@@ -42,26 +42,20 @@
               <label class="bv-label">Tipo *</label>
               <select v-model="form.tipo" :class="['bv-input bv-select-field', { 'has-error': formErros.tipo }]" @change="formErros.tipo = false">
                 <option value="">Selecione o tipo</option>
-                <option v-for="t in TIPOS" :key="t" :value="t">{{ t }}</option>
+                <optgroup v-for="grupo in TIPOS_AGRUPADOS" :key="grupo.label" :label="grupo.label">
+                  <option v-for="t in grupo.options" :key="t" :value="t">{{ t }}</option>
+                </optgroup>
               </select>
               <span v-if="formErros.tipo" class="bv-error-msg">Tipo é obrigatório</span>
             </div>
 
             <div class="bv-field">
               <label class="bv-label">Status</label>
-              <div class="bv-status-group">
-                <button
-                  v-for="s in STATUS_OPTIONS"
-                  :key="s.value"
-                  :class="['bv-status-opt', { active: form.status === s.value }]"
-                  :data-status="s.value"
-                  @click="form.status = s.value"
-                  type="button"
-                >
-                  <span class="bv-status-dot" :data-status="s.value"></span>
-                  {{ s.label }}
-                </button>
-              </div>
+              <select v-model="form.status" class="bv-input bv-select-field">
+                <optgroup v-for="grupo in statusFiltrados" :key="grupo.label" :label="grupo.label">
+                  <option v-for="s in grupo.options" :key="s.value" :value="s.value">{{ s.label }}</option>
+                </optgroup>
+              </select>
             </div>
 
             <div class="bv-field">
@@ -89,26 +83,26 @@
               <textarea v-model="form.descricao" class="bv-textarea" rows="3" placeholder="Descreva a ideia em poucas palavras..."/>
             </div>
             <div class="bv-field">
-              <label class="bv-label">Contexto</label>
-              <textarea v-model="form.contexto" class="bv-textarea" rows="2" placeholder="De onde surgiu essa ideia?"/>
+              <label class="bv-label">{{ labelsAdaptativos.contexto.label }}</label>
+              <textarea v-model="form.contexto" class="bv-textarea" rows="2" :placeholder="labelsAdaptativos.contexto.placeholder"/>
             </div>
             <div class="bv-field">
-              <label class="bv-label">Problema que resolve</label>
-              <textarea v-model="form.problema" class="bv-textarea" rows="2" placeholder="Qual dor esta ideia ataca?"/>
+              <label class="bv-label">{{ labelsAdaptativos.problema.label }}</label>
+              <textarea v-model="form.problema" class="bv-textarea" rows="2" :placeholder="labelsAdaptativos.problema.placeholder"/>
             </div>
             <div class="bv-field">
-              <label class="bv-label">Transformação prometida</label>
-              <textarea v-model="form.transformacao" class="bv-textarea" rows="2" placeholder="Qual o resultado esperado?"/>
+              <label class="bv-label">{{ labelsAdaptativos.transformacao.label }}</label>
+              <textarea v-model="form.transformacao" class="bv-textarea" rows="2" :placeholder="labelsAdaptativos.transformacao.placeholder"/>
             </div>
             <div class="bv-field">
-              <label class="bv-label">Público-alvo</label>
-              <input v-model="form.publico_alvo" class="bv-input" placeholder="Ex: Iniciantes em tráfego pago" type="text"/>
+              <label class="bv-label">{{ labelsAdaptativos.publico.label }}</label>
+              <input v-model="form.publico_alvo" class="bv-input" :placeholder="labelsAdaptativos.publico.placeholder" type="text"/>
             </div>
           </div>
 
           <!-- ABA 3 — Tags -->
           <div v-show="tabAtiva === 2" class="bv-tab-pane">
-            <div v-for="tagGroup in TAG_GROUPS" :key="tagGroup.key" class="bv-field">
+            <div v-for="tagGroup in labelsAdaptativos.tags" :key="tagGroup.key" class="bv-field">
               <label class="bv-label">{{ tagGroup.label }}</label>
               <div class="bv-chips-input">
                 <span
@@ -181,6 +175,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
 import type { Ideia, IdeiaStatus, IdeiaTipo } from '../types/ideia';
+import { TIPOS_AGRUPADOS, STATUS_AGRUPADOS } from '../types/ideia';
 import { useIdeias } from '../composables/useIdeias';
 
 const props = defineProps<{
@@ -195,24 +190,104 @@ const emit = defineEmits<{
 const { createIdeia, updateIdeia } = useIdeias();
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
-const TIPOS: IdeiaTipo[] = ['Produto', 'Promessa', 'Ângulo', 'Headline', 'Hook', 'Big Idea', 'VSL', 'Funil', 'Lançamento', 'Outro'];
 const TABS = ['Identificação', 'Descrição', 'Tags', 'Ecossistema'];
 const SCORE_LABELS = ['Baixo', 'Médio', 'Alto', 'Muito alto'];
 const RELATIONSHIP_TYPES = ['Complementa', 'Feature de', 'Upsell de', 'Downsell de', 'Order bump de', 'Extensão de', 'Versão de', 'Subproduto de', 'Outro'];
-const STATUS_OPTIONS = [
-  { value: 'bruta' as IdeiaStatus,    label: 'Bruta' },
-  { value: 'em_teste' as IdeiaStatus, label: 'Em Teste' },
-  { value: 'validada' as IdeiaStatus, label: 'Validada' },
-  { value: 'nao_validada' as IdeiaStatus, label: 'Não Validada' },
-  { value: 'escalada' as IdeiaStatus, label: 'Escalada' },
-];
-const TAG_GROUPS = [
-  { key: 'tags_avatar',    label: 'Avatar',    placeholder: 'Ex: iniciante  — Enter para adicionar' },
-  { key: 'tags_nicho',     label: 'Nicho',     placeholder: 'Ex: fitness' },
-  { key: 'tags_dor',       label: 'Dor',       placeholder: 'Ex: falta de dinheiro' },
-  { key: 'tags_desejo',    label: 'Desejo',    placeholder: 'Ex: liberdade financeira' },
-  { key: 'tags_mecanismo', label: 'Mecanismo', placeholder: 'Ex: novo método' },
-];
+// ─── Lógica Adaptativa de UI ──────────────────────────────────────────────────
+const labelsAdaptativos = computed(() => {
+  const tipo = form.tipo;
+  if (!tipo) return defaultLabels;
+
+  // Encontrar o grupo ao qual o tipo pertence
+  const grupo = TIPOS_AGRUPADOS.find(g => g.options.includes(tipo as IdeiaTipo))?.label || '';
+
+  if (grupo.includes('Programação')) {
+    return {
+      contexto: { label: 'Requisitos / Contexto', placeholder: 'Quais os requisitos ou cenário técnico?' },
+      problema: { label: 'Problema / Bug', placeholder: 'O que precisa ser resolvido ou corrigido?' },
+      transformacao: { label: 'Solução Técnica', placeholder: 'Como a solução será implementada?' },
+      publico: { label: 'Stakeholders / Usuários', placeholder: 'Quem será afetado ou usará esta feature?' },
+      tags: [
+        { key: 'tags_avatar',    label: 'Tecnologias', placeholder: 'Ex: Vue, Node.js' },
+        { key: 'tags_nicho',     label: 'Plataforma',  placeholder: 'Ex: Web, iOS' },
+        { key: 'tags_dor',       label: 'Limitação',   placeholder: 'Ex: Performance, Memória' },
+        { key: 'tags_desejo',    label: 'Objetivo',    placeholder: 'Ex: Velocidade, SEO' },
+        { key: 'tags_mecanismo', label: 'Arquitetura', placeholder: 'Ex: Microserviços, SSR' }
+      ]
+    };
+  }
+
+  if (grupo.includes('Jurídico') || grupo.includes('Administrativo')) {
+    return {
+      contexto: { label: 'Fatos / Antecedentes', placeholder: 'Quais os fatos geradores ou histórico?' },
+      problema: { label: 'Questão Jurídica / Base', placeholder: 'Qual a base legal ou problema a resolver?' },
+      transformacao: { label: 'Pedido / Resultado', placeholder: 'O que se pretende obter ou decidir?' },
+      publico: { label: 'Partes Envolvidas', placeholder: 'Quem são os interessados ou partes?' },
+      tags: [
+        { key: 'tags_avatar',    label: 'Jurisprudência', placeholder: 'Ex: STF, Súmula 123' },
+        { key: 'tags_nicho',     label: 'Área do Direito', placeholder: 'Ex: Civil, Penal' },
+        { key: 'tags_dor',       label: 'Tese',           placeholder: 'Ex: Danos Morais' },
+        { key: 'tags_desejo',    label: 'Decisões',       placeholder: 'Ex: Liminar, Sentença' },
+        { key: 'tags_mecanismo', label: 'Prazos',         placeholder: 'Ex: 15 dias, Urgente' }
+      ]
+    };
+  }
+
+  if (grupo.includes('Estudos')) {
+    return {
+      contexto: { label: 'Referência / Origem', placeholder: 'De qual livro, curso ou autor surgiu?' },
+      problema: { label: 'Dúvida / Lacuna', placeholder: 'O que ainda não está claro ou precisa ser focado?' },
+      transformacao: { label: 'Resumo / Conclusão', placeholder: 'Qual a lição principal desta ideia?' },
+      publico: { label: 'Matéria / Disciplina', placeholder: 'A qual área do conhecimento pertence?' },
+      tags: [
+        { key: 'tags_avatar',    label: 'Autor',          placeholder: 'Ex: Peter Drucker' },
+        { key: 'tags_nicho',     label: 'Tema',           placeholder: 'Ex: Gestão' },
+        { key: 'tags_dor',       label: 'Conceito Chave', placeholder: 'Ex: Eficácia' },
+        { key: 'tags_desejo',    label: 'Exemplo',        placeholder: 'Ex: Caso Ford' },
+        { key: 'tags_mecanismo', label: 'Aplicação',      placeholder: 'Ex: Dia a dia' }
+      ]
+    };
+  }
+
+  // Padrão (Marketing/Geral)
+  return defaultLabels;
+});
+
+const statusFiltrados = computed(() => {
+  const tipo = form.tipo;
+  if (!tipo) {
+    // Se não tiver tipo, mostra apenas o grupo Geral para não poluir
+    return STATUS_AGRUPADOS.filter(g => g.label.includes('Geral'));
+  }
+
+  const grupoTipo = TIPOS_AGRUPADOS.find(g => g.options.includes(tipo as IdeiaTipo))?.label || '';
+  
+  const gruposParaMostrar = ['Geral'];
+
+  if (grupoTipo.includes('Programação') || grupoTipo.includes('SaaS') || grupoTipo.includes('Gestão')) {
+    gruposParaMostrar.push('Desenvolvimento');
+  } else if (grupoTipo.includes('Marketing') || grupoTipo.includes('Publicidade')) {
+    gruposParaMostrar.push('Produção');
+  } else if (grupoTipo.includes('Jurídico') || grupoTipo.includes('Administrativo')) {
+    gruposParaMostrar.push('Jurídico');
+  }
+
+  return STATUS_AGRUPADOS.filter(g => gruposParaMostrar.some(keyword => g.label.includes(keyword)));
+});
+
+const defaultLabels = {
+  contexto: { label: 'Contexto', placeholder: 'De onde surgiu essa ideia?' },
+  problema: { label: 'Problema que resolve', placeholder: 'Qual dor esta ideia ataca?' },
+  transformacao: { label: 'Transformação prometida', placeholder: 'Qual o resultado esperado?' },
+  publico: { label: 'Público-alvo', placeholder: 'Ex: Iniciantes em tráfego pago' },
+  tags: [
+    { key: 'tags_avatar',    label: 'Avatar',    placeholder: 'Ex: iniciante  — Enter para adicionar' },
+    { key: 'tags_nicho',     label: 'Nicho',     placeholder: 'Ex: fitness' },
+    { key: 'tags_dor',       label: 'Dor',       placeholder: 'Ex: falta de dinheiro' },
+    { key: 'tags_desejo',    label: 'Desejo',    placeholder: 'Ex: liberdade financeira' },
+    { key: 'tags_mecanismo', label: 'Mecanismo', placeholder: 'Ex: novo método' }
+  ]
+};
 
 // ─── Estado do Modal ──────────────────────────────────────────────────────────
 const modalAberto = ref(false);
