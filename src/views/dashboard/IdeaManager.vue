@@ -282,20 +282,6 @@
 
 
 
-    <!-- ══════════════════════════════════════════════════════ CONFIRM DELETE -->
-    <Teleport to="body">
-      <div v-if="deleteConfirmData" class="bv-overlay" @click.self="deleteConfirmData = null">
-        <div class="bv-confirm">
-          <div class="bv-confirm-icon">🗑️</div>
-          <h3>{{ deleteConfirmData.titulo }}</h3>
-          <p>{{ deleteConfirmData.mensagem }}</p>
-          <div class="bv-confirm-actions">
-            <button class="bv-btn-ghost" @click="deleteConfirmData = null">Cancelar</button>
-            <button class="bv-btn-danger" @click="executarExclusao">Sim, excluir</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
 
   </div>
 </template>
@@ -905,30 +891,6 @@ async function handleDuplicar(ideia: Ideia) {
   }
 }
 
-// ─── Delete ───────────────────────────────────────────────────────────────────
-const deleteConfirmData = ref<{ titulo: string, mensagem: string, onConfirm: () => Promise<void> | void } | null>(null);
-
-function confirmarExclusaoGeral(titulo: string, mensagem: string, onConfirm: () => Promise<void> | void) {
-  deleteConfirmData.value = { titulo, mensagem, onConfirm };
-}
-
-async function executarExclusao() {
-  if (!deleteConfirmData.value) return;
-  await deleteConfirmData.value.onConfirm();
-  deleteConfirmData.value = null;
-}
-
-function confirmarDelete(id: string) {
-  confirmarExclusaoGeral('Excluir ideia?', 'Esta ação não pode ser desfeita.', async () => {
-    const res = await deleteIdeia(id);
-    if (res) {
-      showToast('Ideia excluída com sucesso!');
-    } else {
-      showToast('Erro ao excluir ideia.', 'error');
-    }
-    drawerIdeia.value = null;
-  });
-}
 
 // ─── Rede Neural ──────────────────────────────────────────────────────────────
 function encontrarRaizEcossistema(ideia: Ideia): string {

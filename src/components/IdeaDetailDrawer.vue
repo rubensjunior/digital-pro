@@ -352,6 +352,7 @@
     <!-- Modal de Confirmação Personalizado -->
     <ConfirmModal 
       v-if="drawer.confirmDialog.show"
+      :show="drawer.confirmDialog.show"
       :title="drawer.confirmDialog.title"
       :message="drawer.confirmDialog.message"
       :type="drawer.confirmDialog.type"

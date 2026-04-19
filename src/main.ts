@@ -244,6 +244,10 @@ function registerIdeiaHandlers() {
     db.prepare('DELETE FROM ideia_links WHERE ideia_id = ?').run(id);
     db.prepare('DELETE FROM ideia_arquivos WHERE ideia_id = ?').run(id);
     db.prepare('DELETE FROM ideia_correlacoes WHERE ideia_a_id = ? OR ideia_b_id = ?').run(id, id);
+    
+    // Desvincular ideias filhas (torná-las raízes) ao invés de apagá-las
+    db.prepare('UPDATE ideias SET parent_id = NULL WHERE parent_id = ?').run(id);
+    
     db.prepare('DELETE FROM ideias WHERE id = ?').run(id);
     db.prepare('DELETE FROM ideias_historico WHERE ideia_id = ?').run(id);
     return true;
