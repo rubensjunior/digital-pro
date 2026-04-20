@@ -195,69 +195,24 @@ const labelsAdaptativos = computed(() => {
   // Encontrar o grupo ao qual o tipo pertence
   const grupo = tiposAgrupados.value.find(g => g.options.some((t: any) => t.id === tipo))?.label || '';
 
-  if (grupo.includes('Programação')) {
-    return {
-      contexto: { label: 'Requisitos / Contexto', placeholder: 'Quais os requisitos ou cenário técnico?' },
-      problema: { label: 'Problema / Bug', placeholder: 'O que precisa ser resolvido ou corrigido?' },
-      transformacao: { label: 'Solução Técnica', placeholder: 'Como a solução será implementada?' },
-      publico: { label: 'Stakeholders / Usuários', placeholder: 'Quem será afetado ou usará esta feature?' },
-      tags: [
-        { key: 'tags_avatar',    label: 'Tecnologias', placeholder: 'Ex: Vue, Node.js' },
-        { key: 'tags_nicho',     label: 'Plataforma',  placeholder: 'Ex: Web, iOS' },
-        { key: 'tags_dor',       label: 'Limitação',   placeholder: 'Ex: Performance, Memória' },
-        { key: 'tags_desejo',    label: 'Objetivo',    placeholder: 'Ex: Velocidade, SEO' },
-        { key: 'tags_mecanismo', label: 'Arquitetura', placeholder: 'Ex: Microserviços, SSR' }
-      ]
-    };
-  }
-
-  if (grupo.includes('Jurídico') || grupo.includes('Administrativo')) {
-    return {
-      contexto: { label: 'Fatos / Antecedentes', placeholder: 'Quais os fatos geradores ou histórico?' },
-      problema: { label: 'Questão Jurídica / Base', placeholder: 'Qual a base legal ou problema a resolver?' },
-      transformacao: { label: 'Pedido / Resultado', placeholder: 'O que se pretende obter ou decidir?' },
-      publico: { label: 'Partes Envolvidas', placeholder: 'Quem são os interessados ou partes?' },
-      tags: [
-        { key: 'tags_avatar',    label: 'Jurisprudência', placeholder: 'Ex: STF, Súmula 123' },
-        { key: 'tags_nicho',     label: 'Área do Direito', placeholder: 'Ex: Civil, Penal' },
-        { key: 'tags_dor',       label: 'Tese',           placeholder: 'Ex: Danos Morais' },
-        { key: 'tags_desejo',    label: 'Decisões',       placeholder: 'Ex: Liminar, Sentença' },
-        { key: 'tags_mecanismo', label: 'Prazos',         placeholder: 'Ex: 15 dias, Urgente' }
-      ]
-    };
-  }
-
-  if (grupo.includes('Estudos')) {
-    return {
-      contexto: { label: 'Referência / Origem', placeholder: 'De qual livro, curso ou autor surgiu?' },
-      problema: { label: 'Dúvida / Lacuna', placeholder: 'O que ainda não está claro ou precisa ser focado?' },
-      transformacao: { label: 'Resumo / Conclusão', placeholder: 'Qual a lição principal desta ideia?' },
-      publico: { label: 'Matéria / Disciplina', placeholder: 'A qual área do conhecimento pertence?' },
-      tags: [
-        { key: 'tags_avatar',    label: 'Autor',          placeholder: 'Ex: Peter Drucker' },
-        { key: 'tags_nicho',     label: 'Tema',           placeholder: 'Ex: Gestão' },
-        { key: 'tags_dor',       label: 'Conceito Chave', placeholder: 'Ex: Eficácia' },
-        { key: 'tags_desejo',    label: 'Exemplo',        placeholder: 'Ex: Caso Ford' },
-        { key: 'tags_mecanismo', label: 'Aplicação',      placeholder: 'Ex: Dia a dia' }
-      ]
-    };
-  }
-
-  // Padrão (Marketing/Geral)
+  // Mesmo que o grupo mude, manteremos o padrão solicitado pelo usuário, 
+  // pois ele é versátil o suficiente. No futuro, se necessário, 
+  // poderemos adicionar variações específicas aqui.
+  
   return defaultLabels;
 });
 
 const defaultLabels = {
-  contexto: { label: 'Contexto', placeholder: 'De onde surgiu essa ideia?' },
-  problema: { label: 'Problema que resolve', placeholder: 'Qual dor esta ideia ataca?' },
-  transformacao: { label: 'Transformação prometida', placeholder: 'Qual o resultado esperado?' },
-  publico: { label: 'Público-alvo', placeholder: 'Ex: Iniciantes em tráfego pago' },
+  contexto: { label: 'Contexto', placeholder: 'De onde surgiu a ideia?' },
+  problema: { label: 'Problema', placeholder: 'O que resolve ou pretende resolver?' },
+  transformacao: { label: 'Transformação', placeholder: 'Resultado prometido ou transformação esperada.' },
+  publico: { label: 'Público-alvo / Cliente', placeholder: 'Para quem é esta ideia?' },
   tags: [
-    { key: 'tags_avatar',    label: 'Avatar',    placeholder: 'Ex: iniciante  — Enter para adicionar' },
-    { key: 'tags_nicho',     label: 'Nicho',     placeholder: 'Ex: fitness' },
-    { key: 'tags_dor',       label: 'Dor',       placeholder: 'Ex: falta de dinheiro' },
-    { key: 'tags_desejo',    label: 'Desejo',    placeholder: 'Ex: liberdade financeira' },
-    { key: 'tags_mecanismo', label: 'Mecanismo', placeholder: 'Ex: novo método' }
+    { key: 'tags_avatar',    label: 'Avatar / Persona', placeholder: 'Ex: iniciante' },
+    { key: 'tags_nicho',     label: 'Nicho / Área',     placeholder: 'Ex: fitness, dev' },
+    { key: 'tags_dor',       label: 'Dor / Necessidade', placeholder: 'Ex: falta de tempo' },
+    { key: 'tags_desejo',    label: 'Desejo / Objetivo', placeholder: 'Ex: produtividade' },
+    { key: 'tags_mecanismo', label: 'Diferencial',       placeholder: 'Ex: método rápido' }
   ]
 };
 

@@ -26,6 +26,7 @@ export interface IElectronAPI {
     create: (payload: Record<string, unknown>) => Promise<any>;
     update: (payload: Record<string, unknown>) => Promise<any>;
     delete: (id: string) => Promise<boolean>;
+    setupTemplate: (templateId: string) => Promise<any>;
   };
 
   taxonomia: {

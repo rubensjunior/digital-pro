@@ -246,6 +246,11 @@ async function checkSubscription(): Promise<void> {
 // ─── Lifecycle ────────────────────────────────────────────
 onMounted(async () => {
   await fetchWorkspaces();
+  
+  if (workspaces.value.length === 0) {
+    router.replace('/onboarding');
+  }
+
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (user) {

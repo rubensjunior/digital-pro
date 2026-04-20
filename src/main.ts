@@ -178,91 +178,13 @@ function initDatabase() {
 
 function runDataMigration() {
   const countRes = db.prepare('SELECT count(*) as c FROM workspaces').get() as { c: number };
+  
+  // Se já existem workspaces, não fazemos nada de semeadura automática.
+  // A semeadura agora é disparada pelo Onboarding no frontend via IPC.
+  
   if (countRes.c === 0) {
-    const defaultWorkspaceId = 'default_workspace';
-    db.prepare('INSERT INTO workspaces (id, name, color) VALUES (?, ?, ?)').run(defaultWorkspaceId, 'Meu Cofre de Ideias', '#3b82f6');
-
-    console.log('Semeadura Inicial: Iniciando migração de tipos e status...');
-
-    // Tipos Legados
-    const TIPOS_AGRUPADOS = [
-      { label: '📣 Marketing & Copywriting', options: ['Produto', 'Promessa', 'Ângulo de Venda', 'Headline', 'Hook (Gancho)', 'Big Idea', 'VSL (Vídeo de Vendas)', 'Funil de Vendas', 'Lançamento', 'Copywriting', 'Criativo (Anúncio)', 'Lead Magnet (Isca)', 'E-mail Marketing'] },
-      { label: '📺 Publicidade & Social Media', options: ['Campanha Publicitária', 'Roteiro', 'Storyboard', 'Briefing', 'Mídia Kit', 'Planejamento de Mídia', 'Post Social Media', 'Newsletter'] },
-      { label: '💻 Programação & Tecnologia', options: ['POC (Proof of Concept)', 'Nova Feature', 'Bugfix (Correção)', 'Refatoração', 'Arquitetura de Software', 'API / Integração', 'Interface (UI/UX)', 'Automação / Script', 'Banco de Dados', 'DevOps / Infraestrutura'] },
-      { label: '📊 Gestão & Projetos', options: ['Planejamento Estratégico', 'Sprint / Roadmap', 'Tarefa (Task)', 'Processo / Workflow', 'Insight de Negócio', 'KPI / Métrica', 'OKR (Objetivos)'] },
-      { label: '🚀 SaaS & Produto', options: ['Onboarding de Usuário', 'Retenção / Churn', 'Pricing / Monetização', 'User Experience (UX)', 'MVP (Minimum Viable Product)', 'Feature Request'] },
-      { label: '⚖️ Jurídico & Documentação', options: ['Peça Processual', 'Contrato', 'Parecer Técnico', 'Petição', 'Documento / Anexo', 'Planilha de Dados'] },
-      { label: '🏢 Administrativo & Financeiro', options: ['Nota Fiscal / Recibo', 'Orçamento / Proposta', 'Relatório Financeiro', 'Ata de Reunião', 'Protocolo / Cadastro', 'Gestão de Custos'] },
-      { label: '📚 Estudos & Pesquisa', options: ['Revisão de Conteúdo', 'Resumo / Nota de Estudo', 'Teoria / Conceito', 'Método / Framework', 'Citação / Referência', 'Insight de Leitura', 'Curso / Treinamento'] },
-      { label: '🖋️ Outros', options: ['Insight / Ideia Solta', 'Pessoal / Meta', 'Outro'] }
-    ];
-
-    const tipoMap = new Map<string, string>();
-    for (const grupo of TIPOS_AGRUPADOS) {
-      for (const opt of grupo.options) {
-        const tId = crypto.randomUUID();
-        db.prepare('INSERT INTO workspace_tipos (id, workspace_id, label, grupo) VALUES (?, ?, ?, ?)').run(tId, defaultWorkspaceId, opt, grupo.label);
-        tipoMap.set(opt, tId);
-      }
-    }
-
-    // Status Legados (Mapeamento livre para meta_status)
-    const STATUS_AGRUPADOS = [
-      { label: 'Fluxo de Ideia (Geral)', options: [
-        { value: 'bruta', label: 'Bruta (Capturada)', meta: 'backlog' },
-        { value: 'pesquisa', label: 'Em Pesquisa / Estudo', meta: 'in_progress' },
-        { value: 'validada', label: 'Validada (Pronta)', meta: 'done' },
-        { value: 'nao_validada', label: 'Não Validada / Descartada', meta: 'archived' },
-        { value: 'escalada', label: 'Escalada (Em Escala)', meta: 'done' },
-        { value: 'arquivada', label: 'Arquivada', meta: 'archived' }
-      ]},
-      { label: '💻 Desenvolvimento & Projetos', options: [
-        { value: 'backlog', label: 'Backlog', meta: 'backlog' },
-        { value: 'em_desenvolvimento', label: 'Em Desenvolvimento', meta: 'in_progress' },
-        { value: 'em_teste', label: 'Em Teste (QA)', meta: 'review' },
-        { value: 'implementado', label: 'Implementado / Em Produção', meta: 'done' },
-        { value: 'pausado', label: 'Pausado / Bloqueado', meta: 'backlog' }
-      ]},
-      { label: '📝 Produção & Conteúdo', options: [
-        { value: 'rascunho', label: 'Rascunho / Draft', meta: 'backlog' },
-        { value: 'em_revisao', label: 'Em Revisão', meta: 'review' },
-        { value: 'aprovado', label: 'Aprovado / Pronto', meta: 'done' },
-        { value: 'publicado', label: 'Publicado / Finalizado', meta: 'done' }
-      ]},
-      { label: '⚖️ Jurídico & Administrativo', options: [
-        { value: 'pendente', label: 'Pendente', meta: 'backlog' },
-        { value: 'em_analise', label: 'Em Análise', meta: 'review' },
-        { value: 'assinado_deferido', label: 'Assinado / Deferido', meta: 'done' },
-        { value: 'cancelado_indeferido', label: 'Cancelado / Indeferido', meta: 'archived' }
-      ]}
-    ];
-
-    const statusMap = new Map<string, string>();
-    let order_index = 0;
-    for (const grupo of STATUS_AGRUPADOS) {
-      for (const opt of grupo.options) {
-        const sId = crypto.randomUUID();
-        db.prepare('INSERT INTO workspace_status (id, workspace_id, label, grupo, meta_status, order_index) VALUES (?, ?, ?, ?, ?, ?)').run(sId, defaultWorkspaceId, opt.label, grupo.label, opt.meta, order_index++);
-        statusMap.set(opt.value, sId); // map based on old exact string value like 'em_desenvolvimento'
-      }
-    }
-
-    // Migrar Tabela 'ideias'
-    const ideias = db.prepare('SELECT id, tipo, status FROM ideias').all() as {id: string, tipo: string, status: string}[];
-    const updateStmt = db.prepare('UPDATE ideias SET tipo = ?, status = ? WHERE id = ?');
-    
-    // Outro fallback for lost items
-    const fallbackTipo = tipoMap.get('Outro') || Array.from(tipoMap.values())[0];
-    const fallbackStatus = statusMap.get('bruta') || Array.from(statusMap.values())[0];
-
-    db.transaction(() => {
-      for (const i of ideias) {
-        const newTipoId = tipoMap.get(i.tipo) || fallbackTipo;
-        const newStatusId = statusMap.get(i.status) || fallbackStatus;
-        updateStmt.run(newTipoId, newStatusId, i.id);
-      }
-    })();
-    console.log(`Migração Completa: ${ideias.length} ideias atualizadas para IDs dinâmicos.`);
+    console.log('Banco de dados vazio. Aguardando Onboarding...');
+    return;
   }
 
   // Semente: Garantir que todo workspace tenha relacionamentos padrão
@@ -320,6 +242,162 @@ function registerIdeiaHandlers() {
   ipcMain.handle('workspaces:delete', (_, id: string) => {
     db.prepare('DELETE FROM workspaces WHERE id = ?').run(id);
     return true;
+  });
+
+  ipcMain.handle('workspaces:setupTemplate', (_, templateId: string) => {
+    try {
+      const dbTransaction = db.transaction(() => {
+        const id = crypto.randomUUID();
+        let name = 'Meu Workspace';
+        let color = '#3b82f6';
+        let types: { label: string; grupo: string }[] = [];
+        let statuses: { label: string; grupo: string; meta: string }[] = [];
+        let ideas: any[] = [];
+
+        if (templateId === 'marketing') {
+          name = 'Marketing & Infoprodutos';
+          color = '#f59e0b';
+          types = [
+            { label: 'Produto', grupo: '📣 Ofertas' },
+            { label: 'VSL (Vídeo de Vendas)', grupo: '🎬 Conteúdo' },
+            { label: 'Headline', grupo: '✍️ Copywriting' },
+            { label: 'Funil de Vendas', grupo: '📈 Estratégia' },
+            { label: 'Criativo (Anúncio)', grupo: '📺 Tráfego' },
+            { label: 'Lead Magnet', grupo: '🎁 Iscas' }
+          ];
+          statuses = [
+            { label: 'Capturada (Bruta)', grupo: 'Fluxo', meta: 'backlog' },
+            { label: 'Em Pesquisa', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Validada', grupo: 'Fluxo', meta: 'done' },
+            { label: 'Em Escala', grupo: 'Fluxo', meta: 'done' }
+          ];
+          ideas = [
+            { nome: 'Ebook: Guia de Tráfego Pago', tipo: 'Produto', status: 'Validada', descricao: 'Guia completo para iniciantes.' },
+            { nome: 'VSL Lançamento Agosto', tipo: 'VSL (Vídeo de Vendas)', status: 'Em Pesquisa', descricao: 'Roteiro baseado em storytelling.' },
+            { nome: 'Criativo: O Segredo do ROI', tipo: 'Criativo (Anúncio)', status: 'Capturada (Bruta)', descricao: 'Gancho focado em curiosidade.' }
+          ];
+        } else if (templateId === 'software') {
+          name = 'Software & SaaS';
+          color = '#6366f1';
+          types = [
+            { label: 'Nova Feature', grupo: '💻 Dev' },
+            { label: 'Bugfix', grupo: '💻 Dev' },
+            { label: 'Refatoração', grupo: '💻 Dev' },
+            { label: 'Interface (UI/UX)', grupo: '🎨 Design' },
+            { label: 'Bug', grupo: '🐞 QA' }
+          ];
+          statuses = [
+            { label: 'Backlog', grupo: 'Kanban', meta: 'backlog' },
+            { label: 'Em Desenvolvimento', grupo: 'Kanban', meta: 'in_progress' },
+            { label: 'Em Teste (QA)', grupo: 'Kanban', meta: 'review' },
+            { label: 'Implementado', grupo: 'Kanban', meta: 'done' }
+          ];
+          ideas = [
+            { nome: 'Dashboard de Métricas', tipo: 'Nova Feature', status: 'Em Desenvolvimento', descricao: 'Visão geral de KPIs para o admin.' },
+            { nome: 'Bug: Erro no Checkout', tipo: 'Bug', status: 'Backlog', descricao: 'Falha intermitente no Stripe.' },
+            { nome: 'Melhorar Onboarding', tipo: 'Interface (UI/UX)', status: 'Implementado', descricao: 'Simplificar passos iniciais.' }
+          ];
+        } else if (templateId === 'business') {
+          name = 'Negócios & Gestão';
+          color = '#10b981';
+          types = [
+            { label: 'OKR (Objetivo)', grupo: '🎯 Metas' },
+            { label: 'KPI (Métrica)', grupo: '🎯 Metas' },
+            { label: 'Processo / Workflow', grupo: '⚙️ Operação' },
+            { label: 'Planejamento', grupo: '📅 Gestão' },
+            { label: 'Insight de Negócio', grupo: '💡 Estratégia' }
+          ];
+          statuses = [
+            { label: 'Pendente', grupo: 'Status', meta: 'backlog' },
+            { label: 'Em Análise', grupo: 'Status', meta: 'review' },
+            { label: 'Aprovado', grupo: 'Status', meta: 'done' },
+            { label: 'Arquivado', grupo: 'Status', meta: 'archived' }
+          ];
+          ideas = [
+            { nome: 'Meta: 1000 Clientes', tipo: 'OKR (Objetivo)', status: 'Em Análise', descricao: 'Atingir 1k MRR até dezembro.' },
+            { nome: 'Fluxo Interno de Suporte', tipo: 'Processo / Workflow', status: 'Aprovado', descricao: 'Escopo de atendimento via Slack.' },
+            { nome: 'Reduzir Churn em 5%', tipo: 'KPI (Métrica)', status: 'Pendente', descricao: 'Análise de retenção mensal.' }
+          ];
+        } else if (templateId === 'education') {
+          name = 'Estudos & Pesquisa';
+          color = '#ec4899';
+          types = [
+            { label: 'Resumo', grupo: '📝 Notas' },
+            { label: 'Teoria / Conceito', grupo: '📖 Estudo' },
+            { label: 'Framework', grupo: '📖 Estudo' },
+            { label: 'Citação / Referência', grupo: '🔍 Pesquisa' },
+            { label: 'Insight de Leitura', grupo: '💡 Ideias' }
+          ];
+          statuses = [
+            { label: 'Para Estudar', grupo: 'Progresso', meta: 'backlog' },
+            { label: 'Em Estudo', grupo: 'Progresso', meta: 'in_progress' },
+            { label: 'Revisado', grupo: 'Progresso', meta: 'review' },
+            { label: 'Aplicado', grupo: 'Progresso', meta: 'done' }
+          ];
+          ideas = [
+            { nome: 'Livro: Hábitos Atômicos', tipo: 'Resumo', status: 'Revisado', descricao: 'Notas sobre micro-hábitos.' },
+            { nome: 'Framework Aprendizado Rápido', tipo: 'Framework', status: 'Em Estudo', descricao: 'Técnica Feynman aplicada.' },
+            { nome: 'Conceito: Juros Compostos', tipo: 'Teoria / Conceito', status: 'Para Estudar', descricao: 'Aplicação além do financeiro.' }
+          ];
+        }
+
+        // 1. Criar Workspace
+        db.prepare('INSERT INTO workspaces (id, name, color) VALUES (?, ?, ?)').run(id, name, color);
+
+        // 2. Criar Tipos
+        const tipoMap = new Map<string, string>();
+        for (const t of types) {
+          const tId = crypto.randomUUID();
+          db.prepare('INSERT INTO workspace_tipos (id, workspace_id, label, grupo) VALUES (?, ?, ?, ?)').run(tId, id, t.label, t.grupo);
+          tipoMap.set(t.label, tId);
+        }
+
+        // 3. Criar Status
+        const statusMap = new Map<string, string>();
+        let orderIndex = 0;
+        for (const s of statuses) {
+          const sId = crypto.randomUUID();
+          db.prepare('INSERT INTO workspace_status (id, workspace_id, label, grupo, meta_status, order_index) VALUES (?, ?, ?, ?, ?, ?)').run(sId, id, s.label, s.grupo, s.meta, orderIndex++);
+          statusMap.set(s.label, sId);
+        }
+
+        // 4. Criar Relacionamentos Padrão
+        const DEFAULTS = ['Complementa', 'Feature de', 'Upsell de', 'Downsell de', 'Order bump de', 'Extensão de', 'Versão de', 'Subproduto de', 'Outro'];
+        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1', '#ec4899', '#14b8a6', '#64748b'];
+        for (let i = 0; i < DEFAULTS.length; i++) {
+          db.prepare('INSERT INTO workspace_relacionamentos (id, workspace_id, label, color) VALUES (?, ?, ?, ?)').run(
+            crypto.randomUUID(),
+            id,
+            DEFAULTS[i],
+            COLORS[i]
+          );
+        }
+
+        // 5. Criar Ideias de Exemplo (se houver)
+        const now = new Date().toISOString();
+        for (const idea of ideas) {
+          const ideaId = crypto.randomUUID();
+          const tId = tipoMap.get(idea.tipo) || Array.from(tipoMap.values())[0];
+          const sId = statusMap.get(idea.status) || Array.from(statusMap.values())[0];
+          
+          db.prepare(`
+            INSERT INTO ideias (
+              id, workspace_id, nome, tipo, status, score, descricao,
+              tags_avatar, tags_nicho, tags_dor, tags_desejo, tags_mecanismo,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, '[]', '[]', '[]', '[]', '[]', ?, ?)
+          `).run(ideaId, id, idea.nome, tId, sId, 3, idea.descricao, now, now);
+        }
+
+        return id;
+      });
+      
+      const newWorkspaceId = dbTransaction();
+      return db.prepare('SELECT * FROM workspaces WHERE id = ?').get(newWorkspaceId);
+    } catch (error) {
+      console.error('[workspaces:setupTemplate] Erro:', error);
+      throw error;
+    }
   });
   
   ipcMain.handle('taxonomia:tipos:getAll', (_, workspace_id: string) => {

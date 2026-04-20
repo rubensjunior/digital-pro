@@ -11,6 +11,8 @@ import GeneralNetworkView from '../views/dashboard/GeneralNetworkView.vue';
 import GeneralFlowchartView from '../views/dashboard/GeneralFlowchartView.vue';
 import IdeaFlowchartView from '../views/dashboard/IdeaFlowchartView.vue';
 import IdeaKanbanView from '../views/dashboard/IdeaKanbanView.vue';
+import Onboarding from '../views/Onboarding.vue';
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -18,6 +20,7 @@ const router = createRouter({
     { path: '/login', component: Login },
     { path: '/signup', component: Signup },
     { path: '/pending-payment', component: PendingPayment },
+    { path: '/onboarding', component: Onboarding },
 
     // Área protegida do cliente
     {

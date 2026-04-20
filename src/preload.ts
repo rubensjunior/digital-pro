@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     create: (payload: Record<string, unknown>) => ipcRenderer.invoke('workspaces:create', payload),
     update: (payload: Record<string, unknown>) => ipcRenderer.invoke('workspaces:update', payload),
     delete: (id: string) => ipcRenderer.invoke('workspaces:delete', id),
+    setupTemplate: (templateId: string) => ipcRenderer.invoke('workspaces:setupTemplate', templateId),
   },
   taxonomia: {
     tipos: {
