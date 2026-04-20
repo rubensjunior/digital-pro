@@ -12,8 +12,7 @@
         <p class="bv-subtitle" style="margin-top: -12px;">
           <strong>Workspace Atual:</strong>
           {{ ideias.length }} ideia{{ ideias.length !== 1 ? 's' : '' }} registrada{{ ideias.length !== 1 ? 's' : '' }}
-          · {{ porStatus.validada.length }} validada{{ porStatus.validada.length !== 1 ? 's' : '' }}
-          · {{ porStatus.escalada.length }} escalada{{ porStatus.escalada.length !== 1 ? 's' : '' }}
+          · {{ totalValidadas }} validada{{ totalValidadas !== 1 ? 's' : '' }}
         </p>
       </div>
     </div>
@@ -43,7 +42,7 @@
         </div>
         <div class="bv-metric-value">{{ taxaSucesso }}%</div>
         <div class="bv-metric-trend">
-          Ideias validadas/escaladas: {{ porStatus.validada.length + porStatus.escalada.length }}
+          Ideias finalizadas ou em escala
         </div>
       </div>
       <div class="bv-metric-card bv-metric-orange">
@@ -67,8 +66,8 @@
             </svg>
           </div>
         </div>
-        <div class="bv-metric-value">{{ porStatus.em_teste.length }}</div>
-        <div class="bv-metric-trend">Testes rolando atualmente</div>
+        <div class="bv-metric-value">{{ totalEmProgresso }}</div>
+        <div class="bv-metric-trend">Trabalho em andamento</div>
       </div>
     </div>
 
@@ -311,7 +310,11 @@ const filtro = reactive({
   apenasFavoritas: false, emArquivo: false, ordenacao: 'nova' 
 });
 
-const { tiposAgrupados, statusAgrupados, getStatusLabel: getStatusLabelHelper, getTipoLabel, getStatusColor, getTipoColor } = useTaxonomy();
+const { 
+  tipos, status, tiposAgrupados, statusAgrupados, 
+  getStatusLabel: getStatusLabelHelper, getTipoLabel, 
+  getStatusColor, getTipoColor 
+} = useTaxonomy();
 
 const ideiasFilradas = computed(() => {
   const archMap = new Map<string, boolean>();
@@ -391,19 +394,23 @@ const listaHierarquica = computed(() => {
   return arr;
 });
 
-const porStatus = computed(() => ({
-  validada: ideias.value.filter(i => getStatusLabelHelper(i.status).toLowerCase().includes('validada')),
-  escalada: ideias.value.filter(i => getStatusLabelHelper(i.status).toLowerCase().includes('escalada')),
-  em_teste: ideias.value.filter(i => getStatusLabelHelper(i.status).toLowerCase().includes('teste')),
-  bruta: ideias.value.filter(i => getStatusLabelHelper(i.status).toLowerCase().includes('bruta')),
-}));
+const totalValidadas = computed(() => {
+  return ideias.value.filter(i => {
+    const s = status.value.find(x => x.id === i.status);
+    return s?.meta_status === 'done';
+  }).length;
+});
 
-// Removidas referências exclusivas do Kanban global
+const totalEmProgresso = computed(() => {
+  return ideias.value.filter(i => {
+    const s = status.value.find(x => x.id === i.status);
+    return s?.meta_status === 'in_progress' || s?.meta_status === 'review';
+  }).length;
+});
 
 const taxaSucesso = computed(() => {
   if (ideias.value.length === 0) return 0;
-  const count = porStatus.value.validada.length + porStatus.value.escalada.length;
-  return Math.round((count / ideias.value.length) * 100);
+  return Math.round((totalValidadas.value / ideias.value.length) * 100);
 });
 
 const deAltoPotencial = computed(() => ideias.value.filter(i => i.score >= 3).length);
@@ -735,32 +742,10 @@ function formatDate(iso: string): string {
 }
 
 .bv-status-badge {
-  font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px;
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  color: #fff;
 }
-.bv-status-badge[data-status="bruta"],
-.bv-status-badge[data-status="backlog"],
-.bv-status-badge[data-status="rascunho"],
-.bv-status-badge[data-status="pendente"] { background: rgba(100,116,139,0.12); color: #94a3b8; }
-
-.bv-status-badge[data-status="em_teste"] { background: rgba(234,179,8,0.12);   color: #eab308; }
-
-.bv-status-badge[data-status="em_desenvolvimento"],
-.bv-status-badge[data-status="em_revisao"],
-.bv-status-badge[data-status="em_analise"] { background: rgba(59,130,246,0.12); color: #60a5fa; }
-
-.bv-status-badge[data-status="validada"],
-.bv-status-badge[data-status="implementado"],
-.bv-status-badge[data-status="publicado"],
-.bv-status-badge[data-status="aprovado"],
-.bv-status-badge[data-status="assinado_deferido"] { background: rgba(34,197,94,0.12); color: #22c55e; }
-
-.bv-status-badge[data-status="escalada"] { background: rgba(59,130,246,0.12);  color: #60a5fa; }
-
-.bv-status-badge[data-status="nao_validada"],
-.bv-status-badge[data-status="pausado"],
-.bv-status-badge[data-status="cancelado_indeferido"] { background: rgba(239,68,68,0.12); color: #ef4444; }
-
-.bv-status-badge[data-status="arquivada"] { background: rgba(100,116,139,0.12); color: #94a3b8; opacity: 0.6; }
 
 .bv-stars { display: flex; gap: 2px; margin: 4px 0; }
 .bv-star-on { color: #f59e0b; fill: #f59e0b; }

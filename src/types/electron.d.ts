@@ -10,7 +10,7 @@ export interface IElectronAPI {
   };
 
   ideias: {
-    getAll: () => Promise<any[]>;
+    getAll: (workspace_id?: string) => Promise<any[]>;
     getHistorico: (id: string) => Promise<any[]>;
     create: (payload: Record<string, unknown>) => Promise<any>;
     update: (payload: Record<string, unknown>) => Promise<any>;
@@ -19,6 +19,28 @@ export interface IElectronAPI {
     updateAcesso: (id: string) => Promise<boolean>;
     toggleFavorita: (id: string, is_favorita: number) => Promise<boolean>;
     toggleArquivada: (id: string, is_arquivada: number) => Promise<boolean>;
+  };
+
+  workspaces: {
+    getAll: () => Promise<any[]>;
+    create: (payload: Record<string, unknown>) => Promise<any>;
+    update: (payload: Record<string, unknown>) => Promise<any>;
+    delete: (id: string) => Promise<boolean>;
+  };
+
+  taxonomia: {
+    tipos: {
+      getAll: (workspace_id: string) => Promise<any[]>;
+      create: (payload: Record<string, unknown>) => Promise<any>;
+      update: (payload: Record<string, unknown>) => Promise<any>;
+      delete: (id: string) => Promise<boolean>;
+    },
+    status: {
+      getAll: (workspace_id: string) => Promise<any[]>;
+      create: (payload: Record<string, unknown>) => Promise<any>;
+      update: (payload: Record<string, unknown>) => Promise<any>;
+      delete: (id: string) => Promise<boolean>;
+    }
   };
 
   notas: {

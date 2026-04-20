@@ -99,8 +99,7 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
-import type { Ideia, IdeiaStatus, IdeiaTipo } from '../../types/ideia';
-import { getStatusGroupsForTipo } from '../../types/ideia';
+import { useTaxonomy } from '../../composables/useTaxonomy';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 import IdeaFormModal from '../../components/IdeaFormModal.vue';
 
@@ -109,6 +108,8 @@ const {
   ideias, loading, fetchIdeias, 
   updateStatus, toggleFavorita 
 } = useIdeias();
+
+const { status: allStatus, getStatusLabel, getStatusColor } = useTaxonomy();
 
 const router = useRouter();
 const route  = useRoute();
@@ -141,7 +142,7 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
   toast.type = type;
   toast.visible = true;
   if (toastTimeout) clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => { toast.visible = false; }, 3000);
+  toastTimeout = setTimeout(() => { toast.visible = false; }, 3000) as any;
 }
 
 // ─── Lógica de Dados ─────────────────────────────────────────────────────────
@@ -162,27 +163,15 @@ async function handleToggleFavorita(ideia: Ideia) {
 // ─── Kanban dinâmico ─────────────────────────────────────────────────────────
 
 const colunasVisiveis = computed(() => {
-  const presentTypes = Array.from(new Set(derivedIdeas.value.map(i => i.tipo)));
+  // No novo sistema, o Kanban de "Ecossistema" de uma ideia deve mostrar
+  // os status definidos para o workspace da ideia pai.
+  if (!parentIdea.value) return [];
   
-  if (presentTypes.length === 0) {
-    presentTypes.push('Outro'); // Defaulting to something that loads 'Geral'
-  }
-
-  const cols: { status: IdeiaStatus; label: string }[] = [];
-  
-  presentTypes.forEach(t => {
-    const grupos = getStatusGroupsForTipo(t as IdeiaTipo);
-    grupos.forEach(g => {
-      g.options.forEach(opt => {
-        // Evita duplicados inter-grupos
-        if (!cols.some(c => c.status === opt.value)) {
-          cols.push({ status: opt.value, label: opt.label.split(' (')[0] });
-        }
-      });
-    });
-  });
-
-  return cols;
+  // Pegamos todos os status disponíveis para este workspace
+  return allStatus.value.map(s => ({
+    status: s.id,
+    label: s.label
+  }));
 });
 
 const porStatusKanban = computed(() => {

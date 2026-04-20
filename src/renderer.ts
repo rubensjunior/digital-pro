@@ -10,30 +10,7 @@ import App from './App.vue';
 import router from './router';
 import { useTheme } from './composables/useTheme';
 
-// Declare the electronAPI type for TypeScript
-declare global {
-  interface Window {
-    electronAPI: {
-      ping: () => Promise<string>;
-      windowMinimize: () => void;
-      windowMaximize: () => void;
-      windowClose: () => void;
-      versions: {
-        node: () => string;
-        chrome: () => string;
-        electron: () => string;
-      };
-      // ─── Brain Vault ───────────────────────────────────────────────────
-      ideias: {
-        getAll: () => Promise<import('./types/ideia').IdeiaRaw[]>;
-        create: (payload: Record<string, unknown>) => Promise<import('./types/ideia').IdeiaRaw>;
-        update: (payload: Record<string, unknown>) => Promise<import('./types/ideia').IdeiaRaw>;
-        delete: (id: string) => Promise<boolean>;
-        updateStatus: (id: string, status: string) => Promise<boolean>;
-      };
-    };
-  }
-}
+// The electronAPI is defined globally in src/types/electron.d.ts
 
 // Bootstrap Vue application
 const app = createApp(App);

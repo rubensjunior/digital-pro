@@ -596,13 +596,14 @@ function registerIdeiaHandlers() {
         CASE WHEN c.ideia_a_id = ? THEN c.ideia_b_id ELSE c.ideia_a_id END as correlata_id,
         CASE WHEN c.ideia_a_id = ? THEN i_b.nome ELSE i_a.nome END as correlata_nome,
         CASE WHEN c.ideia_a_id = ? THEN i_b.tipo ELSE i_a.tipo END as correlata_tipo,
-        CASE WHEN c.ideia_a_id = ? THEN i_b.status ELSE i_a.status END as correlata_status
+        CASE WHEN c.ideia_a_id = ? THEN i_b.status ELSE i_a.status END as correlata_status,
+        CASE WHEN c.ideia_a_id = ? THEN i_b.workspace_id ELSE i_a.workspace_id END as correlata_workspace_id
       FROM ideia_correlacoes c
       LEFT JOIN ideias i_a ON c.ideia_a_id = i_a.id
       LEFT JOIN ideias i_b ON c.ideia_b_id = i_b.id
       WHERE c.ideia_a_id = ? OR c.ideia_b_id = ?
       ORDER BY c.created_at DESC
-    `).all(ideia_id, ideia_id, ideia_id, ideia_id, ideia_id, ideia_id);
+    `).all(ideia_id, ideia_id, ideia_id, ideia_id, ideia_id, ideia_id, ideia_id);
   });
 
   ipcMain.handle('ideias:correlacoes:getAllTodos', () => {

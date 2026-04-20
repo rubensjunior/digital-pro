@@ -1,6 +1,16 @@
 import { ref, reactive, computed, type Ref } from 'vue';
 import type { Ideia, IdeiaStatus, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../types/ideia';
-import { getStatusGroupsForTipo, getStatusLabel as getStatusLabelHelper } from '../types/ideia';
+import { useTaxonomy } from './useTaxonomy';
+import { useWorkspaces } from './useWorkspaces';
+
+const NOTE_COLORS = [
+  { id: 'yellow', value: '#fef9c3', label: 'Amarelo' },
+  { id: 'blue', value: '#dbeafe', label: 'Azul' },
+  { id: 'green', value: '#dcfce7', label: 'Verde' },
+  { id: 'red', value: '#fee2e2', label: 'Rosa' },
+  { id: 'purple', value: '#f3e8ff', label: 'Roxo' },
+  { id: 'gray', value: '#f3f4f6', label: 'Cinza' },
+];
 
 // ─── Tipos de callback que o componente hospedeiro fornece ─────────────────────
 export interface DrawerCallbacks {
@@ -19,6 +29,8 @@ export interface DrawerCallbacks {
 
 // ─── Composable ────────────────────────────────────────────────────────────────
 export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks) {
+  const { status, statusAgrupados, fetchTaxonomies } = useTaxonomy();
+  const { workspaces } = useWorkspaces();
 
   // ─── Estado do Drawer ───────────────────────────────────────────────────────
   const drawerIdeia = ref<Ideia | null>(null);
@@ -60,14 +72,18 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
   const ideiasParaConectar = computed(() => {
     if (!drawerIdeia.value) return [];
-    const connectedIds = new Set(correlacoes.value.map(c => c.correlata_id));
+    const connectedIds = new Set(correlacoes.value.map((c: IdeiaCorrelacao) => c.correlata_id));
     const currentId = drawerIdeia.value.id;
-    return ideias.value.filter(i => i.id !== currentId && !connectedIds.has(i.id) && !i.is_arquivada);
+    
+    // Suporte a Soft Boundaries: permite conectar com ideias de qualquer workspace
+    // Para simplificar, usamos a lista de ideias passada por prop, 
+    // mas sinalizaremos o workspace na UI.
+    return ideias.value.filter((i: Ideia) => i.id !== currentId && !connectedIds.has(i.id) && !i.is_arquivada);
   });
 
   async function carregarCorrelacoes(id: string) {
     try {
-      const api = window.electronAPI;
+      const api = (window as any).electronAPI;
       correlacoes.value = await api.correlacoes.getAll(id);
     } catch (e) {
       console.error('Erro ao buscar correlacoes:', e);
@@ -77,7 +93,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   async function criarCorrelacao() {
     if (!novaCorrelacaoForm.ideia_id || !drawerIdeia.value) return;
     try {
-      const api = window.electronAPI;
+      const api = (window as any).electronAPI;
       await api.correlacoes.create({
         ideia_a_id: drawerIdeia.value.id,
         ideia_b_id: novaCorrelacaoForm.ideia_id,
@@ -100,7 +116,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
   async function saveEditCorrelacao(id: string) {
     try {
-      const api = window.electronAPI;
+      const api = (window as any).electronAPI;
       await api.correlacoes.update({
         id,
         descricao: correlacaoEditForm.descricao,
@@ -118,7 +134,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const ok = await solicitarConfirmacao('Remover conexão?', 'Deseja realmente remover esta conexão? Ela desaparecerá do ecossistema geral.');
     if (!ok) return;
     try {
-      const api = window.electronAPI;
+      const api = (window as any).electronAPI;
       await api.correlacoes.delete(id);
       if (drawerIdeia.value) await carregarCorrelacoes(drawerIdeia.value.id);
       callbacks.showToast('Conexão removida.');
@@ -130,12 +146,12 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   // ─── Ecossistema ────────────────────────────────────────────────────────────
   const ideiaPai = computed(() => {
     if (!drawerIdeia.value?.parent_id) return null;
-    return ideias.value.find(i => i.id === drawerIdeia.value?.parent_id) || null;
+    return ideias.value.find((i: Ideia) => i.id === drawerIdeia.value?.parent_id) || null;
   });
 
   const ideiasFilhas = computed(() => {
     if (!drawerIdeia.value) return [];
-    return ideias.value.filter(i => i.parent_id === drawerIdeia.value?.id);
+    return ideias.value.filter((i: Ideia) => i.parent_id === drawerIdeia.value?.id);
   });
 
   const ecosistemaArvore = computed(() => {
@@ -143,7 +159,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
     const encontrarRaiz = (ideia: Ideia): Ideia => {
       if (!ideia.parent_id) return ideia;
-      const pai = ideias.value.find(i => i.id === ideia.parent_id);
+      const pai = ideias.value.find((i: Ideia) => i.id === ideia.parent_id);
       return pai ? encontrarRaiz(pai) : ideia;
     };
 
@@ -157,8 +173,8 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
       visitados.add(ideia.id);
       arr.push({ ...ideia, depth, isCurrent: ideia.id === currentId });
       const filhos = ideias.value
-        .filter(i => i.parent_id === ideia.id)
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        .filter((i: Ideia) => i.parent_id === ideia.id)
+        .sort((a: Ideia, b: Ideia) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       for (const filho of filhos) {
         inserir(filho, depth + 1);
       }
@@ -193,8 +209,8 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   const uploadProgress = ref(0);
 
   async function carregarDocumentacao(ideia_id: string) {
-    const api = window.electronAPI;
-    const [n, l, a] = await Promise.all([
+    const api = (window as any).electronAPI;
+    const [n, l, a]: [IdeiaNote[], IdeiaLink[], IdeiaArquivo[]] = await Promise.all([
       api.notas.getAll(ideia_id),
       api.links.getAll(ideia_id),
       api.arquivos.getAll(ideia_id),
@@ -212,7 +228,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
   async function saveNewNote() {
     if (!newNoteForm.conteudo.trim() || !drawerIdeia.value) return;
-    const api = window.electronAPI;
+    const api = (window as any).electronAPI;
     const nota = await api.notas.create({
       ideia_id: drawerIdeia.value.id,
       titulo: newNoteForm.titulo.trim() || null,
@@ -230,14 +246,14 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   }
 
   async function saveEditNote(id: string) {
-    const api = window.electronAPI;
+    const api = (window as any).electronAPI;
     const updated = await api.notas.update({
       id,
       titulo: noteEditForm.titulo.trim() || null,
       conteudo: noteEditForm.conteudo.trim(),
       cor: noteEditForm.cor,
     });
-    const idx = notas.value.findIndex(n => n.id === id);
+    const idx = notas.value.findIndex((n: IdeiaNote) => n.id === id);
     if (idx !== -1) notas.value[idx] = updated;
     editingNoteId.value = null;
     callbacks.showToast('Nota atualizada!');
@@ -247,9 +263,9 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const ok = await solicitarConfirmacao('Excluir nota?', 'Esta ação não pode ser desfeita e o conteúdo será permanentemente removido.');
     if (!ok) return;
     try {
-      const api = window.electronAPI;
+      const api = (window as any).electronAPI;
       await api.notas.delete(id);
-      notas.value = notas.value.filter(n => n.id !== id);
+      notas.value = notas.value.filter((n: IdeiaNote) => n.id !== id);
       callbacks.showToast('Nota removida.');
     } catch (e) {
       console.error('Erro ao deletar nota:', e);
@@ -262,7 +278,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     if (!newLinkForm.url.trim()) { linkErro.value = 'URL é obrigatória.'; return; }
     try { new URL(newLinkForm.url.trim()); } catch { linkErro.value = 'URL inválida.'; return; }
     if (!drawerIdeia.value) return;
-    const api = window.electronAPI;
+    const api = (window as any).electronAPI;
     const link = await api.links.create({
       ideia_id: drawerIdeia.value.id,
       url: newLinkForm.url.trim(),
@@ -279,9 +295,9 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const ok = await solicitarConfirmacao('Excluir link?', 'Deseja remover este link da documentação?');
     if (!ok) return;
     try {
-      const api = window.electronAPI;
+      const api = (window as any).electronAPI;
       await api.links.delete(id);
-      links.value = links.value.filter(l => l.id !== id);
+      links.value = links.value.filter((l: IdeiaLink) => l.id !== id);
       callbacks.showToast('Link removido.');
     } catch (e) {
       console.error('Erro ao deletar link:', e);
@@ -305,7 +321,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   async function onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0 || !drawerIdeia.value) return;
-    const api = window.electronAPI;
+    const api = (window as any).electronAPI;
     uploadando.value = true;
     uploadProgress.value = 0;
     const files = Array.from(input.files);
@@ -328,7 +344,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   }
 
   async function openArquivo(id: string) {
-    const api = window.electronAPI;
+    const api = (window as any).electronAPI;
     await api.arquivos.open(id);
   }
 
@@ -336,9 +352,9 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const ok = await solicitarConfirmacao('Excluir arquivo?', 'O arquivo será removido permanentemente do seu computador.');
     if (!ok) return;
     try {
-      const api = window.electronAPI;
+      const api = (window as any).electronAPI;
       await api.arquivos.delete(id);
-      arquivos.value = arquivos.value.filter(a => a.id !== id);
+      arquivos.value = arquivos.value.filter((a: IdeiaArquivo) => a.id !== id);
       callbacks.showToast('Arquivo removido.');
     } catch (e) {
       console.error('Erro ao deletar arquivo:', e);
@@ -375,8 +391,9 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     ];
   }
 
-  function statusLabel(status: IdeiaStatus): string {
-    return getStatusLabelHelper(status);
+  function statusLabel(status_id: string): string {
+    const s = status.value.find(x => x.id === status_id);
+    return s ? s.label : status_id;
   }
 
   function formatDate(iso: string): string {
@@ -387,6 +404,13 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   async function abrirDrawer(ideia: Ideia) {
     drawerTab.value = 'geral';
     drawerIdeia.value = ideia;
+    
+    // Importante: recarregar as taxonomias do workspace dessa ideia específica
+    // Isso garante que o dropdown de status reflita o pipeline desse workspace
+    if (ideia.workspace_id) {
+      await fetchTaxonomies(ideia.workspace_id);
+    }
+
     historicoIdeia.value = await callbacks.getHistorico(ideia.id);
     await callbacks.updateAcesso(ideia.id);
     await carregarDocumentacao(ideia.id);
@@ -449,12 +473,14 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     }
   }
 
-  // ─── Constantes ──────────────────────────────────────────────────────────────
-  const NOTE_COLORS = ['#fef9c3', '#fce7f3', '#dbeafe', '#dcfce7', '#ffe4e6', '#ede9fe', '#f1f5f9'];
   const statusOptions = computed(() => {
-    if (!drawerIdeia.value) return [];
-    return getStatusGroupsForTipo(drawerIdeia.value.tipo);
+    return statusAgrupados.value;
   });
+
+  function getWorkspaceName(workspaceId?: string) {
+    if (!workspaceId) return 'Desconhecido';
+    return workspaces.value.find(w => w.id === workspaceId)?.name || 'Outro Workspace';
+  }
 
   return {
     // Estado
@@ -519,6 +545,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     allTags,
     statusLabel,
     formatDate,
+    getWorkspaceName,
 
     // Constantes
     NOTE_COLORS,

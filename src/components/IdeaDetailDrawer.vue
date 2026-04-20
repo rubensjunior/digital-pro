@@ -5,7 +5,13 @@
         <div class="bv-drawer-header">
           <div style="display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; width: 100%;">
             <div style="flex: 1;">
-              <div class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(drawer.drawerIdeia.value.tipo) || undefined }">{{ getTipoLabel(drawer.drawerIdeia.value.tipo) }}</div>
+              <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;">
+                <div class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(drawer.drawerIdeia.value.tipo) || undefined }">{{ getTipoLabel(drawer.drawerIdeia.value.tipo) }}</div>
+                <div class="bv-workspace-badge">
+                  <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 3px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                  {{ drawer.getWorkspaceName(drawer.drawerIdeia.value.workspace_id) }}
+                </div>
+              </div>
               <h2 class="bv-drawer-title">{{ drawer.drawerIdeia.value.nome }}</h2>
             </div>
             <div style="display: flex; gap: 8px;">
@@ -53,14 +59,29 @@
           <!-- ══════════════════════════ ABA: INFORMAÇÕES -->
           <div v-show="drawer.drawerTab.value === 'geral'" class="bv-drawer-tab-pane">
 
-            <!-- Status + Score -->
-            <div class="bv-drawer-row">
-              <span 
-                class="bv-status-badge" 
-                :style="{ backgroundColor: getStatusColor(drawer.drawerIdeia.value.status) || undefined }"
-              >
-                {{ getStatusLabel(drawer.drawerIdeia.value.status) }}
-              </span>
+            <!-- Status Selector + Score -->
+            <div class="bv-drawer-row" style="justify-content: space-between;">
+              <div class="bv-status-selector-wrapper">
+                <select 
+                  class="bv-status-select-hidden"
+                  :value="drawer.drawerIdeia.value.status"
+                  @change="drawer.mudarStatus(drawer.drawerIdeia.value.id, ($event.target as HTMLSelectElement).value)"
+                >
+                  <optgroup v-for="grupo in drawer.statusOptions.value" :key="grupo.label" :label="grupo.label">
+                    <option v-for="opt in grupo.options" :key="opt.id" :value="opt.id">
+                      {{ opt.label }}
+                    </option>
+                  </optgroup>
+                </select>
+                <div 
+                  class="bv-status-badge bv-status-interactive" 
+                  :style="{ backgroundColor: getStatusColor(drawer.drawerIdeia.value.status) || undefined }"
+                >
+                  {{ getStatusLabel(drawer.drawerIdeia.value.status) }}
+                  <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left: 6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
+
               <div class="bv-stars">
                 <span v-for="n in 4" :key="n" :class="n <= drawer.drawerIdeia.value.score ? 'bv-star-on' : 'bv-star-off'">★</span>
               </div>
@@ -328,6 +349,7 @@
                     <div style="flex: 1; min-width: 0;">
                       <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 4px;">
                         <span class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(c.correlata_tipo!) || undefined, padding: '2px 6px', fontSize: '10px' }">{{ getTipoLabel(c.correlata_tipo!) }}</span>
+                        <div class="bv-workspace-badge" style="font-size: 9px; padding: 1px 5px;">{{ drawer.getWorkspaceName(c.correlata_workspace_id) }}</div>
                         <strong style="font-size: 13px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ c.correlata_nome }}</strong>
                       </div>
                       <div style="display: flex; align-items: center; gap: 8px;">
@@ -366,7 +388,7 @@
                 <select v-model="drawer.novaCorrelacaoForm.ideia_id" class="bv-input bv-select-field" style="margin-bottom: 10px;">
                   <option value="">Selecione uma ideia para conectar...</option>
                   <option v-for="i in drawer.ideiasParaConectar.value" :key="i.id" :value="i.id">
-                    {{ i.nome }} ({{ getTipoLabel(i.tipo) }})
+                    {{ i.nome }} ({{ drawer.getWorkspaceName(i.workspace_id) }})
                   </option>
                 </select>
                 <input v-model="drawer.novaCorrelacaoForm.descricao" class="bv-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 10px;" />
@@ -509,13 +531,14 @@ defineExpose({
 /* ═══════════════════════════════════ VARIÁVEIS */
 .bv-drawer-overlay,
 .bv-drawer {
-  --bg: #f1f5f9;
+  --bg: #f5f8fa;
   --surface: #ffffff;
-  --border: #e2e8f0;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --accent: #3b82f6;
-  --accent-end: #2563eb;
+  --border: #eff2f5;
+  --text-primary: #181c32;
+  --text-secondary: #7e8299;
+  --accent: #009ef7;
+  --accent-light: #f1faff;
+  --danger: #f1416c;
 }
 
 /* ═══════════════════════════════════ OVERLAY + DRAWER */
@@ -523,25 +546,25 @@ defineExpose({
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: flex-end;
   z-index: 9998;
-  animation: fadeIn 0.15s ease;
+  animation: fadeIn 0.25s ease;
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .bv-drawer {
-  width: 50vw;
-  max-width: calc(100vw - 40px);
-  min-width: 480px;
+  width: 35vw;
+  max-width: calc(100vw - 60px);
+  min-width: 500px;
   height: 100%;
-  background: #ffffff;
-  border-left: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  box-shadow: -12px 0 40px rgba(0,0,0,0.15);
+  box-shadow: -20px 0 50px rgba(0,0,0,0.08);
   animation: slideRight 0.2s cubic-bezier(0.16,1,0.3,1);
   color: #1e293b;
 }
@@ -627,12 +650,50 @@ defineExpose({
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  background: #3b82f6;
+  background: var(--accent);
   color: #fff;
   border-radius: 9px;
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
+}
+
+.bv-workspace-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: #f1faff;
+  color: #009ef7;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bv-status-selector-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.bv-status-select-hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  width: 100%;
+}
+
+.bv-status-interactive {
+  position: relative;
+  transition: filter 0.15s;
+  cursor: pointer;
+}
+
+.bv-status-interactive:hover {
+  filter: brightness(0.95);
 }
 
 .bv-drawer-tab-pane {
@@ -714,15 +775,11 @@ defineExpose({
 
 /* ═══════════════════════════════════ STATUS */
 .bv-status-badge {
-  display: inline-flex; align-items: center; padding: 3px 9px;
-  border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  display: inline-flex; align-items: center; padding: 4px 12px;
+  border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
-.bv-status-badge[data-status="bruta"]    { background: rgba(100,116,139,0.12); color: #94a3b8; }
-.bv-status-badge[data-status="em_teste"] { background: rgba(234,179,8,0.12);   color: #eab308; }
-.bv-status-badge[data-status="validada"] { background: rgba(34,197,94,0.12);   color: #22c55e; }
-.bv-status-badge[data-status="escalada"] { background: rgba(59,130,246,0.12);  color: #60a5fa; }
-.bv-status-badge[data-status="nao_validada"] { background: rgba(239,68,68,0.12); color: #ef4444; }
-.bv-status-sm { font-size: 9px !important; padding: 1px 6px !important; border-radius: 4px !important; }
+.bv-status-sm { font-size: 9px !important; padding: 2px 6px !important; border-radius: 4px !important; }
 
 
 /* ═══════════════════════════════════ STARS & TAGS */

@@ -177,8 +177,10 @@ import { ref, computed, reactive } from 'vue';
 import type { Ideia, IdeiaStatus, IdeiaTipo } from '../types/ideia';
 import { useIdeias } from '../composables/useIdeias';
 import { useTaxonomy } from '../composables/useTaxonomy';
+import { useWorkspaces } from '../composables/useWorkspaces';
 
-const { tiposAgrupados, statusAgrupados } = useTaxonomy();
+const { tiposAgrupados, statusAgrupados, status } = useTaxonomy();
+const { currentWorkspaceId } = useWorkspaces();
 
 const props = defineProps<{
   ideias: Ideia[];
@@ -278,7 +280,8 @@ const alertData = ref<{ titulo: string, mensagem: string } | null>(null);
 const formVazio = () => ({
   nome: '',
   tipo: '' as IdeiaTipo | '',
-  status: 'bruta' as IdeiaStatus,
+  status: (status.value[0]?.id || '') as IdeiaStatus,
+  workspace_id: currentWorkspaceId.value || '',
   score: 2,
   descricao: '',
   contexto: '',
@@ -399,6 +402,7 @@ async function salvar(fechar: boolean = true) {
     nome: form.nome.trim(),
     tipo: form.tipo as IdeiaTipo,
     status: form.status,
+    workspace_id: form.workspace_id,
     score: form.score,
     descricao: form.descricao || undefined,
     contexto: form.contexto || undefined,
