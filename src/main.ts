@@ -25,10 +25,17 @@ protocol.registerSchemesAsPrivileged([
 
 let db: import('better-sqlite3').Database;
 
-function initDatabase() {
+function initDatabase(userId: string) {
+  if (db) {
+    try {
+      db.close();
+    } catch (e) {
+      console.error('Erro ao fechar DB anterior:', e);
+    }
+  }
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const Database = require('better-sqlite3');
-  const dbPath = path.join(app.getPath('userData'), 'brainvault.db');
+  const dbPath = path.join(app.getPath('userData'), `brainvault_${userId}.db`);
   db = new Database(dbPath);
 
   // Evolução 5: Workspaces & Data-Driven Taxonomy
@@ -865,6 +872,9 @@ const createWindow = () => {
     },
   });
 
+  // Maximiza a janela ao iniciar
+  mainWindow.maximize();
+
   // IPC básicos
   ipcMain.handle('ping', () => 'pong');
 
@@ -943,7 +953,12 @@ app.on('ready', () => {
     }
   });
 
-  initDatabase();
+  // initDatabase() será chamado via IPC quando o frontend validar o login
+  ipcMain.handle('database:init', (_, userId: string) => {
+    initDatabase(userId);
+    return true;
+  });
+
   registerIdeiaHandlers();
   registerUserHandlers();
   createWindow();
@@ -1012,6 +1027,27 @@ function registerUserHandlers() {
       return { success: true };
     } catch (e) {
       console.error('Erro ao atualizar perfil:', e);
+      return { success: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('user:clearDatabase', () => {
+    try {
+      db.exec(`
+        DELETE FROM ideia_arquivos;
+        DELETE FROM ideia_links;
+        DELETE FROM ideia_notas;
+        DELETE FROM ideia_correlacoes;
+        DELETE FROM ideias_historico;
+        DELETE FROM ideias;
+        DELETE FROM workspace_relacionamentos;
+        DELETE FROM workspace_status;
+        DELETE FROM workspace_tipos;
+        DELETE FROM workspaces;
+      `);
+      return { success: true };
+    } catch (e) {
+      console.error('Erro ao limpar o banco:', e);
       return { success: false, error: e.message };
     }
   });

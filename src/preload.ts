@@ -88,9 +88,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   // ─── Brain Vault — Usuário ───────────────────────────────────────────────
   user: {
+    initDb: (userId: string) => ipcRenderer.invoke('database:init', userId),
     getProfile: () => ipcRenderer.invoke('user:getProfile'),
     updateProfile: (payload: Record<string, unknown>) => ipcRenderer.invoke('user:updateProfile', payload),
     selectAvatar: () => ipcRenderer.invoke('user:selectAvatar'),
+    clearDatabase: () => ipcRenderer.invoke('user:clearDatabase'),
   },
 });
 

@@ -13,6 +13,73 @@ import IdeaFlowchartView from '../views/dashboard/IdeaFlowchartView.vue';
 import IdeaKanbanView from '../views/dashboard/IdeaKanbanView.vue';
 import Onboarding from '../views/Onboarding.vue';
 
+const requireActivePlan = async (_to: any, _from: any, next: any) => {
+  try {
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+
+    if (authError || !session) {
+      return next('/login');
+    }
+
+    // Se estiver offline, permitimos o acesso baseado na sessão local
+    // (Pois os dados do Brain Vault são locais no SQLite)
+    if (!navigator.onLine) {
+      console.log('App em modo offline. Ignorando verificação remota de assinatura.');
+      return next();
+    }
+
+    const userId = session.user.id;
+
+    // 1) Verifica se a conta está ativa
+    const { data: clientData, error: clientError } = await supabase
+      .from('clientes')
+      .select('status')
+      .eq('id', userId)
+      .single();
+
+    if (clientError) {
+      console.error('Erro ao verificar status do cliente (offline?):', clientError);
+      // Em caso de erro de rede (não falta de auth), permitimos passar
+      return next();
+    }
+
+    if (!clientData || clientData.status !== 'ativo') {
+      await supabase.auth.signOut();
+      return next('/pending-payment');
+    }
+
+    // 2) Verifica se a assinatura ainda está dentro do prazo
+    const { data: assinatura, error: searchError } = await supabase
+      .from('assinaturas')
+      .select('data_fim, status')
+      .eq('cliente_id', userId)
+      .order('data_fim', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (searchError && searchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      console.error('Erro ao verificar assinatura:', searchError);
+      return next();
+    }
+
+    if (assinatura) {
+      const vencida =
+        assinatura.status === 'cancelado' ||
+        (assinatura.data_fim && new Date(assinatura.data_fim) < new Date());
+
+      if (vencida) {
+        return next('/pending-payment');
+      }
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Falha crítica na verificação de acesso:', error);
+    // Em caso de erro catastrófico (ex: rede), tentamos deixar o usuário entrar se ele tiver sessão
+    next();
+  }
+};
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -20,78 +87,17 @@ const router = createRouter({
     { path: '/login', component: Login },
     { path: '/signup', component: Signup },
     { path: '/pending-payment', component: PendingPayment },
-    { path: '/onboarding', component: Onboarding },
+    { 
+      path: '/onboarding', 
+      component: Onboarding,
+      beforeEnter: requireActivePlan
+    },
 
     // Área protegida do cliente
     {
       path: '/dashboard',
       component: DashboardLayout,
-      beforeEnter: async (_to, _from, next) => {
-        try {
-          const { data: { session }, error: authError } = await supabase.auth.getSession();
-
-          if (authError || !session) {
-            return next('/login');
-          }
-
-          // Se estiver offline, permitimos o acesso baseado na sessão local
-          // (Pois os dados do Brain Vault são locais no SQLite)
-          if (!navigator.onLine) {
-            console.log('App em modo offline. Ignorando verificação remota de assinatura.');
-            return next();
-          }
-
-          const userId = session.user.id;
-
-          // 1) Verifica se a conta está ativa
-          const { data: clientData, error: clientError } = await supabase
-            .from('clientes')
-            .select('status')
-            .eq('id', userId)
-            .single();
-
-          if (clientError) {
-            console.error('Erro ao verificar status do cliente (offline?):', clientError);
-            // Em caso de erro de rede (não falta de auth), permitimos passar
-            return next();
-          }
-
-          if (!clientData || clientData.status === 'inativo') {
-            await supabase.auth.signOut();
-            return next('/login');
-          }
-
-          // 2) Verifica se a assinatura ainda está dentro do prazo
-          const { data: assinatura, error: searchError } = await supabase
-            .from('assinaturas')
-            .select('data_fim, status')
-            .eq('cliente_id', userId)
-            .order('data_fim', { ascending: false })
-            .limit(1)
-            .single();
-
-          if (searchError && searchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-            console.error('Erro ao verificar assinatura:', searchError);
-            return next();
-          }
-
-          if (assinatura) {
-            const vencida =
-              assinatura.status === 'cancelado' ||
-              (assinatura.data_fim && new Date(assinatura.data_fim) < new Date());
-
-            if (vencida) {
-              return next('/pending-payment');
-            }
-          }
-          
-          next();
-        } catch (error) {
-          console.error('Falha crítica na verificação de acesso:', error);
-          // Em caso de erro catastrófico (ex: rede), tentamos deixar o usuário entrar se ele tiver sessão
-          next();
-        }
-      },
+      beforeEnter: requireActivePlan,
       children: [
         { path: '', component: Dashboard },
         { path: 'ideas', component: IdeaManager },

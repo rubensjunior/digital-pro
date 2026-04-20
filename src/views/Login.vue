@@ -271,15 +271,14 @@ const handleLogin = async () => {
         
       if (clientError) throw clientError;
 
-      // 3. Bloquear e deslogar se a conta estiver inativa
-      if (clientData && clientData.status === 'inativo') {
+      // 3. Bloquear e redirecionar se a conta não estiver ativa
+      if (clientData && clientData.status !== 'ativo') {
         await supabase.auth.signOut();
-        errorMessage.value = 'Sua conta está inativa. Verifique seus pagamentos ou contate o suporte.';
+        router.push('/pending-payment');
         return;
       }
 
       // Login bem-sucedido e conta ativa
-      // (Substitua por router.push quando houver a rota do dashboard)
       configurarNavegacaoAoSucesso();
     }
   } catch (err: any) {

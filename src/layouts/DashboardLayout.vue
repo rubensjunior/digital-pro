@@ -68,7 +68,11 @@
               </div>
               <div class="user-meta">
                 <span class="user-name">{{ userName }}</span>
-                <button @click="handleLogout" class="small-logout-btn">Sair</button>
+                <div class="user-actions-row">
+                  <button @click="handleOpenUserSettings" class="small-action-btn">Conta</button>
+                  <span class="action-divider-small"></span>
+                  <button @click="handleLogout" class="small-action-btn logout">Sair</button>
+                </div>
               </div>
             </div>
           </div>
@@ -138,6 +142,7 @@
     </main>
     
     <WorkspaceSettingsModal ref="workspaceSettingsModalRef" />
+    <UserSettingsModal ref="userSettingsModalRef" />
   </div>
 </template>
 
@@ -149,6 +154,7 @@ import { supabase } from '../lib/supabase';
 import { useBus } from '../composables/useBus';
 import { useWorkspaces } from '../composables/useWorkspaces';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal.vue';
+import UserSettingsModal from '../components/UserSettingsModal.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -157,8 +163,13 @@ const { emit } = useBus();
 const { workspaces, currentWorkspaceId, fetchWorkspaces, createWorkspace } = useWorkspaces();
 const userName = ref('');
 const workspaceSettingsModalRef = ref<InstanceType<typeof WorkspaceSettingsModal> | null>(null);
+const userSettingsModalRef = ref<InstanceType<typeof UserSettingsModal> | null>(null);
 
 const currentWorkspace = computed(() => workspaces.value.find(w => w.id === currentWorkspaceId.value));
+
+function handleOpenUserSettings() {
+  userSettingsModalRef.value?.abrirModal();
+}
 
 function handleOpenWorkspaceSettings() {
   workspaceSettingsModalRef.value?.abrirModal(currentWorkspaceId.value || undefined);
@@ -245,26 +256,45 @@ async function checkSubscription(): Promise<void> {
 
 // ─── Lifecycle ────────────────────────────────────────────
 onMounted(async () => {
-  await fetchWorkspaces();
-  
-  if (workspaces.value.length === 0) {
-    router.replace('/onboarding');
-  }
-
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (user) {
-      const emailName = user.email ? user.email.split('@')[0] : 'Usuário';
-      userName.value = emailName.split(/[.\s]/)[0];
-      if (navigator.onLine) {
-        const { data } = await supabase.from('clientes').select('nome').eq('id', user.id).single();
-        if (data?.nome) {
-          userName.value = data.nome.split(/[.\s]/)[0];
-        }
-      }
+    // 1. Obter a sessão ativa
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session) {
+       router.push('/login');
+       return;
     }
+    const user = session.user;
+
+    // 2. Inicializar o Banco de Dados NATIVO isolado para este usuário
+    await window.electronAPI.user.initDb(user.id);
+
+    // 3. Popular Perfil do Supabase
+    const emailName = user.email ? user.email.split('@')[0] : 'Usuário';
+    userName.value = emailName.split(/[.\s]/)[0];
+    if (navigator.onLine) {
+       const { data } = await supabase.from('clientes').select('nome').eq('id', user.id).single();
+       if (data?.nome) {
+         userName.value = data.nome.split(/[.\s]/)[0];
+       }
+    }
+
+    // 4. Agora podemos acionar as APIs locais seguramente
+    await fetchWorkspaces();
+    const profile = await window.electronAPI.user.getProfile();
+
+    const hasWorkspace = workspaces.value.length > 0;
+    const hasProfile = profile && profile.nickname && profile.nickname.trim() !== '' && profile.nickname.trim() !== 'Usuário';
+
+    if (!hasProfile) {
+      router.replace({ path: '/onboarding', query: { step: '0' } });
+      return;
+    } else if (!hasWorkspace) {
+      router.replace({ path: '/onboarding', query: { step: '1' } });
+      return;
+    }
+
   } catch (error) {
-    console.error('Erro ao inicializar dados do usuário:', error);
+    console.error('Erro ao inicializar dados do usuário e banco:', error);
     userName.value = 'Usuário';
   }
 
@@ -538,7 +568,8 @@ function handleAction(action: string) {
 
 .user-meta { display: flex; flex-direction: column; align-items: flex-end; }
 .user-name { font-size: 13px; font-weight: 600; color: #ffffff; line-height: 1.2; }
-.small-logout-btn {
+.user-actions-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.small-action-btn {
   font-size: 11px;
   color: var(--header-dark-text);
   background: none;
@@ -546,7 +577,9 @@ function handleAction(action: string) {
   padding: 0;
   cursor: pointer;
 }
-.small-logout-btn:hover { color: #ef4444; }
+.small-action-btn:hover { color: #ffffff; }
+.small-action-btn.logout:hover { color: #ef4444; }
+.action-divider-small { width: 1px; height: 10px; background: rgba(255,255,255,0.1); }
 
 .header-secondary {
   height: var(--header-secondary-h);

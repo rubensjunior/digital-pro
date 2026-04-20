@@ -2,6 +2,8 @@
 CREATE TABLE public.clientes (
   id uuid references auth.users not null primary key,
   nome_completo text,
+  apelido text,
+  profissao text,
   cpf_cnpj text,
   telefone text,
   asaas_cliente_id text,
@@ -70,3 +72,20 @@ CREATE POLICY "Usuários podem ver suas próprias cobranças."
 CREATE POLICY "Usuários podem gerenciar suas próprias cobranças."
   ON public.cobrancas FOR ALL
   USING ( auth.uid() = cliente_id );
+
+-- Função RPC para exclusão de conta e limpeza de dados
+CREATE OR REPLACE FUNCTION delete_my_account()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Opcional: Se houver dependências com outras tabelas, devem ser limpas aqui.
+  DELETE FROM public.cobrancas WHERE cliente_id = auth.uid();
+  DELETE FROM public.assinaturas WHERE cliente_id = auth.uid();
+  DELETE FROM public.clientes WHERE id = auth.uid();
+  
+  -- Remove da tabela global de Auth
+  DELETE FROM auth.users WHERE id = auth.uid();
+END;
+$$;

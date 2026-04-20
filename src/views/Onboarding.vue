@@ -130,11 +130,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { supabase } from '../lib/supabase';
 import { useWorkspaces } from '../composables/useWorkspaces';
 
 const router = useRouter();
-const { fetchWorkspaces, createWorkspace } = useWorkspaces();
+const route = useRoute();
+const { workspaces, fetchWorkspaces, createWorkspace } = useWorkspaces();
 const currentStep = ref(0);
 const selectedTemplate = ref('marketing');
 const loading = ref(false);
@@ -146,8 +148,13 @@ const profileForm = reactive({
 });
 
 onMounted(async () => {
+  const step = route.query.step;
+  if (step) {
+    currentStep.value = parseInt(step as string, 10);
+  }
+
   const profile = await window.electronAPI.user.getProfile();
-  if (profile) {
+  if (profile && profile.nickname !== 'Usuário') {
     profileForm.nickname = profile.nickname || '';
     profileForm.profession = profile.profession || '';
     profileForm.avatarPath = profile.avatar_path || '';
@@ -171,12 +178,42 @@ async function handleProfileSubmit() {
   if (!profileForm.nickname) return;
   loading.value = true;
   try {
+    // 1. Atualizar Profile Localmente (SQLite)
     await window.electronAPI.user.updateProfile({
       nickname: profileForm.nickname,
       profession: profileForm.profession,
       avatarPath: profileForm.avatarPath
     });
-    currentStep.value = 1;
+
+    // 2. Sincronizar Informações no Supabase de Maneira Independente
+    if (navigator.onLine) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.user) {
+          const { error } = await supabase
+            .from('clientes')
+            .update({ 
+              apelido: profileForm.nickname, 
+              profissao: profileForm.profession 
+            })
+            .eq('id', data.session.user.id);
+            
+          if (error) {
+            console.warn('Aviso: As colunas apelido ou profissao podem não existir na tabela clientes no Supabase:', error);
+          }
+        }
+      } catch (err) {
+        console.error('Erro de Sync com Supabase:', err);
+      }
+    }
+
+    // 3. Verifica a Necessidade de Setup do Template
+    await fetchWorkspaces();
+    if (workspaces.value.length === 0) {
+      currentStep.value = 1;
+    } else {
+      router.replace('/dashboard/ideas');
+    }
   } catch (e) {
     console.error('Erro ao salvar perfil:', e);
   } finally {
