@@ -106,15 +106,12 @@
 
             <div class="metronic-form-group">
               <label>Cor de Destaque <span class="text-danger">*</span></label>
-              <div class="metronic-color-picker">
-                <button 
-                  v-for="hex in COLORS" 
-                  :key="hex" 
-                  class="color-btn" 
-                  :class="{ active: selectedWorkspace.color === hex }"
-                  :style="{ background: hex }"
-                  @click="atualizarCorWs(hex)"
-                ></button>
+              <div class="workspace-color-picker-v2">
+                <ModernColorPicker 
+                  :model-value="selectedWorkspace.color || '#009ef7'" 
+                  @update:model-value="atualizarCorWs"
+                />
+                <span class="color-label">Clique na cor para expandir a paleta</span>
               </div>
             </div>
 
@@ -153,7 +150,7 @@
                   <div v-else class="item-edit">
                     <input v-model="editTipoForm.label" class="metronic-input sm" placeholder="Nome do Tipo" style="flex: 1" />
                     <div class="color-picker-wrapper">
-                      <input type="color" v-model="editTipoForm.color" class="html-color-picker" />
+                      <ModernColorPicker v-model="editTipoForm.color" />
                       <button class="shuffle-btn" @click="editTipoForm.color = generateRandomHex()" title="Cor aleatória">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                       </button>
@@ -168,7 +165,7 @@
                   <div class="item-edit">
                     <input v-model="newTipoForm.label" class="metronic-input sm" placeholder="Ex: Produto, Post Instagram..." style="flex: 1" />
                     <div class="color-picker-wrapper">
-                      <input type="color" v-model="newTipoForm.color" class="html-color-picker" />
+                      <ModernColorPicker v-model="newTipoForm.color" />
                       <button class="shuffle-btn" @click="newTipoForm.color = generateRandomHex()" title="Cor aleatória">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                       </button>
@@ -207,7 +204,7 @@
                   <div v-else class="item-edit">
                     <input v-model="editStatusForm.label" class="metronic-input sm" placeholder="Ex: Em Andamento" style="flex: 1" />
                     <div class="color-picker-wrapper">
-                      <input type="color" v-model="editStatusForm.color" class="html-color-picker" />
+                      <ModernColorPicker v-model="editStatusForm.color" />
                       <button class="shuffle-btn" @click="editStatusForm.color = generateRandomHex()" title="Cor aleatória">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                       </button>
@@ -222,7 +219,7 @@
                   <div class="item-edit">
                     <input v-model="newStatusForm.label" class="metronic-input sm" placeholder="Ex: Finalizado" style="flex: 1" />
                     <div class="color-picker-wrapper">
-                      <input type="color" v-model="newStatusForm.color" class="html-color-picker" />
+                      <ModernColorPicker v-model="newStatusForm.color" />
                       <button class="shuffle-btn" @click="newStatusForm.color = generateRandomHex()" title="Cor aleatória">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                       </button>
@@ -261,7 +258,7 @@
                   <div v-else class="item-edit">
                     <input v-model="editRelForm.label" class="metronic-input sm" placeholder="Nome da Relação" style="flex: 1" />
                     <div class="color-picker-wrapper">
-                      <input type="color" v-model="editRelForm.color" class="html-color-picker" />
+                      <ModernColorPicker v-model="editRelForm.color" />
                       <button class="shuffle-btn" @click="editRelForm.color = generateRandomHex()" title="Cor aleatória">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                       </button>
@@ -276,7 +273,7 @@
                   <div class="item-edit">
                     <input v-model="newRelForm.label" class="metronic-input sm" placeholder="Ex: Módulo de, Upsell de..." style="flex: 1" />
                     <div class="color-picker-wrapper">
-                      <input type="color" v-model="newRelForm.color" class="html-color-picker" />
+                      <ModernColorPicker v-model="newRelForm.color" />
                       <button class="shuffle-btn" @click="newRelForm.color = generateRandomHex()" title="Cor aleatória">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                       </button>
@@ -303,6 +300,7 @@ import { useWorkspaces, type Workspace } from '../composables/useWorkspaces';
 import { useTaxonomy, type TaxonomyTipo, type TaxonomyStatus } from '../composables/useTaxonomy';
 import { useConfirm } from '../composables/useConfirm';
 import { TEMPLATES } from '../lib/templates';
+import ModernColorPicker from './ModernColorPicker.vue';
 
 const emit = defineEmits<{
   (e: 'closed'): void;
@@ -744,15 +742,19 @@ defineExpose({ abrirModal });
 .metronic-btn-light:hover { background: #e4e6ef; color: #3f4254; }
 .metronic-btn-light.sm { padding: 8px 14px; font-size: 13px; }
 
-.metronic-color-picker {
-  display: flex; gap: 10px; flex-wrap: wrap; background: #f5f8fa; padding: 16px; border-radius: 8px;
+.workspace-color-picker-v2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f5f8fa;
+  padding: 12px 16px;
+  border-radius: 12px;
 }
-
-.color-btn {
-  width: 32px; height: 32px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: transform 0.1s;
+.workspace-color-picker-v2 .color-label {
+  font-size: 13px;
+  color: #7e8299;
+  font-weight: 500;
 }
-.color-btn:hover { transform: scale(1.1); }
-.color-btn.active { border-color: #181c32; padding: 2px; background-clip: content-box; }
 
 .metronic-danger-zone {
   display: flex; justify-content: space-between; align-items: center;
