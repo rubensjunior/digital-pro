@@ -2,6 +2,23 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.2] - 2026-04-20
+
+### Adicionado
+- **Personalização de Perfil**: Implementado sistema de perfil com apelido, profissão e foto de avatar.
+- **Sincronização de Perfil**: Integração automática entre o banco de dados SQLite local e o Supabase remoto para persistência do perfil.
+- **Exclusão de Conta**: Funcionalidade para excluir permanentemente a conta no Supabase e limpar todos os dados locais.
+
+### Alterado
+- **Dashboard Personalizado**: O cabeçalho do Dashboard agora exibe o avatar e o apelido escolhidos pelo usuário.
+- **Fluxo de Onboarding**: Adicionado passo inicial para configuração de perfil pessoal antes da escolha de templates.
+- **Estabilidade do Banco de Dados**: Adicionadas proteções no processo principal (Electron) para evitar falhas se a interface tentar acessar o banco antes da inicialização completa.
+
+### Corrigido
+- **Erros de Tipagem no Dashboard**: Corrigido acesso incorreto a propriedades de Refs no `DashboardLayout.vue`.
+- **Interação de Avatar**: Corrigida a abertura do diálogo de seleção de arquivo para foto de perfil.
+
+
 ## [1.0.1] - 2026-04-20
 
 ### Adicionado

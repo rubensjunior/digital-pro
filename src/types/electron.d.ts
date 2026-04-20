@@ -41,6 +41,12 @@ export interface IElectronAPI {
       create: (payload: Record<string, unknown>) => Promise<any>;
       update: (payload: Record<string, unknown>) => Promise<any>;
       delete: (id: string) => Promise<boolean>;
+    },
+    relacionamentos: {
+      getAll: (workspace_id: string) => Promise<any[]>;
+      create: (payload: Record<string, unknown>) => Promise<any>;
+      update: (payload: Record<string, unknown>) => Promise<any>;
+      delete: (id: string) => Promise<boolean>;
     }
   };
 
@@ -72,9 +78,11 @@ export interface IElectronAPI {
     delete: (id: string) => Promise<boolean>;
   };
   user: {
+    initDb: (userId: string) => Promise<boolean>;
     getProfile: () => Promise<any>;
     updateProfile: (payload: Record<string, unknown>) => Promise<any>;
     selectAvatar: () => Promise<string | null>;
+    clearDatabase: () => Promise<{ success: boolean; error?: string }>;
   };
 }
 

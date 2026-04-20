@@ -8,10 +8,43 @@
         </button>
       </div>
 
-      <div class="modal-body">
-        <div class="danger-zone-section">
-          <h3>Zona de Perigo</h3>
-          <p class="danger-desc">As ações abaixo são irreversíveis. Tenha certeza do que está fazendo.</p>
+        <div class="modal-body">
+          <!-- Seção de Perfil -->
+          <div class="settings-section profile-edit-section">
+            <h3 class="section-title">Meu Perfil</h3>
+            <p class="section-desc">Como você aparece no sistema e nos relatórios.</p>
+
+            <div class="profile-grid">
+              <div class="avatar-edit" @click="handleSelectAvatar">
+                <div class="avatar-circle" :style="profile.avatar_path ? { backgroundImage: `url(${profile.avatar_path})` } : {}">
+                  <div class="avatar-hover">
+                    <svg fill="currentColor" viewBox="0 0 20 20" width="16"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                  </div>
+                  <span v-if="!profile.avatar_path" class="avatar-placeholder">
+                    {{ profile.nickname ? profile.nickname.charAt(0).toUpperCase() : '?' }}
+                  </span>
+                </div>
+                <span class="edit-label">Alterar foto</span>
+              </div>
+
+              <div class="profile-fields">
+                <div class="field-group">
+                  <label>Apelido *</label>
+                  <input v-model="profile.nickname" type="text" placeholder="Ex: Rubens Júnior" class="settings-input" @blur="handleSaveProfile" />
+                </div>
+                <div class="field-group">
+                  <label>Profissão / Foco</label>
+                  <input v-model="profile.profession" type="text" placeholder="Ex: Gestor de Tráfego" class="settings-input" @blur="handleSaveProfile" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="danger-zone-section">
+            <h3 class="danger-title">Zona de Perigo</h3>
+            <p class="danger-desc">As ações abaixo são irreversíveis. Tenha certeza do que está fazendo.</p>
           
           <!-- Clear Database -->
           <div class="danger-item">
@@ -61,10 +94,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { supabase } from '../lib/supabase';
 import { useRouter } from 'vue-router';
+import { useProfile } from '../composables/useProfile';
+import { supabase } from '../lib/supabase';
 
 const router = useRouter();
+const { profile, updateProfile } = useProfile();
 
 const isOpen = ref(false);
 
@@ -80,6 +115,25 @@ function abrirModal() {
   isOpen.value = true;
   cancelClear();
   cancelDelete();
+}
+
+async function handleSelectAvatar() {
+  try {
+    const path = await window.electronAPI.user.selectAvatar();
+    if (path) {
+      await updateProfile({ avatar_path: path });
+    }
+  } catch (err) {
+    console.error('Erro ao selecionar avatar:', err);
+  }
+}
+
+async function handleSaveProfile() {
+  if (!profile.value.nickname.trim()) return;
+  await updateProfile({
+    nickname: profile.value.nickname,
+    profession: profile.value.profession
+  });
 }
 
 function fecharModal() {
@@ -163,9 +217,44 @@ defineExpose({ abrirModal, fecharModal });
 .close-btn svg { width: 20px; height: 20px; }
 .close-btn:hover { color: #f1416c; }
 
-.modal-body { padding: 24px; }
 
-.danger-zone-section h3 { margin: 0 0 4px 0; color: #f1416c; font-size: 16px; font-weight: 600; }
+.modal-body { padding: 24px; overflow-y: auto; max-height: 70vh; }
+
+.settings-section { margin-bottom: 30px; }
+.section-title { margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: var(--text-primary, #fff); }
+.section-desc { margin: 0 0 20px 0; color: var(--text-secondary, #92929f); font-size: 13px; }
+
+.profile-grid { display: flex; gap: 24px; align-items: center; }
+.avatar-edit { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+.avatar-circle {
+  width: 80px; height: 80px; border-radius: 12px; background: #2b2b40;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden; background-size: cover; background-position: center;
+  border: 2px solid var(--border); transition: all 0.2s;
+}
+.avatar-edit:hover .avatar-circle { border-color: var(--accent); }
+.avatar-hover {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.4); 
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; opacity: 0; transition: opacity 0.2s;
+}
+.avatar-edit:hover .avatar-hover { opacity: 1; }
+.avatar-placeholder { font-size: 24px; font-weight: 700; color: #a1a5b7; }
+.edit-label { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; }
+
+.profile-fields { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-group label { font-size: 12px; font-weight: 600; color: #a1a5b7; text-transform: uppercase; letter-spacing: 0.05em; }
+.settings-input {
+  background: var(--bg, #151521); border: 1px solid var(--border, #2b2b40);
+  border-radius: 8px; padding: 10px 14px; font-size: 14px; color: #fff;
+  transition: all 0.2s;
+}
+.settings-input:focus { outline: none; border-color: var(--accent); background: #1e1e2d; }
+
+.divider { height: 1px; background: var(--border); margin: 0 0 30px 0; opacity: 0.5; }
+
+.danger-zone-section .danger-title { margin: 0 0 4px 0; color: #f1416c; font-size: 16px; font-weight: 600; }
 .danger-desc { margin: 0 0 20px 0; color: var(--text-secondary, #92929f); font-size: 13px; }
 
 .danger-item {

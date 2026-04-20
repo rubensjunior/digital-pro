@@ -7,6 +7,7 @@ Para infoprodutores profissionais! O Digital PRO é uma plataforma robusta proje
 - **Gestão de Workspaces**: Crie múltiplos espaços de trabalho isolados para diferentes projetos.
 - **Ecosistema de Ideias**: Visualize conexões, taxonomias e relacionamentos entre suas ideias.
 - **Visualizações Dinâmicas**: Kanban, Fluxogramas e Mapas de Network.
+- **Personalização de Perfil**: Altere seu apelido, profissão e foto de perfil com sincronização em nuvem.
 - **Modelos de Setup**: Inicie rapidamente com templates pré-configurados para Marketing, Software, Negócios e Educação.
 - **Segurança Local**: Dados armazenados localmente em SQLite com isolamento por usuário.
 - **Sincronização**: Integração com Supabase para gerenciamento de perfil e status de acesso.

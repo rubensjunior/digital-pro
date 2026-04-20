@@ -63,11 +63,13 @@
 
             <!-- User avatar -->
             <div class="user-dropdown">
-              <div class="user-avatar">
-                {{ userInitial }}
+              <div class="user-avatar" :style="profile.avatar_path ? { backgroundImage: `url(${profile.avatar_path})`, backgroundSize: 'cover', backgroundPosition: 'center', border: 'none' } : {}">
+                <template v-if="!profile.avatar_path">
+                  {{ userInitial }}
+                </template>
               </div>
               <div class="user-meta">
-                <span class="user-name">{{ userName }}</span>
+                <span class="user-name">{{ userNameDisplay }}</span>
                 <div class="user-actions-row">
                   <button @click="handleOpenUserSettings" class="small-action-btn">Conta</button>
                   <span class="action-divider-small"></span>
@@ -155,13 +157,14 @@ import { useBus } from '../composables/useBus';
 import { useWorkspaces } from '../composables/useWorkspaces';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal.vue';
 import UserSettingsModal from '../components/UserSettingsModal.vue';
+import { useProfile } from '../composables/useProfile';
 
 const router = useRouter();
 const route = useRoute();
 const { isDark, toggleTheme } = useTheme();
 const { emit } = useBus();
 const { workspaces, currentWorkspaceId, fetchWorkspaces, createWorkspace } = useWorkspaces();
-const userName = ref('');
+const { profile, loadProfile, syncProfile } = useProfile();
 const workspaceSettingsModalRef = ref<InstanceType<typeof WorkspaceSettingsModal> | null>(null);
 const userSettingsModalRef = ref<InstanceType<typeof UserSettingsModal> | null>(null);
 
@@ -181,8 +184,12 @@ async function handleCreateWorkspace() {
 }
 
 const userInitial = computed(() =>
-  userName.value ? userName.value.charAt(0).toUpperCase() : '?'
+  profile.value.nickname ? profile.value.nickname.charAt(0).toUpperCase() : '?'
 );
+
+const userNameDisplay = computed(() => {
+  return profile.value.nickname || 'Usuário';
+});
 
 const isCanvasLayout = computed(() => 
   route.path.includes('/network') || route.path.includes('/flowchart')
@@ -268,22 +275,18 @@ onMounted(async () => {
     // 2. Inicializar o Banco de Dados NATIVO isolado para este usuário
     await window.electronAPI.user.initDb(user.id);
 
-    // 3. Popular Perfil do Supabase
-    const emailName = user.email ? user.email.split('@')[0] : 'Usuário';
-    userName.value = emailName.split(/[.\s]/)[0];
+    // 3. Sincronizar e Carregar Perfil
+    await loadProfile(); // Tenta carregar do local primeiro para UI rápida
     if (navigator.onLine) {
-       const { data } = await supabase.from('clientes').select('nome').eq('id', user.id).single();
-       if (data?.nome) {
-         userName.value = data.nome.split(/[.\s]/)[0];
-       }
+      await syncProfile(); // Sincroniza do Supabase para o local
     }
 
     // 4. Agora podemos acionar as APIs locais seguramente
     await fetchWorkspaces();
-    const profile = await window.electronAPI.user.getProfile();
+    await loadProfile();
 
     const hasWorkspace = workspaces.value.length > 0;
-    const hasProfile = profile && profile.nickname && profile.nickname.trim() !== '' && profile.nickname.trim() !== 'Usuário';
+    const hasProfile = profile.value && profile.value.nickname && profile.value.nickname.trim() !== '' && profile.value.nickname.trim() !== 'Usuário';
 
     if (!hasProfile) {
       router.replace({ path: '/onboarding', query: { step: '0' } });
@@ -295,7 +298,6 @@ onMounted(async () => {
 
   } catch (error) {
     console.error('Erro ao inicializar dados do usuário e banco:', error);
-    userName.value = 'Usuário';
   }
 
   subscriptionCheckTimer = setInterval(checkSubscription, SUBSCRIPTION_CHECK_INTERVAL_MS);

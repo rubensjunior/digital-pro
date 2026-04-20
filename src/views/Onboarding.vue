@@ -14,8 +14,8 @@
 
         <div class="profile-setup">
           <div class="avatar-upload" @click="handleSelectAvatar">
-            <div class="avatar-preview" :style="{ backgroundImage: profileForm.avatarPath ? `url(${profileForm.avatarPath})` : 'none' }">
-              <svg v-if="!profileForm.avatarPath" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="40">
+            <div class="avatar-preview" :style="{ backgroundImage: profileForm.avatar_path ? `url(${profileForm.avatar_path})` : 'none' }">
+              <svg v-if="!profileForm.avatar_path" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="40">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               <div class="avatar-overlay">
@@ -133,20 +133,21 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../lib/supabase';
 import { useWorkspaces } from '../composables/useWorkspaces';
+import { useProfile } from '../composables/useProfile';
 import { TEMPLATES } from '../lib/templates';
 
 const router = useRouter();
 const route = useRoute();
 const { workspaces, fetchWorkspaces, createWorkspace } = useWorkspaces();
+const { profile, loadProfile, updateProfile } = useProfile();
 const currentStep = ref(0);
 const selectedTemplate = ref('marketing');
 const loading = ref(false);
 
-const profileForm = reactive({
-  nickname: '',
-  profession: '',
-  avatarPath: ''
-});
+// O estado do formulário agora é o próprio profile do composable
+// mas para o onboarding, podemos usar uma cópia ou o próprio se quisermos reatividade imediata.
+// Vamos usar o próprio para simplificar.
+const profileForm = profile;
 
 onMounted(async () => {
   const step = route.query.step;
@@ -154,12 +155,7 @@ onMounted(async () => {
     currentStep.value = parseInt(step as string, 10);
   }
 
-  const profile = await window.electronAPI.user.getProfile();
-  if (profile && profile.nickname !== 'Usuário') {
-    profileForm.nickname = profile.nickname || '';
-    profileForm.profession = profile.profession || '';
-    profileForm.avatarPath = profile.avatar_path || '';
-  }
+  await loadProfile();
 });
 
 async function handleSelectAvatar() {
@@ -168,7 +164,7 @@ async function handleSelectAvatar() {
     const path = await window.electronAPI.user.selectAvatar();
     console.log('Caminho recebido do Electron:', path);
     if (path) {
-      profileForm.avatarPath = path;
+      profileForm.value.avatar_path = path;
     }
   } catch (err) {
     console.error('Erro ao chamar selectAvatar:', err);
@@ -176,37 +172,15 @@ async function handleSelectAvatar() {
 }
 
 async function handleProfileSubmit() {
-  if (!profileForm.nickname) return;
+  if (!profileForm.value.nickname) return;
   loading.value = true;
   try {
-    // 1. Atualizar Profile Localmente (SQLite)
-    await window.electronAPI.user.updateProfile({
-      nickname: profileForm.nickname,
-      profession: profileForm.profession,
-      avatarPath: profileForm.avatarPath
+    // Atualizar Profile através do composable (cuida de SQLite e Supabase)
+    await updateProfile({
+      nickname: profileForm.value.nickname,
+      profession: profileForm.value.profession,
+      avatar_path: profileForm.value.avatar_path
     });
-
-    // 2. Sincronizar Informações no Supabase de Maneira Independente
-    if (navigator.onLine) {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session?.user) {
-          const { error } = await supabase
-            .from('clientes')
-            .update({ 
-              apelido: profileForm.nickname, 
-              profissao: profileForm.profession 
-            })
-            .eq('id', data.session.user.id);
-            
-          if (error) {
-            console.warn('Aviso: As colunas apelido ou profissao podem não existir na tabela clientes no Supabase:', error);
-          }
-        }
-      } catch (err) {
-        console.error('Erro de Sync com Supabase:', err);
-      }
-    }
 
     // 3. Verifica a Necessidade de Setup do Template
     await fetchWorkspaces();

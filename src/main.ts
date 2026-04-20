@@ -251,6 +251,7 @@ function logHistorico(ideia_id: string, acao: string, detalhes?: string) {
 function registerIdeiaHandlers() {
   // ─── Workspaces e Taxonomia ────────────────────────────────────────────────
   ipcMain.handle('workspaces:getAll', () => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM workspaces ORDER BY created_at ASC').all();
   });
   ipcMain.handle('workspaces:create', (_, payload: { name: string; color?: string; icon?: string }) => {
@@ -466,6 +467,7 @@ function registerIdeiaHandlers() {
   });
 
   ipcMain.handle('taxonomia:tipos:getAll', (_, workspace_id: string) => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM workspace_tipos WHERE workspace_id = ? ORDER BY label ASC').all(workspace_id);
   });
 
@@ -487,6 +489,7 @@ function registerIdeiaHandlers() {
   });
 
   ipcMain.handle('taxonomia:status:getAll', (_, workspace_id: string) => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM workspace_status WHERE workspace_id = ? ORDER BY order_index ASC').all(workspace_id);
   });
 
@@ -509,6 +512,7 @@ function registerIdeiaHandlers() {
 
   // Relações (Ecossistema)
   ipcMain.handle('taxonomia:relacionamentos:getAll', (_, workspace_id: string) => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM workspace_relacionamentos WHERE workspace_id = ? ORDER BY label ASC').all(workspace_id);
   });
 
@@ -980,6 +984,7 @@ function registerUserHandlers() {
   // ─── Manutenção de Perfil do Usuário ──────────────────────────────────────────
   ipcMain.handle('user:getProfile', () => {
     try {
+      if (!db) return null;
       return db.prepare('SELECT * FROM user_profile WHERE id = ?').get('default');
     } catch (e) {
       console.error('Erro ao buscar perfil:', e);
