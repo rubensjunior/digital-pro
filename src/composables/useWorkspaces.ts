@@ -97,6 +97,20 @@ export function useWorkspaces() {
     }
   }
 
+  async function setupTemplateWorkspace(templateId: string) {
+    try {
+        const resp = await window.electronAPI.workspaces.setupTemplate(templateId);
+        if (resp) {
+            workspaces.value.push(resp);
+            currentWorkspaceId.value = resp.id;
+        }
+        return resp;
+    } catch (e) {
+        console.error('[useWorkspaces] Erro ao criar workspace com template:', e);
+        return null;
+    }
+  }
+
   return {
     workspaces,
     currentWorkspaceId,
@@ -106,5 +120,6 @@ export function useWorkspaces() {
     updateWorkspace,
     deleteWorkspace,
     setWorkspace,
+    setupTemplateWorkspace,
   };
 }

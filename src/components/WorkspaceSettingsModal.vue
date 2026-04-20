@@ -33,14 +33,33 @@
               <p>Crie novos espaços ou gerencie os existentes.</p>
             </div>
 
-            <div class="metronic-list" style="margin-bottom: 40px;">
+            <div class="metronic-list" style="margin-bottom: 24px;">
               <div class="metronic-list-header">
-                <span>Novo Workspace</span>
+                <span>Novo Workspace (Em Branco)</span>
               </div>
               <div class="metronic-form-group" style="margin: 0; max-width: 100%;">
                 <div style="display:flex; gap: 12px;">
                   <input v-model="newWsName" class="metronic-input" style="flex:1" placeholder="Nome do novo workspace..." @keyup.enter="handleCreateNewWs" />
                   <button class="metronic-btn-primary" @click="handleCreateNewWs" :disabled="!newWsName.trim()">Criar Workspace</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="metronic-list" style="margin-bottom: 40px;">
+              <div class="metronic-list-header">
+                <span>Criar a partir de Modelo</span>
+              </div>
+              <div class="templates-grid-modal">
+                <div 
+                  v-for="t in TEMPLATES" 
+                  :key="t.id" 
+                  class="template-card-modal"
+                  @click="handleCreateFromTemplate(t.id)"
+                >
+                  <div class="card-icon-modal" :style="{ background: t.color + '20', color: t.color }">
+                    <span v-html="t.icon"></span>
+                  </div>
+                  <div class="card-title-modal">{{ t.name }}</div>
                 </div>
               </div>
             </div>
@@ -253,12 +272,16 @@ import { ref, computed, watch } from 'vue';
 import { useWorkspaces, type Workspace } from '../composables/useWorkspaces';
 import { useTaxonomy, type TaxonomyTipo, type TaxonomyStatus } from '../composables/useTaxonomy';
 import { useConfirm } from '../composables/useConfirm';
+import { TEMPLATES } from '../lib/templates';
 
 const emit = defineEmits<{
   (e: 'closed'): void;
 }>();
 
-const { workspaces, updateWorkspace, deleteWorkspace, createWorkspace, currentWorkspaceId: globalCurrentId } = useWorkspaces();
+const { 
+  workspaces, updateWorkspace, deleteWorkspace, createWorkspace, 
+  setupTemplateWorkspace, currentWorkspaceId: globalCurrentId 
+} = useWorkspaces();
 const { 
   tipos, status, relacionamentos, fetchTaxonomies, 
   createTipo, updateTipo, deleteTipo, 
@@ -305,6 +328,14 @@ async function handleCreateNewWs() {
     newWsName.value = '';
     selecionarParaConfig(ws.id);
     bvAlert({ title: 'Sucesso!', message: 'Novo workspace criado com êxito.', type: 'success' });
+  }
+}
+
+async function handleCreateFromTemplate(templateId: string) {
+  const ws = await setupTemplateWorkspace(templateId);
+  if (ws) {
+    selecionarParaConfig(ws.id);
+    bvAlert({ title: 'Sucesso!', message: 'Workspace configurado a partir do modelo.', type: 'success' });
   }
 }
 
@@ -766,4 +797,52 @@ defineExpose({ abrirModal });
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Template Grid in Modal */
+.templates-grid-modal {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.template-card-modal {
+  background: #f8fafc;
+  border: 1px solid #e4e6ef;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.template-card-modal:hover {
+  background: #ffffff;
+  border-color: #009ef7;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
+
+.card-icon-modal {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-icon-modal :deep(svg) {
+  width: 20px;
+  height: 20px;
+}
+
+.card-title-modal {
+  font-size: 14px;
+  font-weight: 700;
+  color: #181c32;
+}
 </style>
