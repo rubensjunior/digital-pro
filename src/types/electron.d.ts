@@ -71,6 +71,11 @@ export interface IElectronAPI {
     update: (payload: Record<string, unknown>) => Promise<boolean>;
     delete: (id: string) => Promise<boolean>;
   };
+  user: {
+    getProfile: () => Promise<any>;
+    updateProfile: (payload: Record<string, unknown>) => Promise<any>;
+    selectAvatar: () => Promise<string | null>;
+  };
 }
 
 declare global {

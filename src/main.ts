@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, protocol } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, protocol, dialog } from 'electron';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -164,7 +164,25 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS user_profile (
+      id          TEXT PRIMARY KEY,
+      nickname    TEXT,
+      profession  TEXT,
+      avatar_path TEXT,
+      updated_at  TEXT DEFAULT (datetime('now'))
+    );
   `);
+
+  // Garantir usuário padrão
+  try {
+    const user = db.prepare('SELECT id FROM user_profile WHERE id = ?').get('default');
+    if (!user) {
+      db.prepare('INSERT INTO user_profile (id, nickname) VALUES (?, ?)').run('default', 'Usuário');
+    }
+  } catch (e) {
+    console.warn('Erro ao inicializar perfil:', e);
+  }
 
   // Limpeza automática de conexões e relações órfãs por segurança
   db.exec(`
@@ -263,82 +281,94 @@ function registerIdeiaHandlers() {
             { label: 'Headline', grupo: '✍️ Copywriting' },
             { label: 'Funil de Vendas', grupo: '📈 Estratégia' },
             { label: 'Criativo (Anúncio)', grupo: '📺 Tráfego' },
-            { label: 'Lead Magnet', grupo: '🎁 Iscas' }
+            { label: 'Página de Vendas', grupo: '🌐 Web' }
           ];
           statuses = [
             { label: 'Capturada (Bruta)', grupo: 'Fluxo', meta: 'backlog' },
             { label: 'Em Pesquisa', grupo: 'Fluxo', meta: 'in_progress' },
-            { label: 'Validada', grupo: 'Fluxo', meta: 'done' },
-            { label: 'Em Escala', grupo: 'Fluxo', meta: 'done' }
+            { label: 'Redação/Copy', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Validada', grupo: 'Fluxo', meta: 'done' }
           ];
           ideas = [
-            { nome: 'Ebook: Guia de Tráfego Pago', tipo: 'Produto', status: 'Validada', descricao: 'Guia completo para iniciantes.' },
-            { nome: 'VSL Lançamento Agosto', tipo: 'VSL (Vídeo de Vendas)', status: 'Em Pesquisa', descricao: 'Roteiro baseado em storytelling.' },
-            { nome: 'Criativo: O Segredo do ROI', tipo: 'Criativo (Anúncio)', status: 'Capturada (Bruta)', descricao: 'Gancho focado em curiosidade.' }
+            { id_key: 'p1', nome: 'Lançamento: Workshop Digital', tipo: 'Funil de Vendas', status: 'Em Pesquisa', descricao: 'Evento de 3 dias para vender o curso principal.' },
+            { id_key: 'p1_f1', parent_key: 'p1', nome: 'Página de Inscrição (Capture)', tipo: 'Página de Vendas', status: 'Validada', descricao: 'Focada em leads frios do Instagram.' },
+            { id_key: 'p1_f1_n1', parent_key: 'p1_f1', nome: 'Headline: O Fim do Caos Digital', tipo: 'Headline', status: 'Validada', descricao: 'Gancho principal da página de captura.' },
+            { id_key: 'p2', nome: 'Ebook: 101 Headlines de Alta Conversão', tipo: 'Produto', status: 'Capturada (Bruta)', descricao: 'Isca digital para alimentar o funil.' }
           ];
+          // Exemplo de correlação livre
+          ideas.push({ correlation: { from: 'p1', to: 'p2', desc: 'Ebook serve como order-bump deste lançamento.' } });
+
         } else if (templateId === 'software') {
           name = 'Software & SaaS';
           color = '#6366f1';
           types = [
+            { label: 'Sprint', grupo: '📅 Gestão' },
             { label: 'Nova Feature', grupo: '💻 Dev' },
             { label: 'Bugfix', grupo: '💻 Dev' },
-            { label: 'Refatoração', grupo: '💻 Dev' },
             { label: 'Interface (UI/UX)', grupo: '🎨 Design' },
             { label: 'Bug', grupo: '🐞 QA' }
           ];
           statuses = [
             { label: 'Backlog', grupo: 'Kanban', meta: 'backlog' },
+            { label: 'Priorizado', grupo: 'Kanban', meta: 'backlog' },
             { label: 'Em Desenvolvimento', grupo: 'Kanban', meta: 'in_progress' },
-            { label: 'Em Teste (QA)', grupo: 'Kanban', meta: 'review' },
             { label: 'Implementado', grupo: 'Kanban', meta: 'done' }
           ];
           ideas = [
-            { nome: 'Dashboard de Métricas', tipo: 'Nova Feature', status: 'Em Desenvolvimento', descricao: 'Visão geral de KPIs para o admin.' },
-            { nome: 'Bug: Erro no Checkout', tipo: 'Bug', status: 'Backlog', descricao: 'Falha intermitente no Stripe.' },
-            { nome: 'Melhorar Onboarding', tipo: 'Interface (UI/UX)', status: 'Implementado', descricao: 'Simplificar passos iniciais.' }
+            { id_key: 'p1', nome: 'Sprint #42: Dashboard', tipo: 'Sprint', status: 'Em Desenvolvimento', descricao: 'Ciclo de 15 dias focado em métricas.' },
+            { id_key: 'p1_f1', parent_key: 'p1', nome: 'Visualização de Gráficos Reais', tipo: 'Nova Feature', status: 'Priorizado', descricao: 'Migrar de dados mockados para o banco.' },
+            { id_key: 'p1_f1_n1', parent_key: 'p1_f1', nome: 'Componente: LineChart Avançado', tipo: 'Interface (UI/UX)', status: 'Backlog', descricao: 'Usar Chart.js com cores do sistema.' },
+            { id_key: 'p2', nome: 'Bug: Flicker no Header', tipo: 'Bug', status: 'Backlog', descricao: 'Correção prioritária para o Safari.' }
           ];
+          ideas.push({ correlation: { from: 'p1_f1', to: 'p2', desc: 'Bug impede a finalização desta feature.' } });
+
         } else if (templateId === 'business') {
           name = 'Negócios & Gestão';
           color = '#10b981';
           types = [
+            { label: 'Estruturação', grupo: '🏢 Corporativo' },
             { label: 'OKR (Objetivo)', grupo: '🎯 Metas' },
             { label: 'KPI (Métrica)', grupo: '🎯 Metas' },
             { label: 'Processo / Workflow', grupo: '⚙️ Operação' },
-            { label: 'Planejamento', grupo: '📅 Gestão' },
             { label: 'Insight de Negócio', grupo: '💡 Estratégia' }
           ];
           statuses = [
             { label: 'Pendente', grupo: 'Status', meta: 'backlog' },
-            { label: 'Em Análise', grupo: 'Status', meta: 'review' },
-            { label: 'Aprovado', grupo: 'Status', meta: 'done' },
-            { label: 'Arquivado', grupo: 'Status', meta: 'archived' }
+            { label: 'Agendado', grupo: 'Status', meta: 'backlog' },
+            { label: 'Em Execução', grupo: 'Status', meta: 'in_progress' },
+            { label: 'Aprovado', grupo: 'Status', meta: 'done' }
           ];
           ideas = [
-            { nome: 'Meta: 1000 Clientes', tipo: 'OKR (Objetivo)', status: 'Em Análise', descricao: 'Atingir 1k MRR até dezembro.' },
-            { nome: 'Fluxo Interno de Suporte', tipo: 'Processo / Workflow', status: 'Aprovado', descricao: 'Escopo de atendimento via Slack.' },
-            { nome: 'Reduzir Churn em 5%', tipo: 'KPI (Métrica)', status: 'Pendente', descricao: 'Análise de retenção mensal.' }
+            { id_key: 'p1', nome: 'Meta 2026: Escala 7 Dígitos', tipo: 'OKR (Objetivo)', status: 'Em Execução', descricao: 'Objetivo macro da empresa para este ano.' },
+            { id_key: 'p1_f1', parent_key: 'p1', nome: 'OKR Q1: Retenção de Clientes', tipo: 'OKR (Objetivo)', status: 'Pendente', descricao: 'Foco em diminuir o Churn no primeiro trimestre.' },
+            { id_key: 'p1_f1_n1', parent_key: 'p1_f1', nome: 'Métrica: Churn Rate < 3%', tipo: 'KPI (Métrica)', status: 'Em Execução', descricao: 'KPI principal do squad de retenção.' },
+            { id_key: 'p2', nome: 'Manual de Onboarding do Cliente', tipo: 'Processo / Workflow', status: 'Aprovado', descricao: 'Checkout assistido por consultor.' }
           ];
+          ideas.push({ correlation: { from: 'p1_f1', to: 'p2', desc: 'Este processo é a ferramenta para bater o OKR.' } });
+
         } else if (templateId === 'education') {
           name = 'Estudos & Pesquisa';
           color = '#ec4899';
           types = [
-            { label: 'Resumo', grupo: '📝 Notas' },
-            { label: 'Teoria / Conceito', grupo: '📖 Estudo' },
-            { label: 'Framework', grupo: '📖 Estudo' },
-            { label: 'Citação / Referência', grupo: '🔍 Pesquisa' },
+            { label: 'Projeto de Estudo', grupo: '🎓 Acadêmico' },
+            { label: 'Módulo / Capítulo', grupo: '📖 Estrutura' },
+            { label: 'Aula / Seção', grupo: '📝 Notas' },
+            { label: 'Framework', grupo: '🧠 Modelos' },
             { label: 'Insight de Leitura', grupo: '💡 Ideias' }
           ];
           statuses = [
-            { label: 'Para Estudar', grupo: 'Progresso', meta: 'backlog' },
+            { label: 'Para Iniciar', grupo: 'Progresso', meta: 'backlog' },
             { label: 'Em Estudo', grupo: 'Progresso', meta: 'in_progress' },
             { label: 'Revisado', grupo: 'Progresso', meta: 'review' },
-            { label: 'Aplicado', grupo: 'Progresso', meta: 'done' }
+            { label: 'Concluído/Masterizado', grupo: 'Progresso', meta: 'done' }
           ];
           ideas = [
-            { nome: 'Livro: Hábitos Atômicos', tipo: 'Resumo', status: 'Revisado', descricao: 'Notas sobre micro-hábitos.' },
-            { nome: 'Framework Aprendizado Rápido', tipo: 'Framework', status: 'Em Estudo', descricao: 'Técnica Feynman aplicada.' },
-            { nome: 'Conceito: Juros Compostos', tipo: 'Teoria / Conceito', status: 'Para Estudar', descricao: 'Aplicação além do financeiro.' }
+            { id_key: 'p1', nome: 'Mastery: Neurociência do Foco', tipo: 'Projeto de Estudo', status: 'Em Estudo', descricao: 'Estudo aprofundado sobre atenção sustentada.' },
+            { id_key: 'p1_f1', parent_key: 'p1', nome: 'Módulo: Ciclo Dopaminérgico', tipo: 'Módulo / Capítulo', status: 'Revisado', descricao: 'Como a recompensa afeta a concentração.' },
+            { id_key: 'p1_f1_n1', parent_key: 'p1_f1', nome: 'Nota: O Efeito Zeigarnik', tipo: 'Aula / Seção', status: 'Para Iniciar', descricao: 'Tarefas inacabadas e carga cognitiva.' },
+            { id_key: 'p2', nome: 'Técnica de Pomodoro 2.0', tipo: 'Framework', status: 'Concluído/Masterizado', descricao: 'Ajuste de ciclos baseados em cronotipos.' }
           ];
+          ideas.push({ correlation: { from: 'p1', to: 'p2', desc: 'Pomodoro é aplicado durante as sessões deste estudo.' } });
         }
 
         // 1. Criar Workspace
@@ -373,20 +403,48 @@ function registerIdeiaHandlers() {
           );
         }
 
-        // 5. Criar Ideias de Exemplo (se houver)
+        // 5. Criar Ideias e Conexões
         const now = new Date().toISOString();
-        for (const idea of ideas) {
+        const ideaIdMap = new Map<string, string>();
+        const correlationsToCreate: Array<{ from: string, to: string, desc: string }> = [];
+
+        for (const entry of ideas) {
+          if (entry.correlation) {
+            correlationsToCreate.push(entry.correlation);
+            continue;
+          }
+
           const ideaId = crypto.randomUUID();
-          const tId = tipoMap.get(idea.tipo) || Array.from(tipoMap.values())[0];
-          const sId = statusMap.get(idea.status) || Array.from(statusMap.values())[0];
+          const tId = tipoMap.get(entry.tipo) || Array.from(tipoMap.values())[0];
+          const sId = statusMap.get(entry.status) || Array.from(statusMap.values())[0];
+          const parentId = entry.parent_key ? ideaIdMap.get(entry.parent_key) : null;
           
           db.prepare(`
             INSERT INTO ideias (
-              id, workspace_id, nome, tipo, status, score, descricao,
+              id, workspace_id, parent_id, nome, tipo, status, score, descricao,
               tags_avatar, tags_nicho, tags_dor, tags_desejo, tags_mecanismo,
               created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, '[]', '[]', '[]', '[]', '[]', ?, ?)
-          `).run(ideaId, id, idea.nome, tId, sId, 3, idea.descricao, now, now);
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '[]', '[]', '[]', '[]', '[]', ?, ?)
+          `).run(ideaId, id, parentId, entry.nome, tId, sId, 3, entry.descricao, now, now);
+
+          if (entry.id_key) {
+            ideaIdMap.set(entry.id_key, ideaId);
+          }
+        }
+
+        // 6. Criar Correlações Manuais
+        for (const cor of correlationsToCreate) {
+          const fromId = ideaIdMap.get(cor.from);
+          const toId = ideaIdMap.get(cor.to);
+          if (fromId && toId) {
+            db.prepare('INSERT INTO ideia_correlacoes (id, ideia_a_id, ideia_b_id, descricao, created_at) VALUES (?, ?, ?, ?, ?)').run(
+              crypto.randomUUID(),
+              fromId,
+              toId,
+              cor.desc,
+              now
+            );
+          }
         }
 
         return id;
@@ -399,7 +457,7 @@ function registerIdeiaHandlers() {
       throw error;
     }
   });
-  
+
   ipcMain.handle('taxonomia:tipos:getAll', (_, workspace_id: string) => {
     return db.prepare('SELECT * FROM workspace_tipos WHERE workspace_id = ? ORDER BY label ASC').all(workspace_id);
   });
@@ -847,21 +905,27 @@ app.on('ready', () => {
   // Registrar handler para o protocolo brainvault://
   protocol.handle('brainvault', (request) => {
     try {
-      // Formato esperado: brainvault://<ideia_id>/<file_name>
       const urlStr = request.url;
       const pathPart = urlStr.replace('brainvault://', '');
-      const [ideiaId, ...fileParts] = pathPart.split('/');
-      const fileName = decodeURIComponent(fileParts.join('/'));
       
-      const fullPath = path.join(app.getPath('userData'), 'attachments', ideiaId, fileName);
+      let fullPath = '';
+      let fileName = '';
+
+      if (pathPart.startsWith('avatars/')) {
+        fileName = pathPart.replace('avatars/', '');
+        fullPath = path.join(app.getPath('userData'), 'avatars', fileName);
+      } else {
+        // Formato original: <ideia_id>/<file_name>
+        const [ideiaId, ...fileParts] = pathPart.split('/');
+        fileName = decodeURIComponent(fileParts.join('/'));
+        fullPath = path.join(app.getPath('userData'), 'attachments', ideiaId, fileName);
+      }
 
       if (!fs.existsSync(fullPath)) {
         return new Response('File not found', { status: 404 });
       }
 
       const data = fs.readFileSync(fullPath);
-      
-      // Determinar MIME type básico
       const ext = path.extname(fileName).toLowerCase();
       let contentType = 'application/octet-stream';
       if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
@@ -881,6 +945,7 @@ app.on('ready', () => {
 
   initDatabase();
   registerIdeiaHandlers();
+  registerUserHandlers();
   createWindow();
 });
 
@@ -895,3 +960,59 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+function registerUserHandlers() {
+  // ─── Manutenção de Perfil do Usuário ──────────────────────────────────────────
+  ipcMain.handle('user:getProfile', () => {
+    try {
+      return db.prepare('SELECT * FROM user_profile WHERE id = ?').get('default');
+    } catch (e) {
+      console.error('Erro ao buscar perfil:', e);
+      return null;
+    }
+  });
+
+  ipcMain.handle('user:selectAvatar', async () => {
+    console.log('Handler user:selectAvatar iniciado');
+    try {
+      const win = BrowserWindow.getFocusedWindow();
+      const result = await dialog.showOpenDialog(win!, {
+        properties: ['openFile'],
+        filters: [{ name: 'Imagens', extensions: ['jpg', 'png', 'gif', 'webp', 'jpeg'] }]
+      });
+
+      if (result.canceled || result.filePaths.length === 0) return null;
+
+      const sourcePath = result.filePaths[0];
+      const ext = path.extname(sourcePath);
+      const fileName = `avatar_${Date.now()}${ext}`;
+      const targetDir = path.join(app.getPath('userData'), 'avatars');
+
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      const targetPath = path.join(targetDir, fileName);
+      fs.copyFileSync(sourcePath, targetPath);
+
+      return `brainvault://avatars/${fileName}`;
+    } catch (e) {
+      console.error('Erro ao selecionar avatar:', e);
+      return null;
+    }
+  });
+
+  ipcMain.handle('user:updateProfile', (_, { nickname, profession, avatarPath }) => {
+    try {
+      db.prepare(`
+        UPDATE user_profile 
+        SET nickname = ?, profession = ?, avatar_path = ?, updated_at = datetime('now')
+        WHERE id = 'default'
+      `).run(nickname, profession, avatarPath);
+      return { success: true };
+    } catch (e) {
+      console.error('Erro ao atualizar perfil:', e);
+      return { success: false, error: e.message };
+    }
+  });
+}

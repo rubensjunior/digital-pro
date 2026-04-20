@@ -86,5 +86,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     update: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:correlacoes:update', payload),
     delete: (id: string) => ipcRenderer.invoke('ideias:correlacoes:delete', id),
   },
+  // ─── Brain Vault — Usuário ───────────────────────────────────────────────
+  user: {
+    getProfile: () => ipcRenderer.invoke('user:getProfile'),
+    updateProfile: (payload: Record<string, unknown>) => ipcRenderer.invoke('user:updateProfile', payload),
+    selectAvatar: () => ipcRenderer.invoke('user:selectAvatar'),
+  },
 });
 
