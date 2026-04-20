@@ -152,7 +152,12 @@
                   </div>
                   <div v-else class="item-edit">
                     <input v-model="editTipoForm.label" class="metronic-input sm" placeholder="Nome do Tipo" style="flex: 1" />
-                    <input type="color" v-model="editTipoForm.color" class="html-color-picker" />
+                    <div class="color-picker-wrapper">
+                      <input type="color" v-model="editTipoForm.color" class="html-color-picker" />
+                      <button class="shuffle-btn" @click="editTipoForm.color = generateRandomHex()" title="Cor aleatória">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                      </button>
+                    </div>
                     <button class="metronic-btn-primary sm" @click="salvarTipo(t.id)">Salvar</button>
                     <button class="metronic-btn-light sm" @click="editTipoId = null">Cancelar</button>
                   </div>
@@ -162,7 +167,12 @@
                 <div v-if="addingTipo" class="metronic-list-item is-new">
                   <div class="item-edit">
                     <input v-model="newTipoForm.label" class="metronic-input sm" placeholder="Ex: Produto, Post Instagram..." style="flex: 1" />
-                    <input type="color" v-model="newTipoForm.color" class="html-color-picker" />
+                    <div class="color-picker-wrapper">
+                      <input type="color" v-model="newTipoForm.color" class="html-color-picker" />
+                      <button class="shuffle-btn" @click="newTipoForm.color = generateRandomHex()" title="Cor aleatória">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                      </button>
+                    </div>
                     <button class="metronic-btn-primary sm" @click="salvarNovoTipo">Criar</button>
                     <button class="metronic-btn-light sm" @click="addingTipo = false">Cancelar</button>
                   </div>
@@ -196,7 +206,12 @@
                   </div>
                   <div v-else class="item-edit">
                     <input v-model="editStatusForm.label" class="metronic-input sm" placeholder="Ex: Em Andamento" style="flex: 1" />
-                    <input type="color" v-model="editStatusForm.color" class="html-color-picker" />
+                    <div class="color-picker-wrapper">
+                      <input type="color" v-model="editStatusForm.color" class="html-color-picker" />
+                      <button class="shuffle-btn" @click="editStatusForm.color = generateRandomHex()" title="Cor aleatória">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                      </button>
+                    </div>
                     <button class="metronic-btn-primary sm" @click="salvarStatus(s.id)">Salvar</button>
                     <button class="metronic-btn-light sm" @click="editStatusId = null">Cancelar</button>
                   </div>
@@ -206,7 +221,12 @@
                 <div v-if="addingStatus" class="metronic-list-item is-new">
                   <div class="item-edit">
                     <input v-model="newStatusForm.label" class="metronic-input sm" placeholder="Ex: Finalizado" style="flex: 1" />
-                    <input type="color" v-model="newStatusForm.color" class="html-color-picker" />
+                    <div class="color-picker-wrapper">
+                      <input type="color" v-model="newStatusForm.color" class="html-color-picker" />
+                      <button class="shuffle-btn" @click="newStatusForm.color = generateRandomHex()" title="Cor aleatória">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                      </button>
+                    </div>
                     <button class="metronic-btn-primary sm" @click="salvarNovoStatus">Criar</button>
                     <button class="metronic-btn-light sm" @click="addingStatus = false">Cancelar</button>
                   </div>
@@ -240,7 +260,12 @@
                   </div>
                   <div v-else class="item-edit">
                     <input v-model="editRelForm.label" class="metronic-input sm" placeholder="Nome da Relação" style="flex: 1" />
-                    <input type="color" v-model="editRelForm.color" class="html-color-picker" />
+                    <div class="color-picker-wrapper">
+                      <input type="color" v-model="editRelForm.color" class="html-color-picker" />
+                      <button class="shuffle-btn" @click="editRelForm.color = generateRandomHex()" title="Cor aleatória">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                      </button>
+                    </div>
                     <button class="metronic-btn-primary sm" @click="salvarRel(r.id)">Salvar</button>
                     <button class="metronic-btn-light sm" @click="editRelId = null">Cancelar</button>
                   </div>
@@ -250,7 +275,12 @@
                 <div v-if="addingRel" class="metronic-list-item is-new">
                   <div class="item-edit">
                     <input v-model="newRelForm.label" class="metronic-input sm" placeholder="Ex: Módulo de, Upsell de..." style="flex: 1" />
-                    <input type="color" v-model="newRelForm.color" class="html-color-picker" />
+                    <div class="color-picker-wrapper">
+                      <input type="color" v-model="newRelForm.color" class="html-color-picker" />
+                      <button class="shuffle-btn" @click="newRelForm.color = generateRandomHex()" title="Cor aleatória">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                      </button>
+                    </div>
                     <button class="metronic-btn-primary sm" @click="salvarNovoRel">Criar</button>
                     <button class="metronic-btn-light sm" @click="addingRel = false">Cancelar</button>
                   </div>
@@ -295,6 +325,14 @@ const tabAtiva = ref('workspaces');
 const selectedWorkspaceId = ref<string | null>(null);
 
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#64748b'];
+
+function getRandomColor() {
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
+}
+
+function generateRandomHex() {
+  return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+}
 
 const selectedWorkspace = computed(() => workspaces.value.find(w => w.id === selectedWorkspaceId.value));
 
@@ -388,7 +426,7 @@ const newRelForm = ref({ label: '', color: '#94a3b8' });
 
 function addRel() {
   addingRel.value = true;
-  newRelForm.value = { label: '', color: '#3b82f6' };
+  newRelForm.value = { label: '', color: getRandomColor() };
 }
 
 function iniciarEditRel(r: any) {
@@ -469,7 +507,7 @@ const editTipoForm = ref({ label: '', color: '#50cd89' });
 
 function addTipo() {
   addingTipo.value = true;
-  newTipoForm.value = { label: '', color: '#7e22ce' }; // Metronic purple baseline
+  newTipoForm.value = { label: '', color: getRandomColor() };
 }
 async function salvarNovoTipo() {
   if (!selectedWorkspaceId.value || !newTipoForm.value.label.trim()) return;
@@ -499,7 +537,7 @@ const editStatusForm = ref({ label: '', color: '#a1a5b7' });
 
 function addStatus() {
   addingStatus.value = true;
-  newStatusForm.value = { label: '', color: '#009ef7' }; // Metronic blue baseline
+  newStatusForm.value = { label: '', color: getRandomColor() };
 }
 async function salvarNovoStatus() {
   if (!selectedWorkspaceId.value || !newStatusForm.value.label.trim()) return;
@@ -794,6 +832,32 @@ defineExpose({ abrirModal });
 }
 .html-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
 .html-color-picker::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shuffle-btn {
+  background: #f1faff;
+  color: #009ef7;
+  border: 1px solid #e1f4ff;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.shuffle-btn:hover {
+  background: #009ef7;
+  color: #fff;
+  border-color: #009ef7;
+}
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

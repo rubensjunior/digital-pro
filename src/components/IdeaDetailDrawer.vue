@@ -607,6 +607,7 @@ defineExpose({
   --text-primary: #181c32;
   --text-secondary: #7e8299;
   --accent: #009ef7;
+  --accent-end: #0095e8;
   --accent-light: #f1faff;
   --danger: #f1416c;
 }
@@ -810,6 +811,7 @@ defineExpose({
 /* ═══════════════════════════════════ BUTTONS */
 .bv-btn-primary {
   display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent);
   background: linear-gradient(135deg, var(--accent), var(--accent-end));
   color: #fff; border: none; border-radius: 9px;
   font-size: 13.5px; font-weight: 600; padding: 9px 16px;

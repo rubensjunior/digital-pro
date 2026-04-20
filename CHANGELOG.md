@@ -2,6 +2,16 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.4] - 2026-04-20
+
+### Adicionado
+- **Aleatorização de Cores**: Introduzido botão "Shuffle" nas configurações de taxonomia (Tipos, Status, Relacionamentos) para geração matemática de cores HEX, permitindo milhões de combinações.
+- **Cores Iniciais Inteligentes**: Novos itens agora recebem uma cor premium aleatória por padrão ao serem criados.
+
+### Corrigido
+- **Contraste de Botões no Drawer**: Corrigida a visualização do botão de "Conectar Ideia" na aba de conexões, restaurando o contraste e o gradiente azul premium.
+- **Variáveis CSS**: Corrigida a falta da variável `--accent-end` que causava falhas na renderização de botões primários no Drawer.
+
 ## [1.0.3] - 2026-04-20
 
 ### Corrigido
