@@ -278,6 +278,7 @@ function registerIdeiaHandlers() {
         let color = '#3b82f6';
         let types: { label: string; grupo: string }[] = [];
         let statuses: { label: string; grupo: string; meta: string }[] = [];
+        let relacionamentos: { label: string; color: string }[] = [];
         let ideas: any[] = [];
 
         if (templateId === 'marketing') {
@@ -306,6 +307,17 @@ function registerIdeiaHandlers() {
           // Exemplo de correlação livre
           ideas.push({ correlation: { from: 'p1', to: 'p2', desc: 'Ebook serve como order-bump deste lançamento.' } });
 
+          // Relacionamentos específicos
+          relacionamentos = [
+            { label: 'Upsell de', color: '#f59e0b' },
+            { label: 'Downsell de', color: '#ef4444' },
+            { label: 'Order bump de', color: '#10b981' },
+            { label: 'Bônus de', color: '#8b5cf6' },
+            { label: 'Anúncio de', color: '#3b82f6' },
+            { label: 'Página de', color: '#6366f1' },
+            { label: 'Outro', color: '#64748b' }
+          ];
+
         } else if (templateId === 'software') {
           name = 'Software & SaaS';
           color = '#6366f1';
@@ -329,6 +341,16 @@ function registerIdeiaHandlers() {
             { id_key: 'p2', nome: 'Bug: Flicker no Header', tipo: 'Bug', status: 'Backlog', descricao: 'Correção prioritária para o Safari.' }
           ];
           ideas.push({ correlation: { from: 'p1_f1', to: 'p2', desc: 'Bug impede a finalização desta feature.' } });
+
+          // Relacionamentos específicos
+          relacionamentos = [
+            { label: 'Bloqueia', color: '#ef4444' },
+            { label: 'Parte de', color: '#3b82f6' },
+            { label: 'Implementa', color: '#10b981' },
+            { label: 'Fix de', color: '#f59e0b' },
+            { label: 'Depende de', color: '#8b5cf6' },
+            { label: 'Relacionado', color: '#64748b' }
+          ];
 
         } else if (templateId === 'business') {
           name = 'Negócios & Gestão';
@@ -354,6 +376,16 @@ function registerIdeiaHandlers() {
           ];
           ideas.push({ correlation: { from: 'p1_f1', to: 'p2', desc: 'Este processo é a ferramenta para bater o OKR.' } });
 
+          // Relacionamentos específicos
+          relacionamentos = [
+            { label: 'Alinhado com', color: '#10b981' },
+            { label: 'Monitora', color: '#0ea5e9' },
+            { label: 'Influencia', color: '#f59e0b' },
+            { label: 'Suporta', color: '#8b5cf6' },
+            { label: 'Responsável por', color: '#3b82f6' },
+            { label: 'Outro', color: '#64748b' }
+          ];
+
         } else if (templateId === 'education') {
           name = 'Estudos & Pesquisa';
           color = '#ec4899';
@@ -377,6 +409,17 @@ function registerIdeiaHandlers() {
             { id_key: 'p2', nome: 'Técnica de Pomodoro 2.0', tipo: 'Framework', status: 'Concluído/Masterizado', descricao: 'Ajuste de ciclos baseados em cronotipos.' }
           ];
           ideas.push({ correlation: { from: 'p1', to: 'p2', desc: 'Pomodoro é aplicado durante as sessões deste estudo.' } });
+
+          // Relacionamentos específicos
+          relacionamentos = [
+            { label: 'Cita / Referencia', color: '#ec4899' },
+            { label: 'Resumo de', color: '#3b82f6' },
+            { label: 'Aprofunda', color: '#8b5cf6' },
+            { label: 'Contradiz', color: '#ef4444' },
+            { label: 'Corrobora', color: '#10b981' },
+            { label: 'Prática de', color: '#f59e0b' },
+            { label: 'Relacionado', color: '#64748b' }
+          ];
         }
 
         // 1. Criar Workspace
@@ -399,15 +442,13 @@ function registerIdeiaHandlers() {
           statusMap.set(s.label, sId);
         }
 
-        // 4. Criar Relacionamentos Padrão
-        const DEFAULTS = ['Complementa', 'Feature de', 'Upsell de', 'Downsell de', 'Order bump de', 'Extensão de', 'Versão de', 'Subproduto de', 'Outro'];
-        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1', '#ec4899', '#14b8a6', '#64748b'];
-        for (let i = 0; i < DEFAULTS.length; i++) {
+        // 4. Criar Relacionamentos (Ecossistema)
+        for (const rel of relacionamentos) {
           db.prepare('INSERT INTO workspace_relacionamentos (id, workspace_id, label, color) VALUES (?, ?, ?, ?)').run(
             crypto.randomUUID(),
             id,
-            DEFAULTS[i],
-            COLORS[i]
+            rel.label,
+            rel.color
           );
         }
 
