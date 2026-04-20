@@ -14,7 +14,7 @@ export function useIdeias() {
   // Recarrega ideias sempre que o Workspace ativo for alterado
   watch(currentWorkspaceId, (newId) => {
     if (newId) fetchIdeias();
-  });
+  }, { immediate: true });
 
   // ── Buscar todas as ideias ──────────────────────────────────────────────────
   async function fetchIdeias() {

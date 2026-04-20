@@ -95,21 +95,23 @@
         </div>
       </div>
 
-      <!-- Drawer de Detalhes -->
-      <IdeaDetailDrawer
-        ref="ideaDrawerRef"
-        :ideias="ideias"
-        :show-brain-vault-link="true"
-        @edit="(ideia) => ideaFormRef?.abrirEdicao(ideia)"
-        @navigate="(path) => router.push(path)"
-        @createDerivada="(parentId) => ideaFormRef?.abrirModal(parentId)"
-      />
+    </div><!-- /nn-canvas-wrap -->
+    
+    <!-- Drawer de Detalhes -->
+    <IdeaDetailDrawer
+      ref="ideaDrawerRef"
+      :ideias="ideias"
+      :show-brain-vault-link="true"
+      @edit="(ideia) => ideaFormRef?.abrirEdicao(ideia)"
+      @navigate="(path) => router.push(path)"
+      @createDerivada="(parentId) => ideaFormRef?.abrirModal(parentId)"
+    />
 
-      <IdeaFormModal
-        ref="ideaFormRef"
-        :ideias="ideias"
-        @saved="handleIdeiaSaved"
-      />
+    <IdeaFormModal
+      ref="ideaFormRef"
+      :ideias="ideias"
+      @saved="handleIdeiaSaved"
+    />
 
       <!-- Hint inicial -->
       <div v-if="!loading && nosGrafo.length > 0 && !hintDismissed" class="nn-hint" @click="hintDismissed = true">
@@ -117,13 +119,13 @@
         <button @click.stop="hintDismissed = true">✕</button>
       </div>
     </div>
-  </div>
-</template>
+  </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useIdeias } from '../../composables/useIdeias';
+import { useBus } from '../../composables/useBus';
 import type { Ideia, IdeiaStatus } from '../../types/ideia';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 import IdeaFormModal from '../../components/IdeaFormModal.vue';
@@ -132,6 +134,7 @@ import IdeaFormModal from '../../components/IdeaFormModal.vue';
 const route  = useRoute();
 const router = useRouter();
 const { ideias, loading, fetchIdeias } = useIdeias();
+const { on, off } = useBus();
 
 const rootId = computed(() => route.params.rootId as string);
 const rootIdeia = computed(() => ideias.value.find(i => i.id === rootId.value) ?? null);
@@ -176,8 +179,20 @@ onMounted(async () => {
     canvasEl.value.height = Math.floor(height);
   }
   construirGrafo(rootId.value);
+  
+  on('abrirModalNovaIdeia', abrirModal);
+  
   animFrame = requestAnimationFrame(drawCanvas);
 });
+
+onUnmounted(() => { 
+  if (animFrame) cancelAnimationFrame(animFrame);
+  off('abrirModalNovaIdeia', abrirModal);
+});
+
+function abrirModal() {
+  ideaFormRef.value?.abrirModal();
+}
 
 watch(rootId, async (newVal, oldVal) => {
   if (newVal && newVal !== oldVal) {
@@ -466,7 +481,13 @@ function onCanvasDblClick(e: MouseEvent) {
   const c = canvasEl.value; if (!c) return;
   const r = c.getBoundingClientRect();
   const no = getNoAtPos(e.clientX - r.left, e.clientY - r.top, c.width, c.height);
-  if (no) ideaDrawerRef.value?.abrirDrawer(no.ideia);
+  if (no) {
+    if (ideaDrawerRef.value) {
+      ideaDrawerRef.value.abrirDrawer(no.ideia);
+    } else {
+      console.warn('[IdeaFlowchart] Drawer ref não disponível no duplo clique');
+    }
+  }
 }
 
 function handleContextMenu(e: MouseEvent) {
@@ -945,7 +966,7 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 
 .nn-panel-desc {
   font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;
-  display: -webkit-box; -webkit-line-clamp: 3;
+  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3;
   -webkit-box-orient: vertical; overflow: hidden;
 }
 

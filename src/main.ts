@@ -38,7 +38,8 @@ function initDatabase() {
       name       TEXT NOT NULL,
       icon       TEXT,
       color      TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS workspace_tipos (
       id           TEXT PRIMARY KEY,
@@ -47,7 +48,8 @@ function initDatabase() {
       grupo        TEXT,
       icon         TEXT,
       color        TEXT,
-      created_at   TEXT DEFAULT (datetime('now'))
+      created_at   TEXT DEFAULT (datetime('now')),
+      updated_at   TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS workspace_status (
       id           TEXT PRIMARY KEY,
@@ -57,7 +59,16 @@ function initDatabase() {
       meta_status  TEXT NOT NULL DEFAULT 'in_progress',
       color        TEXT,
       order_index  INTEGER DEFAULT 0,
-      created_at   TEXT DEFAULT (datetime('now'))
+      created_at   TEXT DEFAULT (datetime('now')),
+      updated_at   TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS workspace_relacionamentos (
+      id           TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL,
+      label        TEXT NOT NULL,
+      color        TEXT,
+      created_at   TEXT DEFAULT (datetime('now')),
+      updated_at   TEXT DEFAULT (datetime('now'))
     );
   `);
 
@@ -97,6 +108,11 @@ function initDatabase() {
 
   // Evolução 5.1: Chave de Workspace
   try { db.exec('ALTER TABLE ideias ADD COLUMN workspace_id TEXT NOT NULL DEFAULT "default_workspace";'); } catch (e) { /* ignore */ }
+  try { db.exec('ALTER TABLE workspaces ADD COLUMN updated_at TEXT;'); } catch (e) { /* ignore */ }
+  try { db.exec('ALTER TABLE workspace_tipos ADD COLUMN updated_at TEXT;'); } catch (e) { /* ignore */ }
+  try { db.exec('ALTER TABLE workspace_status ADD COLUMN updated_at TEXT;'); } catch (e) { /* ignore */ }
+  try { db.exec('ALTER TABLE ideia_correlacoes ADD COLUMN updated_at TEXT;'); } catch (e) { /* ignore */ }
+  try { db.exec('ALTER TABLE workspace_relacionamentos ADD COLUMN updated_at TEXT;'); } catch (e) { /* ignore */ }
 
   // Evolução 2: Tabela de histórico
   db.exec(`
@@ -145,7 +161,8 @@ function initDatabase() {
       ideia_a_id TEXT NOT NULL,
       ideia_b_id TEXT NOT NULL,
       descricao  TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
     );
   `);
 
@@ -247,6 +264,25 @@ function runDataMigration() {
     })();
     console.log(`Migração Completa: ${ideias.length} ideias atualizadas para IDs dinâmicos.`);
   }
+
+  // Semente: Garantir que todo workspace tenha relacionamentos padrão
+  const wsIds = db.prepare('SELECT id FROM workspaces').all() as { id: string }[];
+  for (const ws of wsIds) {
+    const relsCount = db.prepare('SELECT count(*) as c FROM workspace_relacionamentos WHERE workspace_id = ?').get(ws.id) as { c: number };
+    if (relsCount.c === 0) {
+      console.log(`Semeando relacionamentos padrão para o workspace: ${ws.id}`);
+      const DEFAULTS = ['Complementa', 'Feature de', 'Upsell de', 'Downsell de', 'Order bump de', 'Extensão de', 'Versão de', 'Subproduto de', 'Outro'];
+      const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1', '#ec4899', '#14b8a6', '#64748b'];
+      for (let i = 0; i < DEFAULTS.length; i++) {
+        db.prepare('INSERT INTO workspace_relacionamentos (id, workspace_id, label, color) VALUES (?, ?, ?, ?)').run(
+          crypto.randomUUID(),
+          ws.id,
+          DEFAULTS[i],
+          COLORS[i]
+        );
+      }
+    }
+  }
 }
 
 // ── Funções Auxiliares de Histórico ───────────────────────────────────────────
@@ -276,7 +312,8 @@ function registerIdeiaHandlers() {
     return db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id);
   });
   ipcMain.handle('workspaces:update', (_, payload: { id: string; name: string; color?: string; icon?: string }) => {
-    db.prepare('UPDATE workspaces SET name = ?, color = ?, icon = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(payload.name, payload.color ?? null, payload.icon ?? null, payload.id);
+    const now = new Date().toISOString();
+    db.prepare('UPDATE workspaces SET name = ?, color = ?, icon = ?, updated_at = ? WHERE id = ?').run(payload.name, payload.color ?? null, payload.icon ?? null, now, payload.id);
     return db.prepare('SELECT * FROM workspaces WHERE id = ?').get(payload.id);
   });
   
@@ -296,7 +333,8 @@ function registerIdeiaHandlers() {
   });
   
   ipcMain.handle('taxonomia:tipos:update', (_, payload: { id: string; label: string; color?: string; icon?: string }) => {
-    db.prepare('UPDATE workspace_tipos SET label = ?, color = ?, icon = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(payload.label, payload.color ?? null, payload.icon ?? null, payload.id);
+    const now = new Date().toISOString();
+    db.prepare('UPDATE workspace_tipos SET label = ?, color = ?, icon = ?, updated_at = ? WHERE id = ?').run(payload.label, payload.color ?? null, payload.icon ?? null, now, payload.id);
     return db.prepare('SELECT * FROM workspace_tipos WHERE id = ?').get(payload.id);
   });
 
@@ -311,18 +349,56 @@ function registerIdeiaHandlers() {
 
   ipcMain.handle('taxonomia:status:create', (_, payload: { workspace_id: string; label: string; color?: string; grouping?: string; order_index?: number }) => {
     const id = crypto.randomUUID();
-    db.prepare('INSERT INTO workspace_status (id, workspace_id, label, color, grouping, order_index) VALUES (?, ?, ?, ?, ?, ?)').run(id, payload.workspace_id, payload.label, payload.color ?? null, payload.grouping ?? null, payload.order_index ?? 0);
+    db.prepare('INSERT INTO workspace_status (id, workspace_id, label, color, grupo, order_index) VALUES (?, ?, ?, ?, ?, ?)').run(id, payload.workspace_id, payload.label, payload.color ?? null, payload.grouping ?? null, payload.order_index ?? 0);
     return db.prepare('SELECT * FROM workspace_status WHERE id = ?').get(id);
   });
 
   ipcMain.handle('taxonomia:status:update', (_, payload: { id: string; label: string; color?: string; grouping?: string; order_index?: number }) => {
-    db.prepare('UPDATE workspace_status SET label = ?, color = ?, grouping = ?, order_index = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(payload.label, payload.color ?? null, payload.grouping ?? null, payload.order_index ?? 0, payload.id);
+    const now = new Date().toISOString();
+    db.prepare('UPDATE workspace_status SET label = ?, color = ?, grupo = ?, order_index = ?, updated_at = ? WHERE id = ?').run(payload.label, payload.color ?? null, payload.grouping ?? null, payload.order_index ?? 0, now, payload.id);
     return db.prepare('SELECT * FROM workspace_status WHERE id = ?').get(payload.id);
   });
 
   ipcMain.handle('taxonomia:status:delete', (_, id: string) => {
     db.prepare('DELETE FROM workspace_status WHERE id = ?').run(id);
     return true;
+  });
+
+  // Relações (Ecossistema)
+  ipcMain.handle('taxonomia:relacionamentos:getAll', (_, workspace_id: string) => {
+    return db.prepare('SELECT * FROM workspace_relacionamentos WHERE workspace_id = ? ORDER BY label ASC').all(workspace_id);
+  });
+
+  ipcMain.handle('taxonomia:relacionamentos:create', (_, payload: { workspace_id: string; label: string; color?: string }) => {
+    try {
+      const id = crypto.randomUUID();
+      db.prepare('INSERT INTO workspace_relacionamentos (id, workspace_id, label, color) VALUES (?, ?, ?, ?)').run(id, payload.workspace_id, payload.label, payload.color ?? null);
+      return db.prepare('SELECT * FROM workspace_relacionamentos WHERE id = ?').get(id);
+    } catch (e) {
+      console.error('[taxonomia:relacionamentos:create] Erro:', e);
+      throw e;
+    }
+  });
+
+  ipcMain.handle('taxonomia:relacionamentos:update', (_, payload: { id: string; label: string; color?: string }) => {
+    try {
+      const now = new Date().toISOString();
+      db.prepare('UPDATE workspace_relacionamentos SET label = ?, color = ?, updated_at = ? WHERE id = ?').run(payload.label, payload.color ?? null, now, payload.id);
+      return db.prepare('SELECT * FROM workspace_relacionamentos WHERE id = ?').get(payload.id);
+    } catch (e) {
+      console.error('[taxonomia:relacionamentos:update] Erro:', e);
+      throw e;
+    }
+  });
+
+  ipcMain.handle('taxonomia:relacionamentos:delete', (_, id: string) => {
+    try {
+      db.prepare('DELETE FROM workspace_relacionamentos WHERE id = ?').run(id);
+      return true;
+    } catch (e) {
+      console.error('[taxonomia:relacionamentos:delete] Erro:', e);
+      throw e;
+    }
   });
 
   // GET ALL (Com Soft Boundary / Filtro)
@@ -625,13 +701,8 @@ function registerIdeiaHandlers() {
   });
 
   ipcMain.handle('ideias:correlacoes:update', (_, payload: { id: string; descricao?: string }) => {
-    db.prepare(`
-      UPDATE ideia_correlacoes SET descricao = @descricao
-      WHERE id = @id
-    `).run({
-      id: payload.id,
-      descricao: payload.descricao ?? null
-    });
+    const now = new Date().toISOString();
+    db.prepare('UPDATE ideia_correlacoes SET descricao = ?, updated_at = ? WHERE id = ?').run(payload.descricao ?? null, now, payload.id);
     return true;
   });
 

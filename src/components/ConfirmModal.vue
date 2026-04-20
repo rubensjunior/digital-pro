@@ -13,13 +13,13 @@
           </div>
 
           <div class="bv-modal-actions">
-            <button class="bv-btn-cancel" @click="cancel">Não, cancelar</button>
+            <button v-if="!isAlert" class="bv-btn-cancel" @click="cancel">{{ cancelText || 'Não, cancelar' }}</button>
             <button 
               class="bv-btn-confirm" 
-              :class="{ 'is-danger': type === 'danger' }" 
+              :class="[type ? `is-${type}` : 'is-primary']" 
               @click="confirm"
             >
-              Sim, confirmar
+              {{ confirmText || 'Sim, confirmar' }}
             </button>
           </div>
         </div>
@@ -33,8 +33,11 @@ defineProps<{
   show: boolean;
   title: string;
   message: string;
-  type?: 'primary' | 'danger';
+  type?: 'primary' | 'danger' | 'success' | 'info' | 'warning';
   icon?: string;
+  confirmText?: string;
+  cancelText?: string;
+  isAlert?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -60,7 +63,7 @@ function cancel() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000; /* Acima do drawer */
+  z-index: 12000; /* Acima de tudo, incluindo WorkspaceSettingsModal (11000) */
 }
 
 .bv-modal-container {
@@ -130,11 +133,24 @@ function cancel() {
   color: #1e293b;
 }
 
-.bv-btn-confirm {
+.bv-btn-confirm.is-primary {
   background: #3b82f6;
-  border: none;
-  color: #ffffff;
   box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.bv-btn-confirm.is-success {
+  background: #10b981;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+}
+
+.bv-btn-confirm.is-warning {
+  background: #f59e0b;
+  box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+}
+
+.bv-btn-confirm.is-info {
+  background: #0ea5e9;
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
 }
 
 .bv-btn-confirm:hover {

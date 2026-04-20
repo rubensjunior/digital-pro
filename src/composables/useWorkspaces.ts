@@ -63,12 +63,18 @@ export function useWorkspaces() {
 
   async function updateWorkspace(id: string, name: string, color?: string, icon?: string) {
     try {
+      console.log('[useWorkspaces] Atualizando workspace:', { id, name, color });
       const resp = await window.electronAPI.workspaces.update({ id, name, color, icon });
       if (resp) {
         const idx = workspaces.value.findIndex(w => w.id === id);
-        if (idx !== -1) workspaces.value[idx] = resp;
+        if (idx !== -1) {
+          // Usar splice para garantir reatividade total em todos os componentes
+          workspaces.value.splice(idx, 1, resp);
+        }
+        console.log('[useWorkspaces] Sucesso:', resp);
+        return resp;
       }
-      return resp;
+      return null;
     } catch (e) {
       console.error('[useWorkspaces] Erro ao editar workspace:', e);
       return null;

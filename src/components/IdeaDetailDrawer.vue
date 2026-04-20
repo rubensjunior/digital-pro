@@ -1,25 +1,28 @@
 <template>
   <Teleport to="body">
-    <div v-if="drawer.drawerIdeia.value" class="bv-drawer-overlay" @mousedown.self="onOverlayMouseDown" @mouseup.self="onOverlayMouseUp">
+    <div v-if="drawerIdeia" class="bv-drawer-overlay" @mousedown.self="onOverlayMouseDown" @mouseup.self="onOverlayMouseUp">
       <div class="bv-drawer">
         <div class="bv-drawer-header">
           <div style="display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; width: 100%;">
             <div style="flex: 1;">
               <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;">
-                <div class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(drawer.drawerIdeia.value.tipo) || undefined }">{{ getTipoLabel(drawer.drawerIdeia.value.tipo) }}</div>
+                <div class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(drawerIdeia.tipo) || undefined }">{{ getTipoLabel(drawerIdeia.tipo) }}</div>
                 <div class="bv-workspace-badge">
                   <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 3px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                  {{ drawer.getWorkspaceName(drawer.drawerIdeia.value.workspace_id) }}
+                  {{ drawer.getWorkspaceName(drawerIdeia.workspace_id) }}
                 </div>
               </div>
-              <h2 class="bv-drawer-title">{{ drawer.drawerIdeia.value.nome }}</h2>
+              <h2 class="bv-drawer-title">{{ drawerIdeia.nome }}</h2>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="bv-modal-close" style="font-size: 16px; width: 32px; height: 32px;" @click="drawer.handleToggleFavorita()">
-                <svg v-if="drawer.drawerIdeia.value.is_favorita" fill="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              <button class="bv-modal-close" style="font-size: 16px; width: 32px; height: 32px;" @click="drawer.handleToggleFavorita(drawerIdeia!)" :title="drawerIdeia.is_favorita ? 'Remover dos Favoritos' : 'Favoritar'">
+                <svg v-if="drawerIdeia.is_favorita" fill="currentColor" viewBox="0 0 24 24" style="width: 15px; height: 15px; color: #f59e0b;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                 <svg v-else fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
               </button>
-              <button class="bv-modal-close" @click="drawer.fecharDrawer()">
+              <button class="bv-modal-close" style="font-size: 16px; width: 32px; height: 32px;" @click="$emit('edit', drawerIdeia!)" title="Editar Ideia">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              </button>
+              <button class="bv-modal-close" @click="drawer.fecharDrawer()" title="Fechar">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -32,25 +35,25 @@
 
           <!-- ═══════════════════════════ TABS DO DRAWER -->
           <div class="bv-drawer-tabs">
-            <button :class="['bv-drawer-tab', { active: drawer.drawerTab.value === 'geral' }]" @click="drawer.drawerTab.value = 'geral'">
+            <button :class="['bv-drawer-tab', { active: drawerTab === 'geral' }]" @click="drawerTab = 'geral'">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Informações
             </button>
-            <button :class="['bv-drawer-tab', { active: drawer.drawerTab.value === 'doc' }]" @click="drawer.drawerTab.value = 'doc'">
+            <button :class="['bv-drawer-tab', { active: drawerTab === 'doc' }]" @click="drawerTab = 'doc'">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               Documentação
-              <span v-if="drawer.notas.value.length + drawer.links.value.length + drawer.arquivos.value.length > 0" class="bv-drawer-tab-badge">{{ drawer.notas.value.length + drawer.links.value.length + drawer.arquivos.value.length }}</span>
+              <span v-if="notas.length + links.length + arquivos.length > 0" class="bv-drawer-tab-badge">{{ notas.length + links.length + arquivos.length }}</span>
             </button>
-            <button :class="['bv-drawer-tab', { active: drawer.drawerTab.value === 'conexoes' }]" @click="drawer.drawerTab.value = 'conexoes'">
+            <button :class="['bv-drawer-tab', { active: drawerTab === 'conexoes' }]" @click="drawerTab = 'conexoes'">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
               Conexões
-              <span v-if="drawer.correlacoes.value.length > 0" class="bv-drawer-tab-badge">{{ drawer.correlacoes.value.length }}</span>
+              <span v-if="correlacoes.length > 0" class="bv-drawer-tab-badge">{{ correlacoes.length }}</span>
             </button>
-            <button class="bv-drawer-tab bv-drawer-tab-neural" @click="$emit('navigate', `/dashboard/ideas/flowchart/${drawer.drawerIdeia.value!.id}`)" title="Ver como Fluxograma">
+            <button class="bv-drawer-tab bv-drawer-tab-neural" @click="$emit('navigate', `/dashboard/ideas/flowchart/${drawerIdeia!.id}`)" title="Ver como Fluxograma">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
               Fluxograma
             </button>
-            <button class="bv-drawer-tab bv-drawer-tab-neural" @click="$emit('navigate', `/dashboard/ideas/network/${drawer.drawerIdeia.value!.id}`)" title="Ver como Rede Neural">
+            <button class="bv-drawer-tab bv-drawer-tab-neural" @click="$emit('navigate', `/dashboard/ideas/network/${drawerIdeia!.id}`)" title="Ver como Rede Neural">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               Rede Neural
             </button>
@@ -64,8 +67,8 @@
               <div class="bv-status-selector-wrapper">
                 <select 
                   class="bv-status-select-hidden"
-                  :value="drawer.drawerIdeia.value.status"
-                  @change="drawer.mudarStatus(drawer.drawerIdeia.value.id, ($event.target as HTMLSelectElement).value)"
+                  :value="drawerIdeia.status"
+                  @change="drawer.mudarStatus(drawerIdeia.id, ($event.target as HTMLSelectElement).value)"
                 >
                   <optgroup v-for="grupo in drawer.statusOptions.value" :key="grupo.label" :label="grupo.label">
                     <option v-for="opt in grupo.options" :key="opt.id" :value="opt.id">
@@ -75,25 +78,25 @@
                 </select>
                 <div 
                   class="bv-status-badge bv-status-interactive" 
-                  :style="{ backgroundColor: getStatusColor(drawer.drawerIdeia.value.status) || undefined }"
+                  :style="{ backgroundColor: getStatusColor(drawerIdeia.status) || undefined }"
                 >
-                  {{ getStatusLabel(drawer.drawerIdeia.value.status) }}
+                  {{ getStatusLabel(drawerIdeia.status) }}
                   <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left: 6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </div>
               </div>
 
               <div class="bv-stars">
-                <span v-for="n in 4" :key="n" :class="n <= drawer.drawerIdeia.value.score ? 'bv-star-on' : 'bv-star-off'">★</span>
+                <span v-for="n in 4" :key="n" :class="n <= drawerIdeia.score ? 'bv-star-on' : 'bv-star-off'">★</span>
               </div>
             </div>
 
 
             <!-- Ecossistema -->
-            <div class="bv-drawer-section" v-if="drawer.ecosistemaArvore.value.length > 1 || drawer.ideiasFilhas.value.length > 0">
+            <div class="bv-drawer-section" v-if="ecosistemaArvore.length > 1 || ideiasFilhas.length > 0">
               <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
               <div class="bv-eco-tree">
                 <div
-                  v-for="no in drawer.ecosistemaArvore.value"
+                  v-for="no in ecosistemaArvore"
                   :key="no.id"
                   class="bv-eco-node"
                   :class="{
@@ -102,7 +105,7 @@
                     'bv-eco-node-child':   no.depth > 0 && !no.isCurrent,
                   }"
                   :style="{ paddingLeft: (no.depth * 20 + 12) + 'px' }"
-                  @click="!no.isCurrent && drawer.abrirDrawer(no)"
+                  @click="!no.isCurrent && abrirDrawer(no)"
                 >
                   <span v-if="no.depth > 0" class="bv-eco-connector">↳</span>
                   <span class="bv-eco-dot" :class="{
@@ -120,10 +123,10 @@
                 </div>
               </div>
               <div style="display: flex; gap: 8px; margin-top: 10px;">
-                <button class="bv-btn-ghost bv-btn-sm" style="flex: 1; justify-content: center;" @click="drawer.cadastrarDerivada()">
+                <button class="bv-btn-ghost bv-btn-sm" style="flex: 1; justify-content: center;" @click="cadastrarDerivada()">
                   + Nova Derivada
                 </button>
-                <button class="bv-btn-primary bv-btn-sm" style="flex: 1; justify-content: center;" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawer.drawerIdeia.value!.id}`)">
+                <button class="bv-btn-primary bv-btn-sm" style="flex: 1; justify-content: center;" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawerIdeia!.id}`)">
                   <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                   Admin Kanban
                 </button>
@@ -132,10 +135,10 @@
             <div class="bv-drawer-section" v-else>
               <div class="bv-drawer-section-title">Ecossistema da Ideia</div>
               <div style="display: flex; gap: 8px;">
-                <button class="bv-btn-ghost" style="flex: 1; justify-content: center;" @click="drawer.cadastrarDerivada()">
+                <button class="bv-btn-ghost" style="flex: 1; justify-content: center;" @click="cadastrarDerivada()">
                   + Criar Ideia Derivada
                 </button>
-                <button class="bv-btn-primary" style="flex: 1; justify-content: center;" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawer.drawerIdeia.value!.id}`)">
+                <button class="bv-btn-primary" style="flex: 1; justify-content: center;" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawerIdeia!.id}`)">
                   <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                   Admin Kanban
                 </button>
@@ -143,32 +146,32 @@
             </div>
 
             <!-- Campos descritivos -->
-            <div v-if="drawer.drawerIdeia.value.descricao" class="bv-drawer-section">
+            <div v-if="drawerIdeia.descricao" class="bv-drawer-section">
               <div class="bv-drawer-section-title">Descrição</div>
-              <p class="bv-drawer-text">{{ drawer.drawerIdeia.value.descricao }}</p>
+              <p class="bv-drawer-text">{{ drawerIdeia.descricao }}</p>
             </div>
-            <div v-if="drawer.drawerIdeia.value.contexto" class="bv-drawer-section">
+            <div v-if="drawerIdeia.contexto" class="bv-drawer-section">
               <div class="bv-drawer-section-title">Contexto</div>
-              <p class="bv-drawer-text">{{ drawer.drawerIdeia.value.contexto }}</p>
+              <p class="bv-drawer-text">{{ drawerIdeia.contexto }}</p>
             </div>
-            <div v-if="drawer.drawerIdeia.value.problema" class="bv-drawer-section">
+            <div v-if="drawerIdeia.problema" class="bv-drawer-section">
               <div class="bv-drawer-section-title">Problema que resolve</div>
-              <p class="bv-drawer-text">{{ drawer.drawerIdeia.value.problema }}</p>
+              <p class="bv-drawer-text">{{ drawerIdeia.problema }}</p>
             </div>
-            <div v-if="drawer.drawerIdeia.value.transformacao" class="bv-drawer-section">
+            <div v-if="drawerIdeia.transformacao" class="bv-drawer-section">
               <div class="bv-drawer-section-title">Transformação prometida</div>
-              <p class="bv-drawer-text">{{ drawer.drawerIdeia.value.transformacao }}</p>
+              <p class="bv-drawer-text">{{ drawerIdeia.transformacao }}</p>
             </div>
-            <div v-if="drawer.drawerIdeia.value.publico_alvo" class="bv-drawer-section">
+            <div v-if="drawerIdeia.publico_alvo" class="bv-drawer-section">
               <div class="bv-drawer-section-title">Público-alvo</div>
-              <p class="bv-drawer-text">{{ drawer.drawerIdeia.value.publico_alvo }}</p>
+              <p class="bv-drawer-text">{{ drawerIdeia.publico_alvo }}</p>
             </div>
 
             <!-- Tags -->
-            <div v-if="drawer.allTags(drawer.drawerIdeia.value).length > 0" class="bv-drawer-section">
+            <div v-if="drawer.allTags(drawerIdeia).length > 0" class="bv-drawer-section">
               <div class="bv-drawer-section-title">Tags</div>
               <div class="bv-drawer-tags">
-                <span v-for="t in drawer.allTags(drawer.drawerIdeia.value)" :key="t" class="bv-tag">{{ t }}</span>
+                <span v-for="t in drawer.allTags(drawerIdeia)" :key="t" class="bv-tag">{{ t }}</span>
               </div>
             </div>
 
@@ -186,8 +189,8 @@
               </div>
             </div>
 
-            <div class="bv-drawer-date">Criada em {{ drawer.formatDate(drawer.drawerIdeia.value.created_at) }}</div>
-            <div class="bv-drawer-date" v-if="drawer.drawerIdeia.value.last_accessed_at">Último acesso: {{ drawer.formatDate(drawer.drawerIdeia.value.last_accessed_at) }}</div>
+            <div class="bv-drawer-date">Criada em {{ formatDate(drawerIdeia.created_at) }}</div>
+            <div class="bv-drawer-date" v-if="drawerIdeia.last_accessed_at">Último acesso: {{ formatDate(drawerIdeia.last_accessed_at) }}</div>
 
           </div><!-- /aba geral -->
 
@@ -196,17 +199,17 @@
 
             <!-- SUB-ABAS -->
             <div class="bv-doc-tabs">
-              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'notas' }]"   @click="drawer.docTab.value = 'notas'">
+              <button :class="['bv-doc-tab', { active: docTab === 'notas' }]"   @click="docTab = 'notas'">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; display: inline; vertical-align: text-bottom;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                Notas ({{ drawer.notas.value.length }})
+                Notas ({{ notas.length }})
               </button>
-              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'links' }]"   @click="drawer.docTab.value = 'links'">
+              <button :class="['bv-doc-tab', { active: docTab === 'links' }]"   @click="docTab = 'links'">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; display: inline; vertical-align: text-bottom;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                Links ({{ drawer.links.value.length }})
+                Links ({{ links.length }})
               </button>
-              <button :class="['bv-doc-tab', { active: drawer.docTab.value === 'arquivos' }]" @click="drawer.docTab.value = 'arquivos'">
+              <button :class="['bv-doc-tab', { active: docTab === 'arquivos' }]" @click="docTab = 'arquivos'">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; display: inline; vertical-align: text-bottom;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-                Arquivos ({{ drawer.arquivos.value.length }})
+                Arquivos ({{ arquivos.length }})
               </button>
             </div>
 
@@ -214,13 +217,13 @@
             <div v-show="drawer.docTab.value === 'notas'" class="bv-doc-pane">
               <div class="bv-notas-list">
                 <div
-                  v-for="nota in drawer.notas.value"
+                  v-for="nota in notas"
                   :key="nota.id"
                   class="bv-nota-item"
                 >
-                  <div v-if="drawer.editingNoteId.value !== nota.id" class="bv-nota-view" @dblclick="drawer.startEditNote(nota)">
+                  <div v-if="editingNoteId !== nota.id" class="bv-nota-view" @dblclick="startEditNote(nota)">
                     <div class="bv-nota-icon" :style="{ backgroundColor: nota.cor || '#e2e8f0' }"></div>
-                    <div class="bv-nota-info" @click="drawer.viewingNote.value = nota">
+                    <div class="bv-nota-info" @click="viewingNote = nota">
                       <div v-if="nota.titulo" class="bv-nota-titulo">{{ nota.titulo }}</div>
                       <div class="bv-nota-conteudo bv-rich-text bv-nota-preview" v-html="nota.conteudo"></div>
                     </div>
@@ -237,15 +240,23 @@
                     </div>
                   </div>
                   <div v-else class="bv-link-form" style="margin: 0; border: none; padding: 10px;">
-                    <input v-model="drawer.noteEditForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
-                    <RichTextEditor v-model="drawer.noteEditForm.conteudo" :ideia-id="drawer.drawerIdeia.value?.id" style="margin-bottom: 8px;" />
+                    <input v-model="noteEditForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
+                    <RichTextEditor v-model="noteEditForm.conteudo" :ideia-id="drawerIdeia?.id" style="margin-bottom: 8px;" />
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
                       <div class="bv-cor-group">
-                        <button v-for="c in drawer.NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: drawer.noteEditForm.cor === c}" @click="drawer.noteEditForm.cor = c" type="button"/>
+                        <button 
+                          v-for="c in drawer.NOTE_COLORS" 
+                          :key="c.id" 
+                          class="bv-cor-btn" 
+                          :style="{ background: c.value }" 
+                          :class="{ active: noteEditForm.cor === c.value }" 
+                          @click="noteEditForm.cor = c.value" 
+                          type="button" 
+                        />
                       </div>
                       <div style="display:flex;gap:6px">
-                        <button class="bv-nota-save-btn" @click="drawer.saveEditNote(nota.id)" type="button">Salvar</button>
-                        <button class="bv-nota-cancel-btn" @click="drawer.editingNoteId.value = null" type="button">Cancelar</button>
+                        <button class="bv-nota-save-btn" @click="saveEditNote(nota.id)" type="button">Salvar</button>
+                        <button class="bv-nota-cancel-btn" @click="editingNoteId = null" type="button">Cancelar</button>
                       </div>
                     </div>
                   </div>
@@ -253,86 +264,94 @@
 
                 <!-- Form de nova nota -->
                 <div v-if="drawer.addingNote.value" class="bv-link-form">
-                  <input v-model="drawer.newNoteForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
-                  <RichTextEditor v-model="drawer.newNoteForm.conteudo" :ideia-id="drawer.drawerIdeia.value?.id" style="margin-bottom: 8px;" />
+                  <input v-model="newNoteForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" />
+                  <RichTextEditor v-model="newNoteForm.conteudo" :ideia-id="drawerIdeia?.id" style="margin-bottom: 8px;" />
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
                     <div class="bv-cor-group">
-                      <button v-for="c in drawer.NOTE_COLORS" :key="c" class="bv-cor-btn" :style="{background:c}" :class="{active: drawer.newNoteForm.cor === c}" @click="drawer.newNoteForm.cor = c" type="button"/>
+                      <button 
+                        v-for="c in drawer.NOTE_COLORS" 
+                        :key="c.id" 
+                        class="bv-cor-btn" 
+                        :style="{ background: c.value }" 
+                        :class="{ active: newNoteForm.cor === c.value }" 
+                        @click="newNoteForm.cor = c.value" 
+                        type="button" 
+                      />
                     </div>
                     <div style="display:flex;gap:6px">
-                      <button class="bv-nota-save-btn" @click="drawer.saveNewNote" type="button">Salvar</button>
-                      <button class="bv-nota-cancel-btn" @click="drawer.addingNote.value = false" type="button">Cancelar</button>
+                      <button class="bv-nota-save-btn" @click="saveNewNote" type="button">Salvar</button>
+                      <button class="bv-nota-cancel-btn" @click="addingNote = false" type="button">Cancelar</button>
                     </div>
                   </div>
                 </div>
                 
-                <div v-if="drawer.notas.value.length === 0 && !drawer.addingNote.value" class="bv-doc-empty">Nenhuma nota adicionada</div>
+                <div v-if="notas.length === 0 && !addingNote" class="bv-doc-empty">Nenhuma nota adicionada</div>
               </div>
 
               <!-- Botão + Nota -->
-              <button v-if="!drawer.addingNote.value" class="bv-doc-add-btn" @click="drawer.openAddNote" type="button">+ Nova Nota</button>
+              <button v-if="!addingNote" class="bv-doc-add-btn" @click="openAddNote" type="button">+ Nova Nota</button>
             </div>
 
             <!-- LINKS -->
             <div v-show="drawer.docTab.value === 'links'" class="bv-doc-pane">
               <div class="bv-links-list">
-                <div v-for="link in drawer.links.value" :key="link.id" class="bv-link-item">
+                <div v-for="link in links" :key="link.id" class="bv-link-item">
                   <div class="bv-link-icon">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                   </div>
                   <div class="bv-link-info">
-                    <a class="bv-link-url" :href="link.url" @click.prevent="drawer.openExternalLink(link.url)">{{ link.titulo || link.url }}</a>
+                    <a class="bv-link-url" :href="link.url" @click.prevent="openExternalLink(link.url)">{{ link.titulo || link.url }}</a>
                     <div v-if="link.titulo" class="bv-link-sub">{{ link.url }}</div>
                     <div v-if="link.descricao" class="bv-link-desc">{{ link.descricao }}</div>
                   </div>
-                  <button class="bv-link-del bv-action-danger" @click="drawer.deleteLink(link.id)" title="Remover">
+                  <button class="bv-link-del bv-action-danger" @click="deleteLink(link.id)" title="Remover">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
                 </div>
 
                 <!-- Form novo link -->
-                <div v-if="drawer.addingLink.value" class="bv-link-form">
-                  <input v-model="drawer.newLinkForm.url" class="bv-doc-input" placeholder="URL *" type="url" />
-                  <input v-model="drawer.newLinkForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" type="text" />
-                  <input v-model="drawer.newLinkForm.descricao" class="bv-doc-input" placeholder="Descrição breve (opcional)" type="text" />
-                  <span v-if="drawer.linkErro.value" class="bv-doc-error">{{ drawer.linkErro.value }}</span>
+                <div v-if="addingLink" class="bv-link-form">
+                  <input v-model="newLinkForm.url" class="bv-doc-input" placeholder="URL *" type="url" />
+                  <input v-model="newLinkForm.titulo" class="bv-doc-input" placeholder="Título (opcional)" type="text" />
+                  <input v-model="newLinkForm.descricao" class="bv-doc-input" placeholder="Descrição breve (opcional)" type="text" />
+                  <span v-if="linkErro" class="bv-doc-error">{{ linkErro }}</span>
                   <div style="display:flex;gap:6px;margin-top:4px">
-                    <button class="bv-nota-save-btn" @click="drawer.saveNewLink" type="button">Salvar</button>
-                    <button class="bv-nota-cancel-btn" @click="drawer.addingLink.value = false; drawer.linkErro.value = ''" type="button">Cancelar</button>
+                    <button class="bv-nota-save-btn" @click="saveNewLink" type="button">Salvar</button>
+                    <button class="bv-nota-cancel-btn" @click="addingLink = false; linkErro = ''" type="button">Cancelar</button>
                   </div>
                 </div>
 
-                <div v-if="drawer.links.value.length === 0 && !drawer.addingLink.value" class="bv-doc-empty">Nenhum link adicionado</div>
+                <div v-if="links.length === 0 && !addingLink" class="bv-doc-empty">Nenhum link adicionado</div>
               </div>
-              <button v-if="!drawer.addingLink.value" class="bv-doc-add-btn" @click="drawer.addingLink.value = true" type="button">+ Novo Link</button>
+              <button v-if="!addingLink" class="bv-doc-add-btn" @click="addingLink = true" type="button">+ Novo Link</button>
             </div>
 
             <!-- ARQUIVOS -->
             <div v-show="drawer.docTab.value === 'arquivos'" class="bv-doc-pane">
               <input ref="fileInputRefEl" type="file" style="display:none" @change="drawer.onFileSelected" multiple />
               <div class="bv-files-list">
-                <div v-for="arq in drawer.arquivos.value" :key="arq.id" class="bv-file-item">
-                  <div class="bv-file-icon">{{ drawer.fileIcon(arq.tipo_mime) }}</div>
+                <div v-for="arq in arquivos" :key="arq.id" class="bv-file-item">
+                  <div class="bv-file-icon">{{ fileIcon(arq.tipo_mime) }}</div>
                   <div class="bv-file-info">
                     <div class="bv-file-nome">{{ arq.nome_original }}</div>
-                    <div class="bv-file-meta">{{ drawer.formatBytes(arq.tamanho) }}</div>
+                    <div class="bv-file-meta">{{ formatBytes(arq.tamanho) }}</div>
                   </div>
                   <div class="bv-file-actions">
-                    <button class="bv-file-btn" @click="drawer.openArquivo(arq.id)" title="Abrir">
+                    <button class="bv-file-btn" @click="openArquivo(arq.id)" title="Abrir">
                       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2z"></path></svg>
                     </button>
-                    <button class="bv-file-btn bv-action-danger" @click="drawer.deleteArquivo(arq.id)" title="Excluir">
+                    <button class="bv-file-btn bv-action-danger" @click="deleteArquivo(arq.id)" title="Excluir">
                       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </button>
                   </div>
                 </div>
-                <div v-if="drawer.arquivos.value.length === 0 && !drawer.uploadando.value" class="bv-doc-empty">Nenhum arquivo anexado</div>
-                <div v-if="drawer.uploadando.value" class="bv-upload-progress">
-                  <div class="bv-upload-bar"><div class="bv-upload-fill" :style="{width: drawer.uploadProgress.value + '%'}"></div></div>
-                  <span>Enviando... {{ drawer.uploadProgress.value }}%</span>
+                <div v-if="arquivos.length === 0 && !uploadando" class="bv-doc-empty">Nenhum arquivo anexado</div>
+                <div v-if="uploadando" class="bv-upload-progress">
+                  <div class="bv-upload-bar"><div class="bv-upload-fill" :style="{width: uploadProgress + '%'}"></div></div>
+                  <span>Enviando... {{ uploadProgress }}%</span>
                 </div>
               </div>
-              <button class="bv-doc-add-btn" @click="fileInputRefEl?.click()" type="button" :disabled="drawer.uploadando.value">+ Anexar Arquivo</button>
+              <button class="bv-doc-add-btn" @click="fileInputRefEl?.click()" type="button" :disabled="uploadando">+ Anexar Arquivo</button>
             </div>
 
           </div><!-- /aba doc -->
@@ -344,12 +363,12 @@
               <p class="bv-drawer-text" style="margin-bottom: 15px;">Conecte esta ideia a outras de forma livre, criando um Ecossistema Geral.</p>
               
               <div class="bv-cor-list" style="margin-bottom: 20px;">
-                <div v-for="c in drawer.correlacoes.value" :key="c.id" class="bv-cor-item">
-                  <div v-if="drawer.editingCorrelacaoId.value !== c.id" style="display:flex; justify-content: space-between; align-items: center;">
+                <div v-for="c in correlacoes" :key="c.id" class="bv-cor-item">
+                  <div v-if="editingCorrelacaoId !== c.id" style="display:flex; justify-content: space-between; align-items: center;">
                     <div style="flex: 1; min-width: 0;">
                       <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 4px;">
                         <span class="bv-card-tipo-badge" :style="{ backgroundColor: getTipoColor(c.correlata_tipo!) || undefined, padding: '2px 6px', fontSize: '10px' }">{{ getTipoLabel(c.correlata_tipo!) }}</span>
-                        <div class="bv-workspace-badge" style="font-size: 9px; padding: 1px 5px;">{{ drawer.getWorkspaceName(c.correlata_workspace_id) }}</div>
+                        <div class="bv-workspace-badge" style="font-size: 9px; padding: 1px 5px;">{{ getWorkspaceName(c.correlata_workspace_id) }}</div>
                         <strong style="font-size: 13px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ c.correlata_nome }}</strong>
                       </div>
                       <div style="display: flex; align-items: center; gap: 8px;">
@@ -361,10 +380,10 @@
                       <button class="bv-nota-action-btn" @click="abrirIdeiaCorrelata(c.correlata_id!)" title="Abrir Ideia">
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                       </button>
-                      <button class="bv-nota-action-btn" @click="drawer.startEditCorrelacao(c)" title="Editar">
+                      <button class="bv-nota-action-btn" @click="startEditCorrelacao(c)" title="Editar">
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                       </button>
-                      <button class="bv-nota-action-btn bv-action-danger" @click="drawer.deleteCorrelacao(c.id)" title="Desconectar">
+                      <button class="bv-nota-action-btn bv-action-danger" @click="deleteCorrelacao(c.id)" title="Desconectar">
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
                     </div>
@@ -373,26 +392,30 @@
                   <!-- Form de edição inline -->
                   <div v-else class="bv-link-form" style="margin: 0; border: none; padding: 0; background: transparent;">
                     <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 8px;">Editando conexão com: {{ c.correlata_nome }}</div>
-                    <input v-model="drawer.correlacaoEditForm.descricao" class="bv-doc-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 8px;" />
+                    <input v-model="correlacaoEditForm.descricao" class="bv-doc-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 8px;" />
                     <div style="display:flex; gap:6px; justify-content: flex-end;">
-                      <button class="bv-nota-save-btn" @click="drawer.saveEditCorrelacao(c.id)" type="button">Salvar</button>
-                      <button class="bv-nota-cancel-btn" @click="drawer.editingCorrelacaoId.value = null" type="button">Cancelar</button>
+                      <button class="bv-nota-save-btn" @click="saveEditCorrelacao(c.id)" type="button">Salvar</button>
+                      <button class="bv-nota-cancel-btn" @click="editingCorrelacaoId = null" type="button">Cancelar</button>
                     </div>
                   </div>
                 </div>
-                <div v-if="drawer.correlacoes.value.length === 0" class="bv-doc-empty">Nenhuma conexão estabelecida.</div>
+                <div v-if="correlacoes.length === 0" class="bv-doc-empty">Nenhuma conexão estabelecida.</div>
               </div>
 
               <div class="bv-field" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
                 <label class="bv-label">Adicionar Conexão</label>
-                <select v-model="drawer.novaCorrelacaoForm.ideia_id" class="bv-input bv-select-field" style="margin-bottom: 10px;">
+                <div style="position: relative; margin-bottom: 10px;">
+                  <input v-model="filtroConexao" class="bv-input sm" placeholder="🔍 Filtrar ideias..." style="padding-left: 30px;" />
+                  <svg style="position: absolute; left: 10px; top: 10px; color: #94a3b8;" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <select v-model="novaCorrelacaoForm.ideia_id" class="bv-input bv-select-field" style="margin-bottom: 10px;">
                   <option value="">Selecione uma ideia para conectar...</option>
-                  <option v-for="i in drawer.ideiasParaConectar.value" :key="i.id" :value="i.id">
-                    {{ i.nome }} ({{ drawer.getWorkspaceName(i.workspace_id) }})
+                  <option v-for="i in ideiasParaConectar" :key="i.id" :value="i.id">
+                    {{ i.nome }} ({{ getWorkspaceName(i.workspace_id) }})
                   </option>
                 </select>
-                <input v-model="drawer.novaCorrelacaoForm.descricao" class="bv-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 10px;" />
-                <button class="bv-btn-primary" style="width: 100%; justify-content: center;" @click="drawer.criarCorrelacao" :disabled="!drawer.novaCorrelacaoForm.ideia_id">
+                <input v-model="novaCorrelacaoForm.descricao" class="bv-input" placeholder="Descrição da conexão (opcional)" style="margin-bottom: 10px;" />
+                <button class="bv-btn-primary" style="width: 100%; justify-content: center;" @click="criarCorrelacao" :disabled="!novaCorrelacaoForm.ideia_id">
                   Conectar Ideia
                 </button>
               </div>
@@ -402,39 +425,39 @@
         </div><!-- /bv-drawer-body -->
 
         <div class="bv-drawer-footer">
-          <button class="bv-btn-ghost" @click="drawer.handleToggleArquivar(drawer.drawerIdeia.value!)" type="button">
-            {{ drawer.drawerIdeia.value.is_arquivada ? 'Desarquivar' : 'Arquivar' }}
+          <button class="bv-btn-ghost" @click="handleToggleArquivar(drawerIdeia!)" type="button">
+            {{ drawerIdeia.is_arquivada ? 'Desarquivar' : 'Arquivar' }}
           </button>
-          <button class="bv-btn-ghost" @click="drawer.handleDuplicar(drawer.drawerIdeia.value!)" type="button">Duplicar</button>
-          <button class="bv-btn-danger" @click="drawer.confirmarDelete(drawer.drawerIdeia.value!.id)" type="button">Excluir</button>
-          <button class="bv-btn-primary" @click="$emit('edit', drawer.drawerIdeia.value!)" type="button">Editar</button>
-          <button v-if="showBrainVaultLink" class="bv-btn-ghost" @click="$emit('navigate', '/dashboard/ideas?openDrawer=' + drawer.drawerIdeia.value!.id)" type="button">Ver no Brain Vault</button>
+          <button class="bv-btn-ghost" @click="handleDuplicar(drawerIdeia!)" type="button">Duplicar</button>
+          <button class="bv-btn-danger" @click="confirmarDelete(drawerIdeia!.id)" type="button">Excluir</button>
+          <button class="bv-btn-primary" @click="$emit('edit', drawerIdeia!)" type="button">Editar</button>
+          <button v-if="showBrainVaultLink" class="bv-btn-ghost" @click="$emit('navigate', '/dashboard/ideas?openDrawer=' + drawerIdeia!.id)" type="button">Ver no Brain Vault</button>
         </div>
       </div>
     </div>
  
     <!-- Modal de Confirmação Personalizado -->
     <ConfirmModal 
-      v-if="drawer.confirmDialog.show"
-      :show="drawer.confirmDialog.show"
-      :title="drawer.confirmDialog.title"
-      :message="drawer.confirmDialog.message"
-      :type="drawer.confirmDialog.type"
-      :icon="drawer.confirmDialog.icon"
-      @confirm="drawer.handleConfirmResult(true)"
-      @cancel="drawer.handleConfirmResult(false)"
+      v-if="confirmDialog.show"
+:show="confirmDialog.show"
+:title="confirmDialog.title"
+:message="confirmDialog.message"
+:type="confirmDialog.type"
+:icon="confirmDialog.icon"
+@confirm="handleConfirmResult(true)"
+@cancel="handleConfirmResult(false)"
     />
 
     <NoteViewModal 
-      v-if="drawer.viewingNote.value"
-      :note="drawer.viewingNote.value"
-      @close="drawer.viewingNote.value = null"
+      v-if="viewingNote"
+:note="viewingNote"
+@close="viewingNote = null"
     />
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, toRef } from 'vue';
+import { ref, toRef, onMounted, onUnmounted } from 'vue';
 import { useIdeiaDrawer, type DrawerCallbacks } from '../composables/useIdeiaDrawer';
 import type { Ideia, IdeiaStatus } from '../types/ideia';
 import { useIdeias } from '../composables/useIdeias';
@@ -511,11 +534,58 @@ const drawerCallbacks: DrawerCallbacks = {
 };
 
 const drawer = useIdeiaDrawer(toRef(props, 'ideias'), drawerCallbacks);
+const { 
+  drawerIdeia, drawerTab, docTab, notas, links, arquivos, 
+  correlacoes, ecosistemaArvore, ideiasFilhas, historicoIdeia,
+  statusOptions, addingNote, addingLink, editingNoteId,
+  editingCorrelacaoId, uploadando, uploadProgress,
+  linkErro, noteEditForm, newNoteForm, newLinkForm,
+  novaCorrelacaoForm, confirmDialog, viewingNote,
+  abrirDrawer, fecharDrawer, mudarStatus, handleToggleFavorita,
+  handleToggleArquivar, handleDuplicar, confirmarDelete,
+  handleConfirmResult, startEditNote, saveEditNote, deleteNota,
+  openAddNote, saveNewNote, deleteLink, saveNewLink,
+  onFileSelected, openArquivo, deleteArquivo, startEditCorrelacao,
+  saveEditCorrelacao, deleteCorrelacao, criarCorrelacao,
+  getWorkspaceName, allTags, formatDate, fileIcon, formatBytes,
+  openExternalLink, cadastrarDerivada, filtroConexao,
+  correlacaoEditForm, ideiasParaConectar
+} = drawer;
+
+let mouseIsDownOnOverlay = false;
+
+function onOverlayMouseDown() {
+  mouseIsDownOnOverlay = true;
+}
+
+function onOverlayMouseUp() {
+  if (mouseIsDownOnOverlay) {
+    fecharDrawer();
+  }
+  mouseIsDownOnOverlay = false;
+}
 
 function abrirIdeiaCorrelata(id: string) {
   const ideia = props.ideias.find(i => i.id === id);
   if (ideia) drawer.abrirDrawer(ideia);
 }
+
+// Fechar com ESC
+function handleEsc(e: KeyboardEvent) {
+  if (e.key === 'Escape' && drawer.drawerIdeia.value) {
+    // Só fecha se não houver um modal de confirmação aberto (embora o ConfirmModal geralmente capture o Esc também se implementado)
+    // Mas aqui garantimos que o drawer fecha se ele for o elemento ativo
+    drawer.fecharDrawer();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleEsc);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleEsc);
+});
 
 
 
@@ -556,10 +626,11 @@ defineExpose({
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .bv-drawer {
-  width: 35vw;
+  width: 55vw;
   max-width: calc(100vw - 60px);
   min-width: 500px;
-  height: 100%;
+  height: calc(100% - 32px);
+  margin-top: 32px;
   background: var(--surface);
   border-left: 1px solid var(--border);
   display: flex;
@@ -567,6 +638,7 @@ defineExpose({
   box-shadow: -20px 0 50px rgba(0,0,0,0.08);
   animation: slideRight 0.2s cubic-bezier(0.16,1,0.3,1);
   color: #1e293b;
+  border-top-left-radius: 12px; /* Opcional: arredondar o topo para ficar premium */
 }
 
 @keyframes slideRight {
@@ -611,7 +683,10 @@ defineExpose({
   padding: 0 20px;
   gap: 0;
   flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
 }
+.bv-drawer-tabs::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
 .bv-drawer-tab {
   display: flex;

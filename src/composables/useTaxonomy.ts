@@ -20,9 +20,17 @@ export interface TaxonomyStatus {
   order_index: number;
 }
 
+export interface TaxonomyRelacionamento {
+  id: string;
+  workspace_id: string;
+  label: string;
+  color: string | null;
+}
+
 // ─── Estado Global (Cache por Workspace) ──────────────────────────────────────
 const tipos = ref<TaxonomyTipo[]>([]);
 const status = ref<TaxonomyStatus[]>([]);
+const relacionamentos = ref<TaxonomyRelacionamento[]>([]);
 const loading = ref(false);
 
 const { currentWorkspaceId } = useWorkspaces();
@@ -34,17 +42,22 @@ watch(currentWorkspaceId, async (newId) => {
   } else {
     tipos.value = [];
     status.value = [];
+    relacionamentos.value = [];
   }
-});
+}, { immediate: true });
 
 // ─── Lógica Principal ─────────────────────────────────────────────────────────
 async function fetchTaxonomies(workspace_id: string) {
   loading.value = true;
   try {
-    const rawTipos = await window.electronAPI.taxonomia.tipos.getAll(workspace_id);
-    const rawStatus = await window.electronAPI.taxonomia.status.getAll(workspace_id);
+    const [rawTipos, rawStatus, rawRels] = await Promise.all([
+      window.electronAPI.taxonomia.tipos.getAll(workspace_id),
+      window.electronAPI.taxonomia.status.getAll(workspace_id),
+      window.electronAPI.taxonomia.relacionamentos.getAll(workspace_id)
+    ]);
     tipos.value = rawTipos;
     status.value = rawStatus;
+    relacionamentos.value = rawRels;
   } catch (e) {
     console.error('[useTaxonomy] Erro ao buscar taxonomia:', e);
   } finally {
@@ -95,6 +108,7 @@ export function useTaxonomy() {
     return t?.color || undefined;
   }
 
+  // ─── CRUD Tipos ──────────────────────────────────
   async function createTipo(payload: Record<string, unknown>) {
     const res = await window.electronAPI.taxonomia.tipos.create(payload);
     if (res) tipos.value.push(res);
@@ -118,6 +132,7 @@ export function useTaxonomy() {
     return res;
   }
 
+  // ─── CRUD Status ──────────────────────────────────
   async function createStatus(payload: Record<string, unknown>) {
     const res = await window.electronAPI.taxonomia.status.create(payload);
     if (res) status.value.push(res);
@@ -141,9 +156,34 @@ export function useTaxonomy() {
     return res;
   }
 
+  // ─── CRUD Relacionamentos ─────────────────────────
+  async function createRelacionamento(payload: Record<string, unknown>) {
+    const res = await window.electronAPI.taxonomia.relacionamentos.create(payload);
+    if (res) relacionamentos.value.push(res);
+    return res;
+  }
+
+  async function updateRelacionamento(payload: Record<string, unknown>) {
+    const res = await window.electronAPI.taxonomia.relacionamentos.update(payload);
+    if (res) {
+      const idx = relacionamentos.value.findIndex(r => r.id === res.id);
+      if (idx !== -1) relacionamentos.value[idx] = res;
+    }
+    return res;
+  }
+
+  async function deleteRelacionamento(id: string) {
+    const res = await window.electronAPI.taxonomia.relacionamentos.delete(id);
+    if (res) {
+      relacionamentos.value = relacionamentos.value.filter(r => r.id !== id);
+    }
+    return res;
+  }
+
   return {
     tipos,
     status,
+    relacionamentos,
     loading,
     tiposAgrupados,
     statusAgrupados,
@@ -158,5 +198,8 @@ export function useTaxonomy() {
     createStatus,
     updateStatus,
     deleteStatus,
+    createRelacionamento,
+    updateRelacionamento,
+    deleteRelacionamento,
   };
 }

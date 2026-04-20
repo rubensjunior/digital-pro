@@ -139,7 +139,7 @@
               <label class="bv-label">Tipo de Relação *</label>
               <select v-model="form.relationship_type" class="bv-input bv-select-field">
                 <option value="">Selecione o tipo de relação</option>
-                <option v-for="rel in RELATIONSHIP_TYPES" :key="rel" :value="rel">{{ rel }}</option>
+                <option v-for="rel in relacionamentos" :key="rel.id" :value="rel.label">{{ rel.label }}</option>
               </select>
             </div>
           </div>
@@ -157,17 +157,6 @@
       </div>
     </div>
 
-    <!-- Alert Modal Padronizado -->
-    <div v-if="alertData" class="bv-overlay" style="z-index: 10005;" @click.self="alertData = null">
-      <div class="bv-confirm">
-        <div class="bv-confirm-icon" style="background: #fef08a; font-size: 24px;">⚠️</div>
-        <h3>{{ alertData.titulo }}</h3>
-        <p>{{ alertData.mensagem }}</p>
-        <div class="bv-confirm-actions">
-          <button class="bv-btn-primary" @click="alertData = null">Entendi</button>
-        </div>
-      </div>
-    </div>
 
   </Teleport>
 </template>
@@ -178,8 +167,9 @@ import type { Ideia, IdeiaStatus, IdeiaTipo } from '../types/ideia';
 import { useIdeias } from '../composables/useIdeias';
 import { useTaxonomy } from '../composables/useTaxonomy';
 import { useWorkspaces } from '../composables/useWorkspaces';
+import { useConfirm } from '../composables/useConfirm';
 
-const { tiposAgrupados, statusAgrupados, status } = useTaxonomy();
+const { tiposAgrupados, statusAgrupados, status, relacionamentos } = useTaxonomy();
 const { currentWorkspaceId } = useWorkspaces();
 
 const props = defineProps<{
@@ -192,11 +182,11 @@ const emit = defineEmits<{
 }>();
 
 const { createIdeia, updateIdeia } = useIdeias();
+const { alert: bvAlert } = useConfirm();
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const TABS = ['Identificação', 'Descrição', 'Tags', 'Ecossistema'];
 const SCORE_LABELS = ['Baixo', 'Médio', 'Alto', 'Muito alto'];
-const RELATIONSHIP_TYPES = ['Complementa', 'Feature de', 'Upsell de', 'Downsell de', 'Order bump de', 'Extensão de', 'Versão de', 'Subproduto de', 'Outro'];
 // ─── Lógica Adaptativa de UI ──────────────────────────────────────────────────
 const labelsAdaptativos = computed(() => {
   const tipo = form.tipo;
@@ -275,7 +265,6 @@ const defaultLabels = {
 const modalAberto = ref(false);
 const editando = ref<string | null>(null);
 const tabAtiva = ref(0);
-const alertData = ref<{ titulo: string, mensagem: string } | null>(null);
 
 const formVazio = () => ({
   nome: '',
@@ -339,7 +328,6 @@ function abrirModal(parentId?: string) {
   Object.assign(form, formVazio());
   formErros.nome = false;
   formErros.tipo = false;
-  alertData.value = null;
   editando.value = null;
   tabAtiva.value = 0;
   
@@ -372,7 +360,6 @@ function abrirEdicao(ideia: Ideia) {
   });
   formErros.nome = false;
   formErros.tipo = false;
-  alertData.value = null;
   editando.value = ideia.id;
   tabAtiva.value = 0;
   modalAberto.value = true;
@@ -385,15 +372,15 @@ function fecharModal() {
 }
 
 async function salvar(fechar: boolean = true) {
-  alertData.value = null;
   formErros.nome = !form.nome.trim();
   formErros.tipo = !form.tipo;
 
   if (formErros.nome || formErros.tipo) {
-    alertData.value = {
-      titulo: 'Campos Obrigatórios',
-      mensagem: 'Os campos obrigatórios (marcados em vermelho) devem ser preenchidos antes de salvar a ideia.'
-    };
+    bvAlert({
+      title: 'Campos Obrigatórios',
+      message: 'Os campos obrigatórios (marcados em vermelho) devem ser preenchidos antes de salvar a ideia.',
+      type: 'warning'
+    });
     tabAtiva.value = 0; // Volta para aba 0 se houver erro
     return;
   }
@@ -424,7 +411,7 @@ async function salvar(fechar: boolean = true) {
       fecharModal();
       emit('saved', res);
     } else {
-      alertData.value = { titulo: 'Erro ao atualizar', mensagem: 'Ocorreu um erro ao atualizar a ideia. Tente novamente.' };
+      bvAlert({ title: 'Erro ao atualizar', message: 'Ocorreu um erro ao atualizar a ideia. Tente novamente.', type: 'danger' });
     }
   } else {
     const res = await createIdeia(payload);
@@ -437,7 +424,7 @@ async function salvar(fechar: boolean = true) {
       }
       emit('saved', res);
     } else {
-      alertData.value = { titulo: 'Erro ao criar', mensagem: 'Ocorreu um erro ao criar a ideia. Tente novamente.' };
+      bvAlert({ title: 'Erro ao criar', message: 'Ocorreu um erro ao criar a ideia. Tente novamente.', type: 'danger' });
     }
   }
 }
@@ -450,21 +437,6 @@ defineExpose({
 </script>
 
 <style scoped>
-/* Copiando estilos necessários da modal. */
-.bv-confirm {
-  background: white; border-radius: 12px; padding: 24px;
-  width: 320px; max-width: 90vw; text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  display: flex; flex-direction: column; gap: 12px;
-}
-.bv-confirm-icon {
-  height: 50px; width: 50px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; margin: 0 auto;
-}
-.bv-confirm h3 { margin: 0; font-size: 18px; color: #1e293b; }
-.bv-confirm p { margin: 0; font-size: 14px; color: #64748b; line-height: 1.5; }
-.bv-confirm-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
 .bv-overlay {
   position: fixed;
   inset: 0;
@@ -485,7 +457,8 @@ defineExpose({
   border-radius: 18px;
   width: 540px;
   max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 60px);
+  max-height: calc(100vh - 84px); /* 32px top + 32px bottom + gaps */
+  margin-top: 32px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 32px 80px rgba(0,0,0,0.15), 0 0 0 1px #e2e8f0;

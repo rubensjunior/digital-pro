@@ -31,10 +31,10 @@
               </div>
 
               <div class="workspace-actions">
-                <button class="metronic-header-btn gear" @click="handleOpenWorkspaceSettings" title="Configurar Cofre Atual">
+                <button class="metronic-header-btn gear" @click="handleOpenWorkspaceSettings" title="Configurar Workspace Atual">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 </button>
-                <button class="metronic-header-btn add" @click="handleCreateWorkspace" title="Novo Cofre">
+                <button class="metronic-header-btn add" @click="handleCreateWorkspace" title="Novo Workspace">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 </button>
               </div>
@@ -165,15 +165,8 @@ function handleOpenWorkspaceSettings() {
 }
 
 async function handleCreateWorkspace() {
-  const count = workspaces.value.length + 1;
-  const ws = await createWorkspace(`Cofre ${count}`, '#009ef7', '');
-  if (ws) {
-    currentWorkspaceId.value = ws.id;
-    // Abre as configurações direto para o user personalizar
-    setTimeout(() => {
-      workspaceSettingsModalRef.value?.abrirModal(ws.id);
-    }, 100);
-  }
+  // Abre o modal diretamente na aba de gerenciamento para o usuário criar com o nome que quiser
+  workspaceSettingsModalRef.value?.abrirModal();
 }
 
 const userInitial = computed(() =>
@@ -352,7 +345,6 @@ function handleAction(action: string) {
   align-items: center;
   justify-content: flex-start;
   padding-left: 30px;
-  -webkit-app-region: drag;
 }
 
 .top-version {
@@ -360,7 +352,6 @@ function handleAction(action: string) {
   color: #565674;
   font-weight: 500;
   letter-spacing: 0.5px;
-  -webkit-app-region: no-drag;
 }
 
 .header-primary {

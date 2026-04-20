@@ -31,6 +31,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       create: (payload: Record<string, unknown>) => ipcRenderer.invoke('taxonomia:status:create', payload),
       update: (payload: Record<string, unknown>) => ipcRenderer.invoke('taxonomia:status:update', payload),
       delete: (id: string) => ipcRenderer.invoke('taxonomia:status:delete', id),
+    },
+    relacionamentos: {
+      getAll: (workspace_id: string) => ipcRenderer.invoke('taxonomia:relacionamentos:getAll', workspace_id),
+      create: (payload: Record<string, unknown>) => ipcRenderer.invoke('taxonomia:relacionamentos:create', payload),
+      update: (payload: Record<string, unknown>) => ipcRenderer.invoke('taxonomia:relacionamentos:update', payload),
+      delete: (id: string) => ipcRenderer.invoke('taxonomia:relacionamentos:delete', id),
     }
   },
 

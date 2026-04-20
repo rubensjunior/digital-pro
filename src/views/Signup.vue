@@ -275,6 +275,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTheme } from '../composables/useTheme';
 import { supabase } from '../lib/supabase';
+import { useConfirm } from '../composables/useConfirm';
 
 // Helpers
 const openExternal = (url: string) => {
@@ -288,6 +289,7 @@ const openExternal = (url: string) => {
 
 const router = useRouter();
 const { isDark, toggleTheme } = useTheme();
+const { alert: bvAlert } = useConfirm();
 
 const currentStep = ref(1);
 const isLoading = ref(false);
@@ -402,7 +404,11 @@ const handleNextOrSubmit = async () => {
     router.push('/pending-payment');
   } catch (err: any) {
     console.error('[Signup] Erro na criação de conta:', err);
-    alert('Ocorreu um erro: ' + (err.message || 'Verifique seus dados e tente novamente.'));
+    bvAlert({ 
+      title: 'Erro na Criação', 
+      message: err.message || 'Verifique seus dados e tente novamente.',
+      type: 'danger'
+    });
   } finally {
     isLoading.value = false;
   }

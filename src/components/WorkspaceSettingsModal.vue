@@ -5,32 +5,80 @@
         
         <!-- Header minimalista -->
         <div class="metronic-modal-header">
-          <h2 class="metronic-modal-title">Configurações do Cofre</h2>
+          <h2 class="metronic-modal-title">Configurações do Workspace</h2>
           <button class="metronic-modal-close" @click="fecharModal">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
 
         <!-- Centralized Tabs -->
-        <div class="metronic-tabs-wrapper" v-if="selectedWorkspace">
+        <div class="metronic-tabs-wrapper">
           <div class="metronic-tabs">
-            <button :class="['metronic-tab', { 'active': tabAtiva === 'detalhes' }]" @click="tabAtiva = 'detalhes'">Detalhes do Cofre</button>
-            <button :class="['metronic-tab', { 'active': tabAtiva === 'tipos' }]" @click="tabAtiva = 'tipos'">Tipos de Ideia</button>
-            <button :class="['metronic-tab', { 'active': tabAtiva === 'status' }]" @click="tabAtiva = 'status'">Status (Colunas)</button>
+            <button :class="['metronic-tab', { 'active': tabAtiva === 'workspaces' }]" @click="tabAtiva = 'workspaces'">Gerenciar Workspaces</button>
+            <template v-if="selectedWorkspace">
+              <button :class="['metronic-tab', { 'active': tabAtiva === 'detalhes' }]" @click="tabAtiva = 'detalhes'">Detalhes do Workspace</button>
+              <button :class="['metronic-tab', { 'active': tabAtiva === 'tipos' }]" @click="tabAtiva = 'tipos'">Tipos de Ideia</button>
+              <button :class="['metronic-tab', { 'active': tabAtiva === 'status' }]" @click="tabAtiva = 'status'">Status (Colunas)</button>
+              <button :class="['metronic-tab', { 'active': tabAtiva === 'relacionamentos' }]" @click="tabAtiva = 'relacionamentos'">Ecossistema</button>
+            </template>
           </div>
         </div>
 
-        <div class="metronic-modal-body" v-if="selectedWorkspace">
+        <div class="metronic-modal-body">
+          
+          <!-- ABA GERENCIAR COFRES -->
+          <div v-show="tabAtiva === 'workspaces'" class="metronic-tab-pane">
+            <div class="pane-header">
+              <h3>Seus Workspaces de Ideias</h3>
+              <p>Crie novos espaços ou gerencie os existentes.</p>
+            </div>
+
+            <div class="metronic-list" style="margin-bottom: 40px;">
+              <div class="metronic-list-header">
+                <span>Novo Workspace</span>
+              </div>
+              <div class="metronic-form-group" style="margin: 0; max-width: 100%;">
+                <div style="display:flex; gap: 12px;">
+                  <input v-model="newWsName" class="metronic-input" style="flex:1" placeholder="Nome do novo workspace..." @keyup.enter="handleCreateNewWs" />
+                  <button class="metronic-btn-primary" @click="handleCreateNewWs" :disabled="!newWsName.trim()">Criar Workspace</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="metronic-list">
+              <div class="metronic-list-header">
+                <span>Workspaces Ativos ({{ workspaces.length }})</span>
+              </div>
+
+              <div class="metronic-list-body">
+                <div v-for="ws in workspaces" :key="ws.id" class="metronic-list-item" :class="{ 'is-active': ws.id === selectedWorkspaceId }">
+                  <div class="item-view">
+                    <div class="item-color-indicator" :style="{ background: ws.color || '#009ef7' }"></div>
+                    <div class="item-label">
+                      {{ ws.name }}
+                      <span v-if="ws.id === selectedWorkspaceId" class="active-badge">Atual</span>
+                    </div>
+                    <div class="item-actions">
+                      <button class="action-icon" @click="selecionarParaConfig(ws.id)" title="Configurar este workspace">⚙️</button>
+                      <button class="action-icon danger" @click="handleDeleteWs(ws)" title="Excluir workspace">✖</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <template v-if="selectedWorkspace">
           
           <!-- ABA DETALHES -->
           <div v-show="tabAtiva === 'detalhes'" class="metronic-tab-pane">
             <div class="pane-header">
               <h3>Detalhes Básicos</h3>
-              <p>Gerencie o nome e a cor temática do seu cofre de ideias.</p>
+              <p>Gerencie o nome e a cor temática do seu workspace de ideias.</p>
             </div>
 
             <div class="metronic-form-group">
-              <label>Nome do Cofre <span class="text-danger">*</span></label>
+              <label>Nome do Workspace <span class="text-danger">*</span></label>
               <div style="display:flex; gap: 12px;">
                 <input v-model="editWsNameForm" class="metronic-input" style="flex:1" placeholder="Ex: Projetos Pessoais" />
                 <button class="metronic-btn-primary" @click="salvarNomeWs">Salvar Alterações</button>
@@ -53,8 +101,8 @@
 
             <div class="metronic-danger-zone">
               <div class="danger-info">
-                <h4>Excluir Cofre</h4>
-                <p>Esta ação apagará permanentemente o cofre e todas as ideias atreladas a ele.</p>
+                <h4>Excluir Workspace</h4>
+                <p>Esta ação apagará permanentemente o workspace e todas as ideias atreladas a ele.</p>
               </div>
               <button class="metronic-btn-danger" @click="confirmarDeleteWs">Excluir Permanentemente</button>
             </div>
@@ -64,7 +112,7 @@
           <div v-show="tabAtiva === 'tipos'" class="metronic-tab-pane">
             <div class="pane-header">
               <h3>Gestão de Tipos</h3>
-              <p>Configure que tipos de ideias você quer que existam neste cofre.</p>
+              <p>Configure que tipos de ideias você quer que existam neste workspace.</p>
             </div>
 
             <div class="metronic-list">
@@ -108,7 +156,7 @@
           <div v-show="tabAtiva === 'status'" class="metronic-tab-pane">
             <div class="pane-header">
               <h3>Status do Kanban</h3>
-              <p>Define as colunas que seu quadro deste cofre possuirá.</p>
+              <p>Define as colunas que seu quadro deste workspace possuirá.</p>
             </div>
 
             <div class="metronic-list">
@@ -148,9 +196,51 @@
             </div>
           </div>
 
-        </div>
-        <div v-else class="metronic-empty">
-          <p>Nenhum cofre selecionado para configurar.</p>
+          <!-- ABA RELACIONAMENTOS (ECOSSISTEMA) -->
+          <div v-show="tabAtiva === 'relacionamentos'" class="metronic-tab-pane">
+            <div class="pane-header">
+              <h3>Taxonomia do Ecossistema</h3>
+              <p>Gerencie os tipos de relações que definem como suas ideias se conectam hierarquicamente.</p>
+            </div>
+
+            <div class="metronic-list">
+              <div class="metronic-list-header">
+                <span>Tipos de Relação</span>
+                <button class="metronic-btn-light-primary" @click="addRel">+ Adicionar Relação</button>
+              </div>
+
+              <div class="metronic-list-body">
+                <div v-for="r in relacionamentos" :key="r.id" class="metronic-list-item">
+                  <div v-if="editRelId !== r.id" class="item-view">
+                    <div class="item-color-indicator" :style="{ background: r.color || '#94a3b8' }"></div>
+                    <div class="item-label">{{ r.label }}</div>
+                    <div class="item-actions">
+                      <button class="action-icon" @click="iniciarEditRel(r)">✎</button>
+                      <button class="action-icon danger" @click="handleDeleteRel(r.id)">✖</button>
+                    </div>
+                  </div>
+                  <div v-else class="item-edit">
+                    <input v-model="editRelForm.label" class="metronic-input sm" placeholder="Nome da Relação" style="flex: 1" />
+                    <input type="color" v-model="editRelForm.color" class="html-color-picker" />
+                    <button class="metronic-btn-primary sm" @click="salvarRel(r.id)">Salvar</button>
+                    <button class="metronic-btn-light sm" @click="editRelId = null">Cancelar</button>
+                  </div>
+                </div>
+
+                <!-- Novo Relacionamento Row -->
+                <div v-if="addingRel" class="metronic-list-item is-new">
+                  <div class="item-edit">
+                    <input v-model="newRelForm.label" class="metronic-input sm" placeholder="Ex: Módulo de, Upsell de..." style="flex: 1" />
+                    <input type="color" v-model="newRelForm.color" class="html-color-picker" />
+                    <button class="metronic-btn-primary sm" @click="salvarNovoRel">Criar</button>
+                    <button class="metronic-btn-light sm" @click="addingRel = false">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </template>
+
         </div>
         
       </div>
@@ -160,18 +250,25 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useWorkspaces } from '../composables/useWorkspaces';
+import { useWorkspaces, type Workspace } from '../composables/useWorkspaces';
 import { useTaxonomy, type TaxonomyTipo, type TaxonomyStatus } from '../composables/useTaxonomy';
+import { useConfirm } from '../composables/useConfirm';
 
 const emit = defineEmits<{
   (e: 'closed'): void;
 }>();
 
-const { workspaces, updateWorkspace, deleteWorkspace } = useWorkspaces();
-const { tipos, status, fetchTaxonomies, createTipo, updateTipo, deleteTipo, createStatus, updateStatus, deleteStatus } = useTaxonomy();
+const { workspaces, updateWorkspace, deleteWorkspace, createWorkspace, currentWorkspaceId: globalCurrentId } = useWorkspaces();
+const { 
+  tipos, status, relacionamentos, fetchTaxonomies, 
+  createTipo, updateTipo, deleteTipo, 
+  createStatus, updateStatus, deleteStatus,
+  createRelacionamento, updateRelacionamento, deleteRelacionamento
+} = useTaxonomy();
+const { confirm: bvConfirm, alert: bvAlert } = useConfirm();
 
 const modalAberto = ref(false);
-const tabAtiva = ref('detalhes');
+const tabAtiva = ref('workspaces');
 const selectedWorkspaceId = ref<string | null>(null);
 
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#64748b'];
@@ -187,6 +284,27 @@ function abrirModal(workspace_id?: string) {
     selectedWorkspaceId.value = workspace_id;
     editWsNameForm.value = workspaces.value.find(w => w.id === workspace_id)?.name || '';
     fetchTaxonomies(workspace_id);
+    tabAtiva.value = 'detalhes';
+  } else {
+    tabAtiva.value = 'workspaces';
+  }
+}
+
+function selecionarParaConfig(id: string) {
+  selectedWorkspaceId.value = id;
+  editWsNameForm.value = workspaces.value.find(w => w.id === id)?.name || '';
+  fetchTaxonomies(id);
+  tabAtiva.value = 'detalhes';
+}
+
+const newWsName = ref('');
+async function handleCreateNewWs() {
+  if (!newWsName.value.trim()) return;
+  const ws = await createWorkspace(newWsName.value.trim(), '#009ef7');
+  if (ws) {
+    newWsName.value = '';
+    selecionarParaConfig(ws.id);
+    bvAlert({ title: 'Sucesso!', message: 'Novo workspace criado com êxito.', type: 'success' });
   }
 }
 
@@ -197,20 +315,111 @@ function fecharModal() {
 
 async function salvarNomeWs() {
   if (!selectedWorkspaceId.value || !editWsNameForm.value.trim()) return;
-  await updateWorkspace(selectedWorkspaceId.value, editWsNameForm.value.trim(), selectedWorkspace.value?.color, selectedWorkspace.value?.icon);
-  alert('Nome salvo com sucesso!');
+  const res = await updateWorkspace(selectedWorkspaceId.value, editWsNameForm.value.trim(), selectedWorkspace.value?.color, selectedWorkspace.value?.icon);
+  if (res) {
+    bvAlert({ title: 'Salvo!', message: 'O nome do workspace foi atualizado com sucesso.', type: 'success' });
+  } else {
+    bvAlert({ title: 'Erro', message: 'Não foi possível salvar as alterações. Verifique se o app precisa ser reiniciado.', type: 'danger' });
+  }
 }
 
 async function atualizarCorWs(color: string) {
   if (!selectedWorkspaceId.value || !selectedWorkspace.value) return;
-  await updateWorkspace(selectedWorkspaceId.value, selectedWorkspace.value.name, color, selectedWorkspace.value.icon);
+  const res = await updateWorkspace(selectedWorkspaceId.value, selectedWorkspace.value.name, color, selectedWorkspace.value.icon);
+  if (res) {
+    bvAlert({ title: 'Cor Atualizada!', message: 'A cor de destaque do workspace foi alterada.', type: 'success' });
+  } else {
+    bvAlert({ title: 'Erro', message: 'Falha ao atualizar a cor.', type: 'danger' });
+  }
 }
 
 async function confirmarDeleteWs() {
   if (!selectedWorkspaceId.value) return;
-  if (confirm('Tem certeza? Isso deletará este cofre permanentemente.')) {
+  const ok = await bvConfirm({
+    title: 'Excluir Workspace?',
+    message: 'Tem certeza? Isso apagará permanentemente este workspace e todas as ideias vinculadas a ele. Esta ação não pode ser desfeita.',
+    type: 'danger',
+    confirmText: 'Sim, excluir tudo'
+  });
+  
+  if (ok) {
     await deleteWorkspace(selectedWorkspaceId.value);
-    fecharModal();
+    tabAtiva.value = 'workspaces';
+    selectedWorkspaceId.value = null;
+  }
+}
+
+// -- Relacionamentos CRUD
+const editRelId = ref<string | null>(null);
+const editRelForm = ref({ label: '', color: '#94a3b8' });
+const addingRel = ref(false);
+const newRelForm = ref({ label: '', color: '#94a3b8' });
+
+function addRel() {
+  addingRel.value = true;
+  newRelForm.value = { label: '', color: '#3b82f6' };
+}
+
+function iniciarEditRel(r: any) {
+  editRelId.value = r.id;
+  editRelForm.value = { label: r.label, color: r.color || '#94a3b8' };
+}
+
+async function salvarNovoRel() {
+  if (!newRelForm.value.label.trim()) return;
+  const res = await createRelacionamento({
+    workspace_id: selectedWorkspaceId.value,
+    label: newRelForm.value.label.trim(),
+    color: newRelForm.value.color
+  });
+  if (res) {
+    addingRel.value = false;
+    bvAlert({ title: 'Sucesso!', message: 'Novo tipo de relação adicionado.', type: 'success' });
+  } else {
+    bvAlert({ title: 'Erro', message: 'Não foi possível criar a relação. Verifique se reiniciou o app.', type: 'danger' });
+  }
+}
+
+async function salvarRel(id: string) {
+  if (!editRelForm.value.label.trim()) return;
+  const res = await updateRelacionamento({
+    id,
+    label: editRelForm.value.label.trim(),
+    color: editRelForm.value.color
+  });
+  if (res) {
+    editRelId.value = null;
+    bvAlert({ title: 'Atualizado!', message: 'O tipo de relação foi alterado.', type: 'success' });
+  } else {
+    bvAlert({ title: 'Erro', message: 'Falha ao atualizar a relação.', type: 'danger' });
+  }
+}
+
+async function handleDeleteRel(id: string) {
+  const ok = await bvConfirm({
+    title: 'Excluir Relação?',
+    message: 'Isso não removerá as relações das ideias existentes, mas este tipo não constará mais no catálogo do workspace.',
+    type: 'danger'
+  });
+  if (ok) {
+    await deleteRelacionamento(id);
+    bvAlert({ title: 'Removido', message: 'Relação excluída com sucesso.', type: 'success' });
+  }
+}
+
+async function handleDeleteWs(ws: Workspace) {
+  const ok = await bvConfirm({
+    title: `Excluir "${ws.name}"?`,
+    message: 'Esta ação apagará permanentemente o workspace e todas as ideias nele contidas.',
+    type: 'danger'
+  });
+  
+  if (ok) {
+    await deleteWorkspace(ws.id);
+    if (selectedWorkspaceId.value === ws.id) {
+      selectedWorkspaceId.value = null;
+      tabAtiva.value = 'workspaces';
+    }
   }
 }
 
@@ -242,7 +451,12 @@ function iniciarEditTipo(t: TaxonomyTipo) {
 }
 async function salvarTipo(id: string) {
   if (!editTipoForm.value.label.trim()) return;
-  await updateTipo({ id, label: editTipoForm.value.label, color: editTipoForm.value.color });
+  const res = await updateTipo({ id, label: editTipoForm.value.label, color: editTipoForm.value.color });
+  if (res) {
+    bvAlert({ title: 'Tipo Atualizado!', message: 'O tipo de ideia foi modificado com sucesso.', type: 'success' });
+  } else {
+    bvAlert({ title: 'Erro', message: 'Falha ao atualizar o tipo. Verifique o terminal.', type: 'danger' });
+  }
   editTipoId.value = null;
 }
 
@@ -267,7 +481,12 @@ function iniciarEditStatus(s: TaxonomyStatus) {
 }
 async function salvarStatus(id: string) {
   if (!editStatusForm.value.label.trim()) return;
-  await updateStatus({ id, label: editStatusForm.value.label, color: editStatusForm.value.color });
+  const res = await updateStatus({ id, label: editStatusForm.value.label, color: editStatusForm.value.color });
+  if (res) {
+    bvAlert({ title: 'Status Atualizado!', message: 'A coluna de status foi modificada com sucesso.', type: 'success' });
+  } else {
+    bvAlert({ title: 'Erro', message: 'Falha ao atualizar o status.', type: 'danger' });
+  }
   editStatusId.value = null;
 }
 
@@ -286,7 +505,8 @@ defineExpose({ abrirModal });
   border-radius: 12px;
   width: 900px;
   max-width: 95vw;
-  max-height: 90vh;
+  max-height: calc(100vh - 84px);
+  margin-top: 32px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 40px rgba(0,0,0,0.1);
@@ -369,6 +589,7 @@ defineExpose({ abrirModal });
   padding: 30px;
   overflow-y: auto;
   flex: 1;
+  background: #fcfcfd;
 }
 
 .metronic-empty {
@@ -514,8 +735,25 @@ defineExpose({ abrirModal });
   background: #fff; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
   color: #a1a5b7; font-size: 13px; display: flex; align-items: center; justify-content: center;
 }
-.action-icon:hover { color: #009ef7; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-.action-icon.danger:hover { color: #f1416c; }
+.action-icon:hover { color: #009ef7; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.action-icon.danger:hover { color: #f1416c; background: #fff5f8; }
+
+.active-badge {
+  font-size: 10px;
+  background: #e1f4ff;
+  color: #009ef7;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.metronic-list-item.is-active {
+  background: #ffffff;
+  border: 1px solid #e1f4ff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
 
 .item-edit {
   display: flex; align-items: center; padding: 12px 16px; gap: 10px; background: #f1faff;

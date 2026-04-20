@@ -21,9 +21,27 @@
   <main id="app-router">
     <router-view class="router-view-fill"></router-view>
   </main>
+
+  <ConfirmModal 
+    :show="show"
+    :title="options.title"
+    :message="options.message"
+    :type="options.type"
+    :icon="options.icon"
+    :confirm-text="options.confirmText"
+    :cancel-text="options.cancelText"
+    :is-alert="options.isAlert"
+    @confirm="handleConfirm"
+    @cancel="handleCancel"
+  />
 </template>
 
 <script setup lang="ts">
+import { useConfirm } from './composables/useConfirm';
+import ConfirmModal from './components/ConfirmModal.vue';
+
+const { show, options, handleConfirm, handleCancel } = useConfirm();
+
 const minimize = () => {
   if (window.electronAPI) window.electronAPI.windowMinimize();
 };

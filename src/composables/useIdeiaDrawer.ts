@@ -67,6 +67,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   // ─── Conexões (Ecossistema Geral) ──────────────────────────────────────────
   const correlacoes = ref<IdeiaCorrelacao[]>([]);
   const novaCorrelacaoForm = reactive({ ideia_id: '', descricao: '' });
+  const filtroConexao = ref('');
   const editingCorrelacaoId = ref<string | null>(null);
   const correlacaoEditForm = reactive({ descricao: '' });
 
@@ -75,10 +76,14 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const connectedIds = new Set(correlacoes.value.map((c: IdeiaCorrelacao) => c.correlata_id));
     const currentId = drawerIdeia.value.id;
     
-    // Suporte a Soft Boundaries: permite conectar com ideias de qualquer workspace
-    // Para simplificar, usamos a lista de ideias passada por prop, 
-    // mas sinalizaremos o workspace na UI.
-    return ideias.value.filter((i: Ideia) => i.id !== currentId && !connectedIds.has(i.id) && !i.is_arquivada);
+    let list = ideias.value.filter((i: Ideia) => i.id !== currentId && !connectedIds.has(i.id) && !i.is_arquivada);
+
+    if (filtroConexao.value) {
+      const b = filtroConexao.value.toLowerCase();
+      list = list.filter(i => i.nome.toLowerCase().includes(b) || (i.descricao && i.descricao.toLowerCase().includes(b)));
+    }
+
+    return list;
   });
 
   async function carregarCorrelacoes(id: string) {
@@ -405,16 +410,22 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     drawerTab.value = 'geral';
     drawerIdeia.value = ideia;
     
-    // Importante: recarregar as taxonomias do workspace dessa ideia específica
-    // Isso garante que o dropdown de status reflita o pipeline desse workspace
+    // Abrir o drawer imediatamente, as taxonomias e outros dados podem carregar em paralelo
     if (ideia.workspace_id) {
-      await fetchTaxonomies(ideia.workspace_id);
+      fetchTaxonomies(ideia.workspace_id).catch(e => console.error('Erro ao buscar taxonomias:', e));
     }
 
-    historicoIdeia.value = await callbacks.getHistorico(ideia.id);
-    await callbacks.updateAcesso(ideia.id);
-    await carregarDocumentacao(ideia.id);
-    await carregarCorrelacoes(ideia.id);
+    // Carregar dados complementares em background
+    try {
+      const hist = await callbacks.getHistorico(ideia.id);
+      historicoIdeia.value = hist;
+      
+      await callbacks.updateAcesso(ideia.id);
+      await carregarDocumentacao(ideia.id);
+      await carregarCorrelacoes(ideia.id);
+    } catch (e) {
+      console.error('[useIdeiaDrawer] Erro ao carregar dados do drawer:', e);
+    }
   }
 
   function fecharDrawer() {
@@ -489,6 +500,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     historicoIdeia,
     correlacoes,
     novaCorrelacaoForm,
+    filtroConexao,
     ideiasParaConectar,
     ideiaPai,
     ideiasFilhas,
