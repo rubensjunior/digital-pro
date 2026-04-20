@@ -2,6 +2,12 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.3] - 2026-04-20
+
+### Corrigido
+- **Sincronização de Cores**: Corrigido o problema onde as orbes e conexões na Rede Neural e Fluxograma não atualizavam após a mudança para taxonomia dinâmica por Workspace.
+- **Visualização Dinâmica**: Refatoradas todas as visões de visualização para consumir o composable `useTaxonomy`, garantindo que cores de status e labels reflitam a configuração atual do Workspace.
+
 ## [1.0.2] - 2026-04-20
 
 ### Adicionado

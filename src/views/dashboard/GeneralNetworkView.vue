@@ -25,7 +25,7 @@
           </svg>
         </button>
         <div class="nn-topbar-divider"></div>
-        <span class="nn-topbar-orb" data-status="bruta" style="background:#3b82f6;color:#3b82f6;"></span>
+        <span class="nn-topbar-orb" style="background:#3b82f6;color:#3b82f6;"></span>
         <div class="nn-topbar-info">
           <span class="nn-topbar-title">Ecossistema Geral</span>
           <span class="nn-topbar-sub">
@@ -138,11 +138,13 @@ import { useBus } from '../../composables/useBus';
 import type { Ideia, IdeiaStatus, IdeiaCorrelacao } from '../../types/ideia';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 import IdeaFormModal from '../../components/IdeaFormModal.vue';
+import { useTaxonomy } from '../../composables/useTaxonomy';
 
 // ─── Router & Dados ───────────────────────────────────────────────────────────
 const router = useRouter();
 const { ideias, loading, fetchIdeias } = useIdeias();
 const { on, off } = useBus();
+const { status: taxonomyStatus, getStatusColor, getStatusLabel } = useTaxonomy();
 
 // ─── Estado de Colapso ────────────────────────────────────────────────────────
 const expandedNodes = reactive(new Set<string>());
@@ -210,25 +212,27 @@ function irParaFluxogramaGeral() {
   router.push('/dashboard/ideas/general-flowchart');
 }
 
-// ─── Constantes ───────────────────────────────────────────────────────────────
+// ─── Constantes & Helpers Dinâmicos ───────────────────────────────────────────
 const SCORE_LABELS = ['Baixo', 'Médio', 'Alto', 'Muito Alto'];
-const STATUS_LIST = [
-  { key: 'bruta',        label: 'Bruta',       color: '#64748b' },
-  { key: 'em_teste',     label: 'Em Teste',     color: '#f59e0b' },
-  { key: 'validada',     label: 'Validada',     color: '#10b981' },
-  { key: 'nao_validada', label: 'Não Validada', color: '#ef4444' },
-  { key: 'escalada',     label: 'Escalada',     color: '#8b5cf6' },
-];
-const STATUS_COLORS: Record<string, string> = {
-  bruta: '#64748b', em_teste: '#f59e0b', validada: '#10b981',
-  nao_validada: '#ef4444', escalada: '#8b5cf6',
-};
-const STATUS_LABEL_MAP: Record<IdeiaStatus, string> = {
-  bruta: 'Bruta', em_teste: 'Em Teste', validada: 'Validada',
-  nao_validada: 'Não Validada', escalada: 'Escalada',
-};
 
-function statusLabel(s: IdeiaStatus) { return STATUS_LABEL_MAP[s] ?? s; }
+// Mantemos o STATUS_LIST reativo baseado na taxonomia para a legenda
+const STATUS_LIST = computed(() => {
+  return taxonomyStatus.value.map(s => ({
+    key: s.id,
+    label: s.label,
+    color: s.color || '#4b5563'
+  }));
+});
+
+function getLocalStatusColor(statusKey: string) {
+  return getStatusColor(statusKey) || '#4b5563';
+}
+
+function getLocalStatusLabel(statusKey: string) {
+  return getStatusLabel(statusKey);
+}
+
+function statusLabel(s: IdeiaStatus) { return getLocalStatusLabel(s); }
 function allTags(i: Ideia) {
   return [...i.tags_avatar, ...i.tags_nicho, ...i.tags_dor, ...i.tags_desejo, ...i.tags_mecanismo];
 }
@@ -479,7 +483,7 @@ function onMouseMove(e: MouseEvent) {
         visible: true,
         x: Math.min(sx + 18, c.width - 250), y: Math.max(sy - 10, 10),
         nome: no.ideia.nome, tipo: no.ideia.tipo, status: no.ideia.status,
-        statusLabel: STATUS_LABEL_MAP[no.ideia.status], score: no.ideia.score, rel: no.relType || '',
+        statusLabel: getLocalStatusLabel(no.ideia.status), score: no.ideia.score, rel: no.relType || '',
       };
     } else {
       tooltip.value.visible = false;
@@ -622,8 +626,8 @@ function drawCanvas() {
     const isHov = hoveredId.value === a.origem.id || hoveredId.value === a.destino.id;
     const isPainel = drawerIdeiaId === a.origem.id || drawerIdeiaId === a.destino.id;
     const alpha = isHov || isPainel ? 'ee' : '44';
-    const c1 = STATUS_COLORS[a.origem.ideia.status] || '#4b5563';
-    const c2 = STATUS_COLORS[a.destino.ideia.status] || '#4b5563';
+    const c1 = getLocalStatusColor(a.origem.ideia.status);
+    const c2 = getLocalStatusColor(a.destino.ideia.status);
     const lg = ctx.createLinearGradient(a.origem.x, a.origem.y, a.destino.x, a.destino.y);
     lg.addColorStop(0, c1 + alpha);
     lg.addColorStop(1, c2 + alpha);
@@ -655,7 +659,7 @@ function drawCanvas() {
     const a = arestas.value[p.arestaIdx]; if (!a) continue;
     const px = lerp(a.origem.x, a.destino.x, p.t);
     const py = lerp(a.origem.y, a.destino.y, p.t);
-    const col = STATUS_COLORS[a.destino.ideia.status] || '#3b82f6';
+    const col = getLocalStatusColor(a.destino.ideia.status);
     ctx.beginPath();
     ctx.arc(px, py, 3, 0, Math.PI * 2);
     ctx.fillStyle = col + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
@@ -666,7 +670,7 @@ function drawCanvas() {
   const drawerIdeiaId = ideaDrawerRef.value?.drawerIdeia?.id;
   for (const no of nosGrafo.value) {
     const r = no.radius;
-    const col = STATUS_COLORS[no.ideia.status] || '#3b82f6';
+    const col = getLocalStatusColor(no.ideia.status);
     const isHov = hoveredId.value === no.id;
     const isPainelNode = drawerIdeiaId === no.id;
     const pulse = 0; // Removido pulse generalizado para não ficar muito agitado
@@ -806,11 +810,7 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
   flex-shrink: 0;
   box-shadow: 0 0 8px currentColor;
 }
-.nn-topbar-orb[data-status="bruta"]        { background: #64748b; color: #64748b; }
-.nn-topbar-orb[data-status="em_teste"]     { background: #f59e0b; color: #f59e0b; }
-.nn-topbar-orb[data-status="validada"]     { background: #10b981; color: #10b981; }
-.nn-topbar-orb[data-status="nao_validada"] { background: #ef4444; color: #ef4444; }
-.nn-topbar-orb[data-status="escalada"]     { background: #8b5cf6; color: #8b5cf6; }
+.nn-topbar-orb { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
 
 .nn-topbar-info { min-width: 0; }
 .nn-topbar-title {
