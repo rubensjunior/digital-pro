@@ -55,10 +55,19 @@ function initDatabase(userId: string) {
             console.warn(`Caminho não existe no disco: ${p}`);
             continue;
           }
-          Database = require(p);
-          console.log(`✅ better-sqlite3 carregado com sucesso de: ${p}`);
-          loaded = true;
-          break;
+          
+          const mod = require(p); // eslint-disable-line @typescript-eslint/no-var-requires
+          // Suporte para interop de módulos (alguns bundlers envolvem o CJS em um objeto com .default)
+          const PotentialConstructor = (mod && typeof mod === 'object' && 'default' in mod) ? mod.default : mod;
+          
+          if (typeof PotentialConstructor === 'function') {
+            Database = PotentialConstructor;
+            console.log(`✅ better-sqlite3 carregado com sucesso de: ${p} (tipo: ${typeof PotentialConstructor})`);
+            loaded = true;
+            break;
+          } else {
+            console.warn(`O módulo carregado de "${p}" não é uma função/construtor (tipo: ${typeof PotentialConstructor})`);
+          }
         } catch (err) {
           console.warn(`Tentativa de carregar de "${p}" falhou:`, err.message);
         }

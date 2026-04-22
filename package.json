@@ -1,7 +1,7 @@
 {
   "name": "rks-digital-pro",
   "productName": "RKS Digital PRO",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Para infoprodutores profissionais!",
   "main": ".vite/build/main.js",
   "private": true,
