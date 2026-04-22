@@ -2,7 +2,26 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
-## [1.0.4] - 2026-04-20
+## [1.0.5] - 2026-04-22
+
+### Resumo Geral
+Esta versão consolida todas as funcionalidades principais do RKS Digital PRO, representando um marco estável e completo do produto. Abaixo um resumo do que está funcionando:
+
+### Funcionalidades Disponíveis
+- **Autenticação**: Login e registro de usuários via Supabase, com proteção de rotas e redirecionamento automático conforme status da conta.
+- **Onboarding**: Fluxo de boas-vindas em dois passos — configuração de perfil pessoal e escolha de template de workspace.
+- **Perfil de Usuário**: Apelido, profissão e foto de avatar com sincronização entre SQLite local e Supabase remoto.
+- **Workspaces**: Criação, edição e exclusão de múltiplos workspaces; suporte a templates temáticos (Marketing, Software, SaaS, etc).
+- **Ideias (Nodes)**: Cadastro completo de ideias com título, descrição, tipo, status, relacionamentos e tags.
+- **Taxonomia Dinâmica**: Tipos, Status e Relacionamentos totalmente personalizáveis por workspace, com cores e ícones configuráveis.
+- **Seletor de Cores Moderno**: Interface premium de seleção de cores com espectro visual, gradiente, controles HSL/HEX/RGB e posicionamento inteligente.
+- **Aleatorização de Cores**: Botão "Shuffle" para geração matemática de cores HEX com alta variação e qualidade visual.
+- **Visualizações**: Rede Neural, Fluxograma e Lista — todas consumindo taxonomia dinâmica do workspace ativo.
+- **Encerramento de Conta**: Exclusão permanente da conta com limpeza de todos os dados locais e remotos.
+- **Atualizações Automáticas**: Integração com `update-electron-app` para atualização silenciosa via GitHub Releases.
+- **Banco de Dados Local**: SQLite via `better-sqlite3`, com proteções de inicialização e módulos nativos desempacotados corretamente no asar.
+
+
 
 ### Adicionado
 - **Aleatorização de Cores**: Introduzido botão "Shuffle" nas configurações de taxonomia (Tipos, Status, Relacionamentos) para geração matemática de cores HEX, permitindo milhões de combinações.

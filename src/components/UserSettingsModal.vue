@@ -230,7 +230,7 @@ defineExpose({ abrirModal, fecharModal });
   width: 80px; height: 80px; border-radius: 12px; background: #2b2b40;
   display: flex; align-items: center; justify-content: center;
   position: relative; overflow: hidden; background-size: cover; background-position: center;
-  border: 2px solid var(--border); transition: all 0.2s;
+  border: 1px solid var(--border, #2b2b40); transition: all 0.2s;
 }
 .avatar-edit:hover .avatar-circle { border-color: var(--accent); }
 .avatar-hover {
@@ -239,18 +239,18 @@ defineExpose({ abrirModal, fecharModal });
   color: #fff; opacity: 0; transition: opacity 0.2s;
 }
 .avatar-edit:hover .avatar-hover { opacity: 1; }
-.avatar-placeholder { font-size: 24px; font-weight: 700; color: #a1a5b7; }
+.avatar-placeholder { font-size: 24px; font-weight: 700; color: var(--text-secondary, #a1a5b7); }
 .edit-label { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; }
 
 .profile-fields { flex: 1; display: flex; flex-direction: column; gap: 16px; }
 .field-group { display: flex; flex-direction: column; gap: 6px; }
-.field-group label { font-size: 12px; font-weight: 600; color: #a1a5b7; text-transform: uppercase; letter-spacing: 0.05em; }
+.field-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary, #a1a5b7); text-transform: uppercase; letter-spacing: 0.05em; }
 .settings-input {
   background: var(--bg, #151521); border: 1px solid var(--border, #2b2b40);
-  border-radius: 8px; padding: 10px 14px; font-size: 14px; color: #fff;
+  border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--text-primary, #ffffff);
   transition: all 0.2s;
 }
-.settings-input:focus { outline: none; border-color: var(--accent); background: #1e1e2d; }
+.settings-input:focus { outline: none; border-color: var(--accent); background: var(--surface, #1e1e2d); }
 
 .divider { height: 1px; background: var(--border); margin: 0 0 30px 0; opacity: 0.5; }
 
@@ -277,9 +277,10 @@ defineExpose({ abrirModal, fecharModal });
 .confirm-input {
   width: 100%; max-width: 250px; padding: 8px 12px; border-radius: 6px;
   border: 1px solid var(--border, #2b2b40); background: var(--bg, #151521);
-  color: var(--text-primary, #fff); font-size: 13px;
+  color: var(--text-primary, #ffffff); font-size: 13px;
 }
 .confirm-input:focus { outline: none; border-color: #f1416c; }
+.confirm-input::placeholder, .settings-input::placeholder { color: var(--text-secondary, #92929f); opacity: 0.7; }
 .confirm-actions { display: flex; gap: 8px; }
 
 .cancel-btn { padding: 10px 16px; border-radius: 6px; font-weight: 500; font-size: 13px; cursor: pointer; border: 1px solid var(--border, #2b2b40); background: transparent; color: var(--text-primary, #fff); }
