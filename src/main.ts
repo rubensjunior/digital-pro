@@ -4,7 +4,6 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
 import { updateElectronApp } from 'update-electron-app';
-import Module from 'node:module';
 
 updateElectronApp({
   repo: 'rubensjunior/digital-pro',
