@@ -242,9 +242,9 @@ async function checkSubscription(): Promise<void> {
 
     const { data: assinatura, error: scrollError } = await supabase
       .from('assinaturas')
-      .select('data_fim, status')
+      .select('proxima_cobranca, status')
       .eq('cliente_id', userId)
-      .order('data_fim', { ascending: false })
+      .order('proxima_cobranca', { ascending: false })
       .limit(1)
       .single();
 
@@ -253,7 +253,7 @@ async function checkSubscription(): Promise<void> {
     if (assinatura) {
       const vencida =
         assinatura.status === 'cancelado' ||
-        (assinatura.data_fim && new Date(assinatura.data_fim) < new Date());
+        (assinatura.proxima_cobranca && new Date(assinatura.proxima_cobranca) < new Date());
       if (vencida) router.push('/pending-payment');
     }
   } catch (err) {

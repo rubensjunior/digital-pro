@@ -13,19 +13,19 @@ import IdeaFlowchartView from '../views/dashboard/IdeaFlowchartView.vue';
 import IdeaKanbanView from '../views/dashboard/IdeaKanbanView.vue';
 import Onboarding from '../views/Onboarding.vue';
 
-const requireActivePlan = async (_to: any, _from: any, next: any) => {
+const requireActivePlan = async () => {
   try {
     const { data: { session }, error: authError } = await supabase.auth.getSession();
 
     if (authError || !session) {
-      return next('/login');
+      return '/login';
     }
 
     // Se estiver offline, permitimos o acesso baseado na sessão local
     // (Pois os dados do Brain Vault são locais no SQLite)
     if (!navigator.onLine) {
       console.log('App em modo offline. Ignorando verificação remota de assinatura.');
-      return next();
+      return true;
     }
 
     const userId = session.user.id;
@@ -40,43 +40,43 @@ const requireActivePlan = async (_to: any, _from: any, next: any) => {
     if (clientError) {
       console.error('Erro ao verificar status do cliente (offline?):', clientError);
       // Em caso de erro de rede (não falta de auth), permitimos passar
-      return next();
+      return true;
     }
 
     if (!clientData || clientData.status !== 'ativo') {
       await supabase.auth.signOut();
-      return next('/pending-payment');
+      return '/pending-payment';
     }
 
     // 2) Verifica se a assinatura ainda está dentro do prazo
     const { data: assinatura, error: searchError } = await supabase
       .from('assinaturas')
-      .select('data_fim, status')
+      .select('proxima_cobranca, status')
       .eq('cliente_id', userId)
-      .order('data_fim', { ascending: false })
+      .order('proxima_cobranca', { ascending: false })
       .limit(1)
       .single();
 
     if (searchError && searchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
       console.error('Erro ao verificar assinatura:', searchError);
-      return next();
+      return true;
     }
 
     if (assinatura) {
       const vencida =
         assinatura.status === 'cancelado' ||
-        (assinatura.data_fim && new Date(assinatura.data_fim) < new Date());
+        (assinatura.proxima_cobranca && new Date(assinatura.proxima_cobranca) < new Date());
 
       if (vencida) {
-        return next('/pending-payment');
+        return '/pending-payment';
       }
     }
     
-    next();
+    return true;
   } catch (error) {
     console.error('Falha crítica na verificação de acesso:', error);
     // Em caso de erro catastrófico (ex: rede), tentamos deixar o usuário entrar se ele tiver sessão
-    next();
+    return true;
   }
 };
 
