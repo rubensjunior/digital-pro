@@ -13,8 +13,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: {
       // Garante que módulos nativos fiquem FORA do ASAR (acessíveis ao Node)
-      unpack: '**/node_modules/better-sqlite3/**',
-      unpackDir: '{node_modules/better-sqlite3,node_modules/bindings,node_modules/node-gyp-build}',
+      unpack: '**/node_modules/better-sqlite3/**/*',
     },
     icon: './src/images/logotipo',
     extraResource: [
