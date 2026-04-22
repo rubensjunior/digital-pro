@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
 import { updateElectronApp } from 'update-electron-app';
+import type Database from 'better-sqlite3';
 
 updateElectronApp({
   repo: 'rubensjunior/digital-pro',
@@ -20,77 +21,71 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 // ─── SQLite — Brain Vault ─────────────────────────────────────────────────────
-// O banco fica em %APPDATA%\rks-digital-pro\brainvault.db (Windows)
 // Importação dinâmica para compatibilidade com o empacotamento do Electron Forge
+let BetterSqlite3: typeof Database | null = null;
 
-let db: import('better-sqlite3').Database;
+function loadBetterSqlite3() {
+  const pathsToTry = [
+    path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3', 'lib', 'index.js'),
+    path.join(process.resourcesPath, 'node_modules', 'better-sqlite3'),
+    'better-sqlite3'
+  ];
+
+  console.log('[SQLite] Iniciando carregamento do módulo...');
+  
+  for (const p of pathsToTry) {
+    try {
+      if (path.isAbsolute(p) && !fs.existsSync(p)) continue;
+      
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const mod = require(p);
+      // Alguns bundlers envolvem CJS em { default: ... }
+      const Constructor = (mod && typeof mod === 'object' && 'default' in mod) ? mod.default : mod;
+      
+      if (typeof Constructor === 'function') {
+        console.log(`[SQLite] ✅ Carregado de: ${p}`);
+        return Constructor;
+      }
+      console.warn(`[SQLite] ⚠️ Módulo em ${p} carregado, mas não é uma função. Tipo: ${typeof Constructor}`);
+    } catch (err) {
+      console.warn(`[SQLite] ❌ Falha ao tentar carregar de ${p}:`, err.message);
+    }
+  }
+  return null;
+}
+
+// Tenta carregar imediatamente se já estiver empacotado, ou aguarda o app ready
+if (app.isPackaged) {
+  BetterSqlite3 = loadBetterSqlite3();
+}
+
+let db: Database.Database | null = null;
 
 function initDatabase(userId: string) {
   if (db) {
-    try {
-      db.close();
-    } catch (e) {
-      console.error('Erro ao fechar DB anterior:', e);
-    }
+    try { db.close(); } catch (e) { console.error('Erro ao fechar DB anterior:', e); }
   }
-  let Database;
-  try {
-    if (app.isPackaged) {
-      console.log('App empacotado. Iniciando busca do better-sqlite3...');
-      
-      // Caminhos possíveis em ordem de prioridade
-      const pathsToTry = [
-        // 1. Caminho absoluto no app.asar.unpacked (padrão do Forge)
-        path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3', 'lib', 'index.js'),
-        // 2. Fallback para node_modules relativo ao resources
-        path.join(process.resourcesPath, 'node_modules', 'better-sqlite3'),
-        // 3. require padrão (confia no asar do Electron)
-        'better-sqlite3'
-      ];
 
-      let loaded = false;
-      for (const p of pathsToTry) {
-        try {
-          if (path.isAbsolute(p) && !fs.existsSync(p)) {
-            console.warn(`Caminho não existe no disco: ${p}`);
-            continue;
-          }
-          
-          const mod = require(p); // eslint-disable-line @typescript-eslint/no-var-requires
-          // Suporte para interop de módulos (alguns bundlers envolvem o CJS em um objeto com .default)
-          const PotentialConstructor = (mod && typeof mod === 'object' && 'default' in mod) ? mod.default : mod;
-          
-          if (typeof PotentialConstructor === 'function') {
-            Database = PotentialConstructor;
-            console.log(`✅ better-sqlite3 carregado com sucesso de: ${p} (tipo: ${typeof PotentialConstructor})`);
-            loaded = true;
-            break;
-          } else {
-            console.warn(`O módulo carregado de "${p}" não é uma função/construtor (tipo: ${typeof PotentialConstructor})`);
-          }
-        } catch (err) {
-          console.warn(`Tentativa de carregar de "${p}" falhou:`, err.message);
-        }
-      }
-
-      if (!loaded) {
-        throw new Error('Não foi possível encontrar o módulo better-sqlite3 em nenhum dos caminhos mapeados.');
-      }
-    } else {
-      // Em desenvolvimento, o require padrão sempre funciona
-      Database = require('better-sqlite3');
-    }
-  } catch (e) {
-    console.error('❌ ERRO FATAL no carregamento do SQLite:', e);
-    // Tenta uma última vez via require simples (último recurso)
-    try {
-      Database = require('better-sqlite3');
-    } catch (finalErr) {
-      console.error('Falha final irremediável:', finalErr);
-    }
+  // Se ainda não carregou o módulo (ex: em dev ou falha inicial), tenta carregar agora
+  if (!BetterSqlite3) {
+    BetterSqlite3 = loadBetterSqlite3();
   }
+
+  if (!BetterSqlite3) {
+    throw new Error('Não foi possível carregar o módulo better-sqlite3 em nenhum dos caminhos mapeados.');
+  }
+
   const dbPath = path.join(app.getPath('userData'), `brainvault_${userId}.db`);
-  db = new Database(dbPath);
+  console.log(`[SQLite] Inicializando banco em: ${dbPath}`);
+  
+  try {
+    // Tenta instanciar. BetterSqlite3 pode ser chamado com ou sem 'new'
+    db = new BetterSqlite3(dbPath);
+    console.log('[SQLite] ✅ Instância do banco criada com sucesso.');
+  } catch (err) {
+    console.error('[SQLite] ❌ Erro ao instanciar Database:', err);
+    throw err;
+  }
 
   // Evolução 5: Workspaces & Data-Driven Taxonomy
   db.exec(`
