@@ -2,7 +2,18 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.7] - 2026-04-22
+
+### Corrigido
+- **Loop Crítico no Onboarding**: Corrigido bug onde o onboarding era exibido em loop toda vez que o app era aberto, mesmo após o usuário já ter criado um workspace e preenchido seu perfil.
+  - **Causa raiz**: O banco de dados SQLite local (`brainvault_{userId}.db`) nunca estava sendo inicializado antes da verificação de workspaces no fluxo de login. A função `workspaces.getAll()` retornava `[]` pois `db` era `undefined`, forçando o redirecionamento para o onboarding a cada abertura.
+  - **Correção 1 (Login Manual)**: Adicionada chamada a `initDb(userId)` imediatamente após a validação do login e verificação do status da conta, antes de chamar `configurarNavegacaoAoSucesso()`.
+  - **Correção 2 (Sessão Persistida)**: Adicionada lógica de `onMounted` no `Login.vue` para detectar sessões Supabase já ativas (tokens válidos em localStorage após reabertura do app). Quando detectada, o banco é inicializado e o usuário é redirecionado automaticamente para o dashboard sem precisar digitar credenciais novamente.
+
+---
+
 ## [1.0.5] - 2026-04-22
+
 
 ### Resumo Geral
 Esta versão consolida todas as funcionalidades principais do RKS Digital PRO, representando um marco estável e completo do produto. Abaixo um resumo do que está funcionando:

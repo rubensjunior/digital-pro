@@ -229,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTheme } from '../composables/useTheme';
 import { supabase } from '../lib/supabase';
@@ -247,6 +247,38 @@ const otpCode = ref('');
 const newPassword = ref('');
 const confirmPassword = ref('');
 const successMessage = ref('');
+
+// ─── Auto-login: detecta sessão Supabase já ativa ───────────────────────────
+// Ocorre quando o app é reaberto e o token ainda não expirou.
+// Sem isso, o banco SQLite nunca seria inicializado, causando loop no onboarding.
+onMounted(async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return; // Nenhuma sessão → mostra tela de login normalmente
+
+    // Verificar status antes de inicializar o banco
+    if (navigator.onLine) {
+      const { data: clientData } = await supabase
+        .from('clientes')
+        .select('status')
+        .eq('id', session.user.id)
+        .single();
+
+      if (clientData && clientData.status !== 'ativo') {
+        await supabase.auth.signOut();
+        router.push('/pending-payment');
+        return;
+      }
+    }
+
+    // Inicializar banco SQLite e redirecionar
+    await window.electronAPI.user.initDb(session.user.id);
+    await configurarNavegacaoAoSucesso();
+  } catch (e) {
+    console.warn('[Login] Erro no auto-login:', e);
+    // Falha silenciosa: deixa o usuário na tela de login para logar manualmente
+  }
+});
 
 const handleLogin = async () => {
   try {
@@ -278,6 +310,10 @@ const handleLogin = async () => {
         return;
       }
 
+      // 4. Inicializar o banco SQLite local com o userId do usuário autenticado
+      // CRÍTICO: sem isso, workspaces.getAll() retorna [] porque `db` está indefinido
+      await window.electronAPI.user.initDb(authData.user.id);
+
       // Login bem-sucedido e conta ativa
       configurarNavegacaoAoSucesso();
     }
@@ -289,8 +325,21 @@ const handleLogin = async () => {
   }
 };
 
-const configurarNavegacaoAoSucesso = () => {
-  router.push('/dashboard');
+const configurarNavegacaoAoSucesso = async () => {
+  try {
+    // Verifica se o usuário já possui workspaces configurados
+    const workspaces = await window.electronAPI.workspaces.getAll();
+    if (!workspaces || workspaces.length === 0) {
+      // Novo usuário sem workspace → vai para onboarding
+      router.push('/onboarding');
+    } else {
+      // Usuário existente com workspace → vai para o dashboard
+      router.push('/dashboard');
+    }
+  } catch (e) {
+    console.error('[Login] Erro ao verificar workspaces, redirecionando para onboarding:', e);
+    router.push('/onboarding');
+  }
 };
 
 const handleSendOtp = async () => {
