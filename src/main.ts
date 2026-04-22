@@ -36,12 +36,26 @@ function initDatabase(userId: string) {
   let Database;
   if (app.isPackaged) {
     try {
-      // Tenta carregar diretamente da pasta descompactada para evitar erros de busca
-      const unpackedPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3');
-      Database = require(unpackedPath);
+      // Estratégia 1: app.asar.unpacked relativo ao resourcesPath (padrão Electron Forge)
+      const path1 = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3');
+      // Estratégia 2: Caso o caminho acima falhe, tenta relativo ao appPath
+      const path2 = path.join(app.getAppPath().replace('app.asar', 'app.asar.unpacked'), 'node_modules', 'better-sqlite3');
+      
+      if (fs.existsSync(path1)) {
+        Database = require(path1);
+      } else if (fs.existsSync(path2)) {
+        Database = require(path2);
+      } else {
+        throw new Error('Caminhos unpacked não encontrados');
+      }
     } catch (e) {
-      console.warn('Falha ao carregar da pasta unpacked, tentando require padrão:', e);
-      Database = require('better-sqlite3');
+      console.warn('Falha ao carregar SQLite das pastas unpacked, tentando fallback:', e);
+      try {
+        Database = require('better-sqlite3');
+      } catch (e2) {
+        console.error('ERRO CRÍTICO: Não foi possível carregar better-sqlite3', e2);
+        throw e2;
+      }
     }
   } else {
     Database = require('better-sqlite3');
