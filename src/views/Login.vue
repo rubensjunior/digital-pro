@@ -274,9 +274,12 @@ onMounted(async () => {
     // Inicializar banco SQLite e redirecionar
     await window.electronAPI.user.initDb(session.user.id);
     await configurarNavegacaoAoSucesso();
-  } catch (e) {
+  } catch (e: any) {
     console.warn('[Login] Erro no auto-login:', e);
-    // Falha silenciosa: deixa o usuário na tela de login para logar manualmente
+    // Log para depuração na versão instalada
+    if (!import.meta.env.VITE_SUPABASE_URL) {
+      console.error('[Login] VITE_SUPABASE_URL está ausente no ambiente!');
+    }
   }
 });
 
@@ -318,8 +321,17 @@ const handleLogin = async () => {
       configurarNavegacaoAoSucesso();
     }
   } catch (err: any) {
-    console.error('Erro no login:', err);
-    errorMessage.value = 'Email ou senha incorretos.';
+    console.error('Erro detalhado no login:', err);
+    // Tenta pegar a mensagem de erro específica do Supabase ou da rede
+    const errorMessageStr = err.error_description || err.message || (err.error ? err.error : 'Erro desconhecido');
+    
+    if (errorMessageStr.includes('Invalid login credentials')) {
+      errorMessage.value = 'E-mail ou senha incorretos.';
+    } else if (errorMessageStr.includes('Failed to fetch')) {
+      errorMessage.value = 'Erro de conexão. Verifique sua internet ou as configurações do servidor.';
+    } else {
+      errorMessage.value = `Erro: ${errorMessageStr}`;
+    }
   } finally {
     isLoading.value = false;
   }
