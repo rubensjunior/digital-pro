@@ -71,7 +71,7 @@ const config: ForgeConfig = {
         name: 'digital-pro'
       },
       prerelease: false,
-      draft: true
+      draft: false
     })
   ],
 };
