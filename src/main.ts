@@ -36,29 +36,48 @@ function initDatabase(userId: string) {
   let Database;
   try {
     if (app.isPackaged) {
-      // Em produção, módulos nativos são extraídos para app.asar.unpacked
-      // Tentamos carregar diretamente do caminho físico descompactado
-      const unpackedPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3');
+      console.log('App empacotado. Iniciando busca do better-sqlite3...');
       
-      try {
-        // Tenta carregar o index.js da pasta descompactada
-        Database = require(path.join(unpackedPath, 'lib/index.js'));
-        console.log('SQLite carregado via caminho absoluto unpacked:', unpackedPath);
-      } catch (err) {
-        console.warn('Falha ao carregar SQLite do caminho absoluto, tentando require padrão...', err);
-        Database = require('better-sqlite3');
+      // Caminhos possíveis em ordem de prioridade
+      const pathsToTry = [
+        // 1. Caminho absoluto no app.asar.unpacked (padrão do Forge)
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3', 'lib', 'index.js'),
+        // 2. Fallback para node_modules relativo ao resources
+        path.join(process.resourcesPath, 'node_modules', 'better-sqlite3'),
+        // 3. require padrão (confia no asar do Electron)
+        'better-sqlite3'
+      ];
+
+      let loaded = false;
+      for (const p of pathsToTry) {
+        try {
+          if (path.isAbsolute(p) && !fs.existsSync(p)) {
+            console.warn(`Caminho não existe no disco: ${p}`);
+            continue;
+          }
+          Database = require(p);
+          console.log(`✅ better-sqlite3 carregado com sucesso de: ${p}`);
+          loaded = true;
+          break;
+        } catch (err) {
+          console.warn(`Tentativa de carregar de "${p}" falhou:`, err.message);
+        }
+      }
+
+      if (!loaded) {
+        throw new Error('Não foi possível encontrar o módulo better-sqlite3 em nenhum dos caminhos mapeados.');
       }
     } else {
-      // Em desenvolvimento, o require padrão funciona
+      // Em desenvolvimento, o require padrão sempre funciona
       Database = require('better-sqlite3');
     }
   } catch (e) {
-    console.error('ERRO CRÍTICO: Não foi possível carregar better-sqlite3 de nenhum local.', e);
-    // Tenta um último recurso
+    console.error('❌ ERRO FATAL no carregamento do SQLite:', e);
+    // Tenta uma última vez via require simples (último recurso)
     try {
       Database = require('better-sqlite3');
     } catch (finalErr) {
-      console.error('Falha final no carregamento do SQLite:', finalErr);
+      console.error('Falha final irremediável:', finalErr);
     }
   }
   const dbPath = path.join(app.getPath('userData'), `brainvault_${userId}.db`);
