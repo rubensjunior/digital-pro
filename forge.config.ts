@@ -11,9 +11,7 @@ import { PublisherGithub } from '@electron-forge/publisher-github';
 
 const config: ForgeConfig = {
   packagerConfig: {
-    asar: {
-      unpack: 'node_modules/better-sqlite3/**/*'
-    },
+    asar: true,
     icon: './src/images/logotipo',
     extraResource: [
       './src/images'

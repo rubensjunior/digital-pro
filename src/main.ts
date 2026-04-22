@@ -34,31 +34,40 @@ function initDatabase(userId: string) {
     }
   }
   let Database;
-  if (app.isPackaged) {
-    try {
-      // Estratégia 1: app.asar.unpacked relativo ao resourcesPath (padrão Electron Forge)
-      const path1 = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3');
-      // Estratégia 2: Caso o caminho acima falhe, tenta relativo ao appPath
-      const path2 = path.join(app.getAppPath().replace('app.asar', 'app.asar.unpacked'), 'node_modules', 'better-sqlite3');
-      
-      if (fs.existsSync(path1)) {
-        Database = require(path1);
-      } else if (fs.existsSync(path2)) {
-        Database = require(path2);
-      } else {
-        throw new Error('Caminhos unpacked não encontrados');
-      }
-    } catch (e) {
-      console.warn('Falha ao carregar SQLite das pastas unpacked, tentando fallback:', e);
-      try {
-        Database = require('better-sqlite3');
-      } catch (e2) {
-        console.error('ERRO CRÍTICO: Não foi possível carregar better-sqlite3', e2);
-        throw e2;
+  try {
+    // Tenta o carregamento padrão primeiro (funciona se estiver no node_modules do ASAR ou externado corretamente)
+    Database = require('better-sqlite3');
+  } catch (e) {
+    console.warn('Falha no require padrão de better-sqlite3, tentando caminhos manuais...', e);
+    
+    if (app.isPackaged) {
+      const possiblePaths = [
+        // Caminho 1: Pasta unpacked padrão
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3'),
+        // Caminho 2: Caminho relativo ao ASAR
+        path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'node_modules', 'better-sqlite3'),
+        // Caminho 3: Diretório pai do asar (resources)
+        path.join(path.dirname(app.getAppPath()), 'node_modules', 'better-sqlite3')
+      ];
+
+      for (const p of possiblePaths) {
+        try {
+          if (fs.existsSync(p)) {
+            Database = require(p);
+            console.log('Sucesso ao carregar SQLite de:', p);
+            break;
+          }
+        } catch (err) {
+          console.warn(`Falha ao carregar de ${p}:`, err);
+        }
       }
     }
-  } else {
-    Database = require('better-sqlite3');
+  }
+
+  if (!Database) {
+    console.error('ERRO CRÍTICO: better-sqlite3 não pôde ser carregado de nenhum local conhecido.');
+    // Tenta o último recurso ou lança erro
+    Database = require('better-sqlite3'); 
   }
   const dbPath = path.join(app.getPath('userData'), `brainvault_${userId}.db`);
   db = new Database(dbPath);
@@ -1131,6 +1140,24 @@ function registerUserHandlers() {
     } catch (e) {
       console.error('Erro ao limpar o banco:', e);
       return { success: false, error: e.message };
+    }
+  });
+
+  // Handler de depuração para investigar o erro de módulo não encontrado
+  ipcMain.handle('debug:listResources', () => {
+    try {
+      const resPath = process.resourcesPath;
+      const unpackedPath = path.join(resPath, 'app.asar.unpacked');
+      const items = {
+        resources: fs.readdirSync(resPath),
+        unpackedExists: fs.existsSync(unpackedPath),
+        unpackedContent: fs.existsSync(unpackedPath) ? fs.readdirSync(unpackedPath) : [],
+        appPath: app.getAppPath(),
+        isPackaged: app.isPackaged
+      };
+      return items;
+    } catch (e) {
+      return { error: e.message };
     }
   });
 }
