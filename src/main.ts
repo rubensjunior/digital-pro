@@ -4,10 +4,18 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
 import { updateElectronApp } from 'update-electron-app';
+import Module from 'node:module';
 
 updateElectronApp({
   repo: 'rubensjunior/digital-pro',
 });
+
+// Correção para módulos nativos no Electron + Vite
+if (app.isPackaged) {
+  const moduleRoot = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules');
+  // @ts-expect-error - _initPaths é um método interno do Node.js necessário para carregar módulos do asar.unpacked
+  (Module as any)._initPaths().push(moduleRoot);
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -279,7 +287,7 @@ function registerIdeiaHandlers() {
         let types: { label: string; grupo: string }[] = [];
         let statuses: { label: string; grupo: string; meta: string }[] = [];
         let relacionamentos: { label: string; color: string }[] = [];
-        let ideas: any[] = [];
+        let ideas: unknown[] = [];
 
         if (templateId === 'marketing') {
           name = 'Marketing & Infoprodutos';
@@ -1037,7 +1045,7 @@ function registerUserHandlers() {
     console.log('Handler user:selectAvatar iniciado');
     try {
       const win = BrowserWindow.getFocusedWindow();
-      const result = await dialog.showOpenDialog(win!, {
+      const result = await dialog.showOpenDialog(win || undefined, {
         properties: ['openFile'],
         filters: [{ name: 'Imagens', extensions: ['jpg', 'png', 'gif', 'webp', 'jpeg'] }]
       });
