@@ -2,6 +2,15 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.1.7] - 2026-04-22
+
+### Corrigido
+- **`better-sqlite3` não encontrado em produção** (`Cannot find module 'better-sqlite3'`): O módulo nativo não estava sendo desempacotado corretamente do ASAR. O `AutoUnpackNativesPlugin` não era suficiente sozinho. Corrigido com a diretiva `asar.unpack` + `asar.unpackDir` no `packagerConfig` do `forge.config.ts`, forçando o `better-sqlite3`, `bindings` e `node-gyp-build` a ficarem **fora** do ASAR e acessíveis ao processo Node principal.
+- **DevTools aberto em produção**: O `mainWindow.webContents.openDevTools()` estava sendo chamado incondicionalmente, causando o aviso `Insecure Content-Security-Policy`. Agora restrito a `app.isPackaged === false`.
+- **Variáveis de ambiente Supabase não garantidas no bundle**: Adicionado `loadEnv` + `define` no `vite.renderer.config.ts` para injetar `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` diretamente no bundle de produção.
+
+---
+
 ## [1.0.7] - 2026-04-22
 
 ### Corrigido

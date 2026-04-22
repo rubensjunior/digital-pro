@@ -997,7 +997,10 @@ const createWindow = () => {
     );
   }
 
-  mainWindow.webContents.openDevTools();
+  // Só abre o DevTools em desenvolvimento (nunca em produção)
+  if (!app.isPackaged) {
+    mainWindow.webContents.openDevTools();
+  }
 };
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
