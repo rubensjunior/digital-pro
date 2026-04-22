@@ -13,8 +13,7 @@ updateElectronApp({
 // Correção para módulos nativos no Electron + Vite
 if (app.isPackaged) {
   const moduleRoot = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules');
-  // @ts-expect-error - _initPaths é um método interno do Node.js necessário para carregar módulos do asar.unpacked
-  (Module as any)._initPaths().push(moduleRoot);
+  (Module as unknown as { _initPaths: () => { push: (p: string) => void } })._initPaths().push(moduleRoot);
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -255,6 +254,17 @@ function logHistorico(ideia_id: string, acao: string, detalhes?: string) {
   `).run(hRow);
 }
 
+// ─── Interfaces de Tipagem ────────────────────────────────────────────────────
+interface TemplateEntry {
+  correlation?: { from: string; to: string; desc: string };
+  tipo?: string;
+  status?: string;
+  parent_key?: string;
+  nome?: string;
+  descricao?: string;
+  id_key?: string;
+}
+
 // ─── IPC Handlers — Brain Vault ───────────────────────────────────────────────
 function registerIdeiaHandlers() {
   // ─── Workspaces e Taxonomia ────────────────────────────────────────────────
@@ -287,7 +297,7 @@ function registerIdeiaHandlers() {
         let types: { label: string; grupo: string }[] = [];
         let statuses: { label: string; grupo: string; meta: string }[] = [];
         let relacionamentos: { label: string; color: string }[] = [];
-        let ideas: unknown[] = [];
+        let ideas: TemplateEntry[] = [];
 
         if (templateId === 'marketing') {
           name = 'Marketing & Infoprodutos';
@@ -472,8 +482,8 @@ function registerIdeiaHandlers() {
           }
 
           const ideaId = crypto.randomUUID();
-          const tId = tipoMap.get(entry.tipo) || Array.from(tipoMap.values())[0];
-          const sId = statusMap.get(entry.status) || Array.from(statusMap.values())[0];
+          const tId = (entry.tipo ? tipoMap.get(entry.tipo) : null) || Array.from(tipoMap.values())[0];
+          const sId = (entry.status ? statusMap.get(entry.status) : null) || Array.from(statusMap.values())[0];
           const parentId = entry.parent_key ? ideaIdMap.get(entry.parent_key) : null;
           
           db.prepare(`
@@ -482,7 +492,7 @@ function registerIdeiaHandlers() {
               tags_avatar, tags_nicho, tags_dor, tags_desejo, tags_mecanismo,
               created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '[]', '[]', '[]', '[]', '[]', ?, ?)
-          `).run(ideaId, id, parentId, entry.nome, tId, sId, 3, entry.descricao, now, now);
+          `).run(ideaId, id, parentId, entry.nome || 'Nova Ideia', tId, sId, 3, entry.descricao || '', now, now);
 
           if (entry.id_key) {
             ideaIdMap.set(entry.id_key, ideaId);
