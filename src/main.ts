@@ -10,12 +10,6 @@ updateElectronApp({
   repo: 'rubensjunior/digital-pro',
 });
 
-// Correção para módulos nativos no Electron + Vite
-if (app.isPackaged) {
-  const moduleRoot = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules');
-  (Module as unknown as { _initPaths: () => { push: (p: string) => void } })._initPaths().push(moduleRoot);
-}
-
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
@@ -40,8 +34,19 @@ function initDatabase(userId: string) {
       console.error('Erro ao fechar DB anterior:', e);
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const Database = require('better-sqlite3');
+  let Database;
+  if (app.isPackaged) {
+    try {
+      // Tenta carregar diretamente da pasta descompactada para evitar erros de busca
+      const unpackedPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3');
+      Database = require(unpackedPath);
+    } catch (e) {
+      console.warn('Falha ao carregar da pasta unpacked, tentando require padrão:', e);
+      Database = require('better-sqlite3');
+    }
+  } else {
+    Database = require('better-sqlite3');
+  }
   const dbPath = path.join(app.getPath('userData'), `brainvault_${userId}.db`);
   db = new Database(dbPath);
 
