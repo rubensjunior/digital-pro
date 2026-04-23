@@ -1,296 +1,260 @@
 <template>
   <Teleport to="body">
-    <div v-if="modalAberto" class="metronic-overlay" @click.self="fecharModal">
-      <div class="metronic-modal">
-        
-        <!-- Header minimalista -->
-        <div class="metronic-modal-header">
-          <h2 class="metronic-modal-title">Configurações do Workspace</h2>
-          <button class="metronic-modal-close" @click="fecharModal">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
+    <Transition name="dp-modal-fade">
+      <div v-if="modalAberto" class="dp-modal-overlay" @click.self="fecharModal">
+        <div class="dp-modal-container workspace-modal-width">
+          
+          <div class="dp-modal-header">
+            <h2 class="dp-modal-title">Configurações do Workspace</h2>
+            <button class="close-modal-btn" @click="fecharModal">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
 
-        <!-- Centralized Tabs -->
-        <div class="metronic-tabs-wrapper">
-          <div class="metronic-tabs">
-            <button :class="['metronic-tab', { 'active': tabAtiva === 'workspaces' }]" @click="tabAtiva = 'workspaces'">Gerenciar Workspaces</button>
+          <div class="modal-tabs-container">
+            <div class="dp-tabs">
+              <button :class="['dp-tab', { 'active': tabAtiva === 'workspaces' }]" @click="tabAtiva = 'workspaces'">Meus Espaços</button>
+              <template v-if="selectedWorkspace">
+                <button :class="['dp-tab', { 'active': tabAtiva === 'detalhes' }]" @click="tabAtiva = 'detalhes'">Detalhes</button>
+                <button :class="['dp-tab', { 'active': tabAtiva === 'tipos' }]" @click="tabAtiva = 'tipos'">Tipos</button>
+                <button :class="['dp-tab', { 'active': tabAtiva === 'status' }]" @click="tabAtiva = 'status'">Status</button>
+                <button :class="['dp-tab', { 'active': tabAtiva === 'relacionamentos' }]" @click="tabAtiva = 'relacionamentos'">Ecossistema</button>
+              </template>
+            </div>
+          </div>
+
+          <div class="dp-modal-body">
+            <!-- ABA GERENCIAR COFRES -->
+            <div v-show="tabAtiva === 'workspaces'" class="tab-pane">
+              <div class="pane-intro">
+                <h3>Seus Workspaces de Ideias</h3>
+                <p>Crie novos espaços ou gerencie os existentes.</p>
+              </div>
+
+              <div class="settings-card">
+                <div class="card-label">Novo Workspace (Em Branco)</div>
+                <div class="inline-form">
+                  <input v-model="newWsName" class="dp-input" placeholder="Nome do novo workspace..." @keyup.enter="handleCreateNewWs" />
+                  <button class="dp-btn dp-btn-primary" @click="handleCreateNewWs" :disabled="!newWsName.trim()">Criar</button>
+                </div>
+              </div>
+
+              <div class="settings-card">
+                <div class="card-label">Criar a partir de Modelo</div>
+                <div class="templates-grid">
+                  <div 
+                    v-for="t in TEMPLATES" 
+                    :key="t.id" 
+                    class="template-item"
+                    @click="handleCreateFromTemplate(t.id)"
+                  >
+                    <div class="item-icon-box" :style="{ background: t.color + '15', color: t.color }">
+                      <span v-html="t.icon"></span>
+                    </div>
+                    <div class="item-name">{{ t.name }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-card">
+                <div class="card-label">Workspaces Ativos ({{ workspaces.length }})</div>
+                <div class="item-list">
+                  <div v-for="ws in workspaces" :key="ws.id" class="list-item" :class="{ 'is-active': ws.id === selectedWorkspaceId }">
+                    <div class="item-dot" :style="{ background: ws.color || '#009ef7' }"></div>
+                    <div class="item-text">
+                      {{ ws.name }}
+                      <span v-if="ws.id === selectedWorkspaceId" class="badge">Atual</span>
+                    </div>
+                    <div class="item-actions">
+                      <button class="small-btn" @click="selecionarParaConfig(ws.id)" title="Configurar">⚙️</button>
+                      <button class="small-btn danger" @click="handleDeleteWs(ws)" title="Excluir">✖</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <template v-if="selectedWorkspace">
-              <button :class="['metronic-tab', { 'active': tabAtiva === 'detalhes' }]" @click="tabAtiva = 'detalhes'">Detalhes do Workspace</button>
-              <button :class="['metronic-tab', { 'active': tabAtiva === 'tipos' }]" @click="tabAtiva = 'tipos'">Tipos de Ideia</button>
-              <button :class="['metronic-tab', { 'active': tabAtiva === 'status' }]" @click="tabAtiva = 'status'">Status (Colunas)</button>
-              <button :class="['metronic-tab', { 'active': tabAtiva === 'relacionamentos' }]" @click="tabAtiva = 'relacionamentos'">Ecossistema</button>
+              <!-- ABA DETALHES -->
+              <div v-show="tabAtiva === 'detalhes'" class="tab-pane">
+                <div class="pane-intro">
+                  <h3>Detalhes Básicos</h3>
+                  <p>Gerencie o nome e a cor temática do seu workspace.</p>
+                </div>
+
+                <div class="field-row">
+                  <label>Nome do Workspace</label>
+                  <div class="inline-form">
+                    <input v-model="editWsNameForm" class="dp-input" placeholder="Ex: Projetos Pessoais" />
+                    <button class="dp-btn dp-btn-primary" @click="salvarNomeWs">Salvar</button>
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <label>Cor de Destaque</label>
+                  <div class="color-picker-container">
+                    <ModernColorPicker 
+                      :model-value="selectedWorkspace.color || '#009ef7'" 
+                      @update:model-value="atualizarCorWs"
+                    />
+                    <span class="helper-text">Toque para selecionar a cor principal.</span>
+                  </div>
+                </div>
+
+                <div class="danger-zone-box">
+                  <div class="danger-text-content">
+                    <h4>Excluir Workspace</h4>
+                    <p>Esta ação apagará permanentemente o workspace e todas as ideias.</p>
+                  </div>
+                  <button class="dp-btn dp-btn-danger sm" @click="confirmarDeleteWs">Excluir Tudo</button>
+                </div>
+              </div>
+
+              <!-- ABA TIPOS -->
+              <div v-show="tabAtiva === 'tipos'" class="tab-pane">
+                <div class="pane-intro">
+                  <h3>Tipos de Ideia</h3>
+                  <p>Configure que categorias de ideias existem neste espaço.</p>
+                </div>
+
+                <div class="settings-card">
+                  <div class="card-header-actions">
+                    <div class="card-label">Categorias Atuais</div>
+                    <button class="dp-btn dp-btn-ghost sm accent-text" @click="addTipo">+ Novo Tipo</button>
+                  </div>
+
+                  <div class="item-list">
+                    <div v-for="t in tipos" :key="t.id" class="list-item">
+                      <div v-if="editTipoId !== t.id" class="item-content-view">
+                        <div class="item-dot" :style="{ background: t.color || '#94a3b8' }"></div>
+                        <div class="item-text">{{ t.label }}</div>
+                        <div class="item-actions">
+                          <button class="small-btn" @click="iniciarEditTipo(t)">✎</button>
+                          <button class="small-btn danger" @click="deleteTipo(t.id)">✖</button>
+                        </div>
+                      </div>
+                      <div v-else class="item-edit-view">
+                        <input v-model="editTipoForm.label" class="dp-input sm" placeholder="Nome" />
+                        <div class="mini-picker">
+                          <ModernColorPicker v-model="editTipoForm.color" />
+                        </div>
+                        <button class="dp-btn dp-btn-primary sm" @click="salvarTipo(t.id)">Ok</button>
+                        <button class="dp-btn dp-btn-ghost sm" @click="editTipoId = null">X</button>
+                      </div>
+                    </div>
+
+                    <div v-if="addingTipo" class="list-item is-adding">
+                      <div class="item-edit-view">
+                        <input v-model="newTipoForm.label" class="dp-input sm" placeholder="Ex: Produto" />
+                        <div class="mini-picker">
+                          <ModernColorPicker v-model="newTipoForm.color" />
+                        </div>
+                        <button class="dp-btn dp-btn-primary sm" @click="salvarNovoTipo">Criar</button>
+                        <button class="dp-btn dp-btn-ghost sm" @click="addingTipo = false">X</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ABA STATUS -->
+              <div v-show="tabAtiva === 'status'" class="tab-pane">
+                <div class="pane-intro">
+                  <h3>Status do Kanban</h3>
+                  <p>Define as colunas que seu quadro possuirá.</p>
+                </div>
+
+                <div class="settings-card">
+                  <div class="card-header-actions">
+                    <div class="card-label">Colunas Configuradas</div>
+                    <button class="dp-btn dp-btn-ghost sm accent-text" @click="addStatus">+ Novo Status</button>
+                  </div>
+
+                  <div class="item-list">
+                    <div v-for="s in status" :key="s.id" class="list-item">
+                      <div v-if="editStatusId !== s.id" class="item-content-view">
+                        <div class="item-dot" :style="{ background: s.color || '#94a3b8' }"></div>
+                        <div class="item-text">{{ s.label }}</div>
+                        <div class="item-actions">
+                          <button class="small-btn" @click="iniciarEditStatus(s)">✎</button>
+                          <button class="small-btn danger" @click="deleteStatus(s.id)">✖</button>
+                        </div>
+                      </div>
+                      <div v-else class="item-edit-view">
+                        <input v-model="editStatusForm.label" class="dp-input sm" placeholder="Nome" />
+                        <div class="mini-picker">
+                          <ModernColorPicker v-model="editStatusForm.color" />
+                        </div>
+                        <button class="dp-btn dp-btn-primary sm" @click="salvarStatus(s.id)">Ok</button>
+                        <button class="dp-btn dp-btn-ghost sm" @click="editStatusId = null">X</button>
+                      </div>
+                    </div>
+
+                    <div v-if="addingStatus" class="list-item is-adding">
+                      <div class="item-edit-view">
+                        <input v-model="newStatusForm.label" class="dp-input sm" placeholder="Ex: Finalizado" />
+                        <div class="mini-picker">
+                          <ModernColorPicker v-model="newStatusForm.color" />
+                        </div>
+                        <button class="dp-btn dp-btn-primary sm" @click="salvarNovoStatus">Criar</button>
+                        <button class="dp-btn dp-btn-ghost sm" @click="addingStatus = false">X</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ABA RELACIONAMENTOS -->
+              <div v-show="tabAtiva === 'relacionamentos'" class="tab-pane">
+                <div class="pane-intro">
+                  <h3>Ecossistema e Relações</h3>
+                  <p>Como suas ideias se conectam hierarquicamente.</p>
+                </div>
+
+                <div class="settings-card">
+                  <div class="card-header-actions">
+                    <div class="card-label">Tipos de Relação</div>
+                    <button class="dp-btn dp-btn-ghost sm accent-text" @click="addRel">+ Nova Relação</button>
+                  </div>
+
+                  <div class="item-list">
+                    <div v-for="r in relacionamentos" :key="r.id" class="list-item">
+                      <div v-if="editRelId !== r.id" class="item-content-view">
+                        <div class="item-dot" :style="{ background: r.color || '#94a3b8' }"></div>
+                        <div class="item-text">{{ r.label }}</div>
+                        <div class="item-actions">
+                          <button class="small-btn" @click="iniciarEditRel(r)">✎</button>
+                          <button class="small-btn danger" @click="handleDeleteRel(r.id)">✖</button>
+                        </div>
+                      </div>
+                      <div v-else class="item-edit-view">
+                        <input v-model="editRelForm.label" class="dp-input sm" placeholder="Nome" />
+                        <div class="mini-picker">
+                          <ModernColorPicker v-model="editRelForm.color" />
+                        </div>
+                        <button class="dp-btn dp-btn-primary sm" @click="salvarRel(r.id)">Ok</button>
+                        <button class="dp-btn dp-btn-ghost sm" @click="editRelId = null">X</button>
+                      </div>
+                    </div>
+
+                    <div v-if="addingRel" class="list-item is-adding">
+                      <div class="item-edit-view">
+                        <input v-model="newRelForm.label" class="dp-input sm" placeholder="Ex: Parte de" />
+                        <div class="mini-picker">
+                          <ModernColorPicker v-model="newRelForm.color" />
+                        </div>
+                        <button class="dp-btn dp-btn-primary sm" @click="salvarNovoRel">Criar</button>
+                        <button class="dp-btn dp-btn-ghost sm" @click="addingRel = false">X</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </template>
           </div>
         </div>
-
-        <div class="metronic-modal-body">
-          
-          <!-- ABA GERENCIAR COFRES -->
-          <div v-show="tabAtiva === 'workspaces'" class="metronic-tab-pane">
-            <div class="pane-header">
-              <h3>Seus Workspaces de Ideias</h3>
-              <p>Crie novos espaços ou gerencie os existentes.</p>
-            </div>
-
-            <div class="metronic-list" style="margin-bottom: 24px;">
-              <div class="metronic-list-header">
-                <span>Novo Workspace (Em Branco)</span>
-              </div>
-              <div class="metronic-form-group" style="margin: 0; max-width: 100%;">
-                <div style="display:flex; gap: 12px;">
-                  <input v-model="newWsName" class="metronic-input" style="flex:1" placeholder="Nome do novo workspace..." @keyup.enter="handleCreateNewWs" />
-                  <button class="metronic-btn-primary" @click="handleCreateNewWs" :disabled="!newWsName.trim()">Criar Workspace</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="metronic-list" style="margin-bottom: 40px;">
-              <div class="metronic-list-header">
-                <span>Criar a partir de Modelo</span>
-              </div>
-              <div class="templates-grid-modal">
-                <div 
-                  v-for="t in TEMPLATES" 
-                  :key="t.id" 
-                  class="template-card-modal"
-                  @click="handleCreateFromTemplate(t.id)"
-                >
-                  <div class="card-icon-modal" :style="{ background: t.color + '20', color: t.color }">
-                    <span v-html="t.icon"></span>
-                  </div>
-                  <div class="card-title-modal">{{ t.name }}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="metronic-list">
-              <div class="metronic-list-header">
-                <span>Workspaces Ativos ({{ workspaces.length }})</span>
-              </div>
-
-              <div class="metronic-list-body">
-                <div v-for="ws in workspaces" :key="ws.id" class="metronic-list-item" :class="{ 'is-active': ws.id === selectedWorkspaceId }">
-                  <div class="item-view">
-                    <div class="item-color-indicator" :style="{ background: ws.color || '#009ef7' }"></div>
-                    <div class="item-label">
-                      {{ ws.name }}
-                      <span v-if="ws.id === selectedWorkspaceId" class="active-badge">Atual</span>
-                    </div>
-                    <div class="item-actions">
-                      <button class="action-icon" @click="selecionarParaConfig(ws.id)" title="Configurar este workspace">⚙️</button>
-                      <button class="action-icon danger" @click="handleDeleteWs(ws)" title="Excluir workspace">✖</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <template v-if="selectedWorkspace">
-          
-          <!-- ABA DETALHES -->
-          <div v-show="tabAtiva === 'detalhes'" class="metronic-tab-pane">
-            <div class="pane-header">
-              <h3>Detalhes Básicos</h3>
-              <p>Gerencie o nome e a cor temática do seu workspace de ideias.</p>
-            </div>
-
-            <div class="metronic-form-group">
-              <label>Nome do Workspace <span class="text-danger">*</span></label>
-              <div style="display:flex; gap: 12px;">
-                <input v-model="editWsNameForm" class="metronic-input" style="flex:1" placeholder="Ex: Projetos Pessoais" />
-                <button class="metronic-btn-primary" @click="salvarNomeWs">Salvar Alterações</button>
-              </div>
-            </div>
-
-            <div class="metronic-form-group">
-              <label>Cor de Destaque <span class="text-danger">*</span></label>
-              <div class="workspace-color-picker-v2">
-                <ModernColorPicker 
-                  :model-value="selectedWorkspace.color || '#009ef7'" 
-                  @update:model-value="atualizarCorWs"
-                />
-                <span class="color-label">Clique na cor para expandir a paleta</span>
-              </div>
-            </div>
-
-            <div class="metronic-danger-zone">
-              <div class="danger-info">
-                <h4>Excluir Workspace</h4>
-                <p>Esta ação apagará permanentemente o workspace e todas as ideias atreladas a ele.</p>
-              </div>
-              <button class="metronic-btn-danger" @click="confirmarDeleteWs">Excluir Permanentemente</button>
-            </div>
-          </div>
-
-          <!-- ABA TIPOS -->
-          <div v-show="tabAtiva === 'tipos'" class="metronic-tab-pane">
-            <div class="pane-header">
-              <h3>Gestão de Tipos</h3>
-              <p>Configure que tipos de ideias você quer que existam neste workspace.</p>
-            </div>
-
-            <div class="metronic-list">
-              <div class="metronic-list-header">
-                <span>Tipos Atuais</span>
-                <button class="metronic-btn-light-primary" @click="addTipo">+ Adicionar Tipo</button>
-              </div>
-
-              <div class="metronic-list-body">
-                <div v-for="t in tipos" :key="t.id" class="metronic-list-item">
-                  <div v-if="editTipoId !== t.id" class="item-view">
-                    <div class="item-color-indicator" :style="{ background: t.color || '#94a3b8' }"></div>
-                    <div class="item-label">{{ t.label }}</div>
-                    <div class="item-actions">
-                      <button class="action-icon" @click="iniciarEditTipo(t)">✎</button>
-                      <button class="action-icon danger" @click="deleteTipo(t.id)">✖</button>
-                    </div>
-                  </div>
-                  <div v-else class="item-edit">
-                    <input v-model="editTipoForm.label" class="metronic-input sm" placeholder="Nome do Tipo" style="flex: 1" />
-                    <div class="color-picker-wrapper">
-                      <ModernColorPicker v-model="editTipoForm.color" />
-                      <button class="shuffle-btn" @click="editTipoForm.color = generateRandomHex()" title="Cor aleatória">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                      </button>
-                    </div>
-                    <button class="metronic-btn-primary sm" @click="salvarTipo(t.id)">Salvar</button>
-                    <button class="metronic-btn-light sm" @click="editTipoId = null">Cancelar</button>
-                  </div>
-                </div>
-
-                <!-- Novo Tipo Row -->
-                <div v-if="addingTipo" class="metronic-list-item is-new">
-                  <div class="item-edit">
-                    <input v-model="newTipoForm.label" class="metronic-input sm" placeholder="Ex: Produto, Post Instagram..." style="flex: 1" />
-                    <div class="color-picker-wrapper">
-                      <ModernColorPicker v-model="newTipoForm.color" />
-                      <button class="shuffle-btn" @click="newTipoForm.color = generateRandomHex()" title="Cor aleatória">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                      </button>
-                    </div>
-                    <button class="metronic-btn-primary sm" @click="salvarNovoTipo">Criar</button>
-                    <button class="metronic-btn-light sm" @click="addingTipo = false">Cancelar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ABA STATUS -->
-          <div v-show="tabAtiva === 'status'" class="metronic-tab-pane">
-            <div class="pane-header">
-              <h3>Status do Kanban</h3>
-              <p>Define as colunas que seu quadro deste workspace possuirá.</p>
-            </div>
-
-            <div class="metronic-list">
-              <div class="metronic-list-header">
-                <span>Colunas / Status</span>
-                <button class="metronic-btn-light-primary" @click="addStatus">+ Adicionar Status</button>
-              </div>
-
-              <div class="metronic-list-body">
-                <div v-for="s in status" :key="s.id" class="metronic-list-item">
-                  <div v-if="editStatusId !== s.id" class="item-view">
-                    <div class="item-color-indicator" :style="{ background: s.color || '#94a3b8' }"></div>
-                    <div class="item-label">{{ s.label }}</div>
-                    <div class="item-actions">
-                      <button class="action-icon" @click="iniciarEditStatus(s)">✎</button>
-                      <button class="action-icon danger" @click="deleteStatus(s.id)">✖</button>
-                    </div>
-                  </div>
-                  <div v-else class="item-edit">
-                    <input v-model="editStatusForm.label" class="metronic-input sm" placeholder="Ex: Em Andamento" style="flex: 1" />
-                    <div class="color-picker-wrapper">
-                      <ModernColorPicker v-model="editStatusForm.color" />
-                      <button class="shuffle-btn" @click="editStatusForm.color = generateRandomHex()" title="Cor aleatória">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                      </button>
-                    </div>
-                    <button class="metronic-btn-primary sm" @click="salvarStatus(s.id)">Salvar</button>
-                    <button class="metronic-btn-light sm" @click="editStatusId = null">Cancelar</button>
-                  </div>
-                </div>
-
-                <!-- Novo Status Row -->
-                <div v-if="addingStatus" class="metronic-list-item is-new">
-                  <div class="item-edit">
-                    <input v-model="newStatusForm.label" class="metronic-input sm" placeholder="Ex: Finalizado" style="flex: 1" />
-                    <div class="color-picker-wrapper">
-                      <ModernColorPicker v-model="newStatusForm.color" />
-                      <button class="shuffle-btn" @click="newStatusForm.color = generateRandomHex()" title="Cor aleatória">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                      </button>
-                    </div>
-                    <button class="metronic-btn-primary sm" @click="salvarNovoStatus">Criar</button>
-                    <button class="metronic-btn-light sm" @click="addingStatus = false">Cancelar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ABA RELACIONAMENTOS (ECOSSISTEMA) -->
-          <div v-show="tabAtiva === 'relacionamentos'" class="metronic-tab-pane">
-            <div class="pane-header">
-              <h3>Taxonomia do Ecossistema</h3>
-              <p>Gerencie os tipos de relações que definem como suas ideias se conectam hierarquicamente.</p>
-            </div>
-
-            <div class="metronic-list">
-              <div class="metronic-list-header">
-                <span>Tipos de Relação</span>
-                <button class="metronic-btn-light-primary" @click="addRel">+ Adicionar Relação</button>
-              </div>
-
-              <div class="metronic-list-body">
-                <div v-for="r in relacionamentos" :key="r.id" class="metronic-list-item">
-                  <div v-if="editRelId !== r.id" class="item-view">
-                    <div class="item-color-indicator" :style="{ background: r.color || '#94a3b8' }"></div>
-                    <div class="item-label">{{ r.label }}</div>
-                    <div class="item-actions">
-                      <button class="action-icon" @click="iniciarEditRel(r)">✎</button>
-                      <button class="action-icon danger" @click="handleDeleteRel(r.id)">✖</button>
-                    </div>
-                  </div>
-                  <div v-else class="item-edit">
-                    <input v-model="editRelForm.label" class="metronic-input sm" placeholder="Nome da Relação" style="flex: 1" />
-                    <div class="color-picker-wrapper">
-                      <ModernColorPicker v-model="editRelForm.color" />
-                      <button class="shuffle-btn" @click="editRelForm.color = generateRandomHex()" title="Cor aleatória">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                      </button>
-                    </div>
-                    <button class="metronic-btn-primary sm" @click="salvarRel(r.id)">Salvar</button>
-                    <button class="metronic-btn-light sm" @click="editRelId = null">Cancelar</button>
-                  </div>
-                </div>
-
-                <!-- Novo Relacionamento Row -->
-                <div v-if="addingRel" class="metronic-list-item is-new">
-                  <div class="item-edit">
-                    <input v-model="newRelForm.label" class="metronic-input sm" placeholder="Ex: Módulo de, Upsell de..." style="flex: 1" />
-                    <div class="color-picker-wrapper">
-                      <ModernColorPicker v-model="newRelForm.color" />
-                      <button class="shuffle-btn" @click="newRelForm.color = generateRandomHex()" title="Cor aleatória">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                      </button>
-                    </div>
-                    <button class="metronic-btn-primary sm" @click="salvarNovoRel">Criar</button>
-                    <button class="metronic-btn-light sm" @click="addingRel = false">Cancelar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          </template>
-
-        </div>
-        
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 
@@ -328,10 +292,6 @@ function getRandomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
-function generateRandomHex() {
-  return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-}
-
 const selectedWorkspace = computed(() => workspaces.value.find(w => w.id === selectedWorkspaceId.value));
 
 // -- Workspaces Edit
@@ -363,7 +323,7 @@ async function handleCreateNewWs() {
   if (ws) {
     newWsName.value = '';
     selecionarParaConfig(ws.id);
-    bvAlert({ title: 'Sucesso!', message: 'Novo workspace criado com êxito.', type: 'success' });
+    bvAlert({ title: 'Sucesso!', message: 'Novo workspace criado.', type: 'success' });
   }
 }
 
@@ -384,29 +344,22 @@ async function salvarNomeWs() {
   if (!selectedWorkspaceId.value || !editWsNameForm.value.trim()) return;
   const res = await updateWorkspace(selectedWorkspaceId.value, editWsNameForm.value.trim(), selectedWorkspace.value?.color, selectedWorkspace.value?.icon);
   if (res) {
-    bvAlert({ title: 'Salvo!', message: 'O nome do workspace foi atualizado com sucesso.', type: 'success' });
-  } else {
-    bvAlert({ title: 'Erro', message: 'Não foi possível salvar as alterações. Verifique se o app precisa ser reiniciado.', type: 'danger' });
+    bvAlert({ title: 'Salvo!', message: 'Nome do workspace atualizado.', type: 'success' });
   }
 }
 
 async function atualizarCorWs(color: string) {
   if (!selectedWorkspaceId.value || !selectedWorkspace.value) return;
-  const res = await updateWorkspace(selectedWorkspaceId.value, selectedWorkspace.value.name, color, selectedWorkspace.value.icon);
-  if (res) {
-    bvAlert({ title: 'Cor Atualizada!', message: 'A cor de destaque do workspace foi alterada.', type: 'success' });
-  } else {
-    bvAlert({ title: 'Erro', message: 'Falha ao atualizar a cor.', type: 'danger' });
-  }
+  await updateWorkspace(selectedWorkspaceId.value, selectedWorkspace.value.name, color, selectedWorkspace.value.icon);
 }
 
 async function confirmarDeleteWs() {
   if (!selectedWorkspaceId.value) return;
   const ok = await bvConfirm({
     title: 'Excluir Workspace?',
-    message: 'Tem certeza? Isso apagará permanentemente este workspace e todas as ideias vinculadas a ele. Esta ação não pode ser desfeita.',
+    message: 'Esta ação apagará tudo vinculado a ele. Deseja continuar?',
     type: 'danger',
-    confirmText: 'Sim, excluir tudo'
+    confirmText: 'Sim, excluir'
   });
   
   if (ok) {
@@ -416,7 +369,7 @@ async function confirmarDeleteWs() {
   }
 }
 
-// -- Relacionamentos CRUD
+// -- Relacionamentos
 const editRelId = ref<string | null>(null);
 const editRelForm = ref({ label: '', color: '#94a3b8' });
 const addingRel = ref(false);
@@ -434,53 +387,27 @@ function iniciarEditRel(r: any) {
 
 async function salvarNovoRel() {
   if (!newRelForm.value.label.trim()) return;
-  const res = await createRelacionamento({
+  await createRelacionamento({
     workspace_id: selectedWorkspaceId.value,
     label: newRelForm.value.label.trim(),
     color: newRelForm.value.color
   });
-  if (res) {
-    addingRel.value = false;
-    bvAlert({ title: 'Sucesso!', message: 'Novo tipo de relação adicionado.', type: 'success' });
-  } else {
-    bvAlert({ title: 'Erro', message: 'Não foi possível criar a relação. Verifique se reiniciou o app.', type: 'danger' });
-  }
+  addingRel.value = false;
 }
 
 async function salvarRel(id: string) {
   if (!editRelForm.value.label.trim()) return;
-  const res = await updateRelacionamento({
-    id,
-    label: editRelForm.value.label.trim(),
-    color: editRelForm.value.color
-  });
-  if (res) {
-    editRelId.value = null;
-    bvAlert({ title: 'Atualizado!', message: 'O tipo de relação foi alterado.', type: 'success' });
-  } else {
-    bvAlert({ title: 'Erro', message: 'Falha ao atualizar a relação.', type: 'danger' });
-  }
+  await updateRelacionamento({ id, label: editRelForm.value.label.trim(), color: editRelForm.value.color });
+  editRelId.value = null;
 }
 
 async function handleDeleteRel(id: string) {
-  const ok = await bvConfirm({
-    title: 'Excluir Relação?',
-    message: 'Isso não removerá as relações das ideias existentes, mas este tipo não constará mais no catálogo do workspace.',
-    type: 'danger'
-  });
-  if (ok) {
-    await deleteRelacionamento(id);
-    bvAlert({ title: 'Removido', message: 'Relação excluída com sucesso.', type: 'success' });
-  }
+  const ok = await bvConfirm({ title: 'Excluir Relação?', message: 'Deseja remover este tipo de relação?', type: 'danger' });
+  if (ok) await deleteRelacionamento(id);
 }
 
 async function handleDeleteWs(ws: Workspace) {
-  const ok = await bvConfirm({
-    title: `Excluir "${ws.name}"?`,
-    message: 'Esta ação apagará permanentemente o workspace e todas as ideias nele contidas.',
-    type: 'danger'
-  });
-  
+  const ok = await bvConfirm({ title: `Excluir "${ws.name}"?`, message: 'Esta ação é irreversível.', type: 'danger' });
   if (ok) {
     await deleteWorkspace(ws.id);
     if (selectedWorkspaceId.value === ws.id) {
@@ -518,12 +445,7 @@ function iniciarEditTipo(t: TaxonomyTipo) {
 }
 async function salvarTipo(id: string) {
   if (!editTipoForm.value.label.trim()) return;
-  const res = await updateTipo({ id, label: editTipoForm.value.label, color: editTipoForm.value.color });
-  if (res) {
-    bvAlert({ title: 'Tipo Atualizado!', message: 'O tipo de ideia foi modificado com sucesso.', type: 'success' });
-  } else {
-    bvAlert({ title: 'Erro', message: 'Falha ao atualizar o tipo. Verifique o terminal.', type: 'danger' });
-  }
+  await updateTipo({ id, label: editTipoForm.value.label, color: editTipoForm.value.color });
   editTipoId.value = null;
 }
 
@@ -548,12 +470,7 @@ function iniciarEditStatus(s: TaxonomyStatus) {
 }
 async function salvarStatus(id: string) {
   if (!editStatusForm.value.label.trim()) return;
-  const res = await updateStatus({ id, label: editStatusForm.value.label, color: editStatusForm.value.color });
-  if (res) {
-    bvAlert({ title: 'Status Atualizado!', message: 'A coluna de status foi modificada com sucesso.', type: 'success' });
-  } else {
-    bvAlert({ title: 'Erro', message: 'Falha ao atualizar o status.', type: 'danger' });
-  }
+  await updateStatus({ id, label: editStatusForm.value.label, color: editStatusForm.value.color });
   editStatusId.value = null;
 }
 
@@ -561,350 +478,113 @@ defineExpose({ abrirModal });
 </script>
 
 <style scoped>
-.metronic-overlay {
-  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; z-index: 11000;
-  animation: fadeIn 0.15s ease;
-}
-
-.metronic-modal {
-  background: #ffffff;
-  border-radius: 12px;
+.workspace-modal-width {
   width: 900px;
   max-width: 95vw;
-  max-height: calc(100vh - 84px);
-  margin-top: 32px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-  animation: slideUp 0.22s cubic-bezier(0.16,1,0.3,1);
+  max-height: calc(100vh - 80px);
 }
 
-.metronic-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px 30px;
+.close-modal-btn {
+  background: transparent; border: none; color: var(--dp-modal-text-secondary);
+  cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.2s;
 }
+.close-modal-btn:hover { background: rgba(0,0,0,0.05); color: #f1416c; }
+.dark .close-modal-btn:hover { background: rgba(255,255,255,0.05); }
 
-.metronic-modal-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #181c32;
-  margin: 0;
+.modal-tabs-container {
+  padding: 0 24px;
+  border-bottom: 1px solid var(--dp-modal-border);
+  background: rgba(0,0,0,0.01);
 }
+.dark .modal-tabs-container { background: rgba(255,255,255,0.01); }
 
-.metronic-modal-close {
-  background: none;
-  border: none;
-  color: #a1a5b7;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.dp-tabs { display: flex; gap: 24px; }
+.dp-tab {
+  background: none; border: none; padding: 16px 4px; font-size: 14px; font-weight: 600;
+  color: var(--dp-modal-text-secondary); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.2s; white-space: nowrap;
+}
+.dp-tab:hover { color: var(--dp-modal-text-primary); }
+.dp-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+.tab-pane { display: flex; flex-direction: column; gap: 24px; animation: dp-fade-in 0.2s ease; }
+.pane-intro { margin-bottom: 8px; }
+.pane-intro h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--dp-modal-text-primary); }
+.pane-intro p { margin: 0; font-size: 13px; color: var(--dp-modal-text-secondary); }
+
+.settings-card {
+  background: rgba(0,0,0,0.02); border: 1px solid var(--dp-modal-border);
+  border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px;
+}
+.dark .settings-card { background: rgba(255,255,255,0.02); }
+.card-label { font-size: 12px; font-weight: 700; color: var(--dp-modal-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.inline-form { display: flex; gap: 12px; }
+.dp-input {
+  flex: 1; background: var(--dp-modal-bg); border: 1px solid var(--dp-modal-border);
+  border-radius: 12px; padding: 10px 16px; font-size: 14px; color: var(--dp-modal-text-primary);
+  outline: none; transition: all 0.2s;
+}
+.dp-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.dp-input.sm { padding: 8px 12px; font-size: 13px; }
+
+.templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.template-item {
+  background: var(--dp-modal-bg); border: 1px solid var(--dp-modal-border);
+  border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer; transition: all 0.2s;
+}
+.template-item:hover { transform: translateY(-2px); border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.item-icon-box { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.item-icon-box :deep(svg) { width: 18px; height: 18px; }
+.item-name { font-size: 13px; font-weight: 600; color: var(--dp-modal-text-primary); }
+
+.item-list { display: flex; flex-direction: column; gap: 8px; }
+.list-item {
+  background: var(--dp-modal-bg); border: 1px solid var(--dp-modal-border);
+  border-radius: 12px; padding: 10px 16px; display: flex; align-items: center; gap: 12px;
   transition: all 0.2s;
 }
+.list-item.is-active { border-color: #3b82f6; background: rgba(59,130,246,0.03); }
+.item-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.item-text { flex: 1; font-size: 14px; font-weight: 600; color: var(--dp-modal-text-primary); display: flex; align-items: center; }
+.badge { font-size: 10px; background: #3b82f6; color: #fff; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
 
-.metronic-modal-close:hover {
-  background: #f5f8fa;
-  color: #009ef7;
-}
-
-.metronic-modal-close svg {
-  width: 20px;
-  height: 20px;
-}
-
-/* Tabs */
-.metronic-tabs-wrapper {
-  padding: 0 30px;
-  border-bottom: 1px solid #e4e6ef;
-  display: flex;
-  justify-content: center;
-}
-
-.metronic-tabs {
-  display: flex;
-  gap: 32px;
-}
-
-.metronic-tab {
-  background: none;
-  border: none;
-  padding: 12px 4px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #a1a5b7;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.metronic-tab:hover {
-  color: #7e22ce; /* Purple accent */
-}
-
-.metronic-tab.active {
-  color: #7e22ce;
-  border-bottom-color: #7e22ce;
-}
-
-/* Body & Content */
-.metronic-modal-body {
-  padding: 30px;
-  overflow-y: auto;
-  flex: 1;
-  background: #fcfcfd;
-}
-
-.metronic-empty {
-  padding: 40px;
-  text-align: center;
-  color: #a1a5b7;
-}
-
-.pane-header {
-  margin-bottom: 30px;
-  text-align: center;
-}
-
-.pane-header h3 {
-  font-size: 18px;
-  font-weight: 700;
-  color: #181c32;
-  margin: 0 0 6px 0;
-}
-
-.pane-header p {
-  font-size: 13px;
-  color: #a1a5b7;
-  margin: 0;
-}
-
-.metronic-form-group {
-  margin-bottom: 25px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.metronic-form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: #3f4254;
-  margin-bottom: 8px;
-}
-
-.text-danger { color: #f1416c; }
-
-.metronic-input {
-  background: #f5f8fa;
-  border: none;
-  padding: 12px 14px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: #181c32;
-  outline: none;
-  transition: background 0.2s;
-}
-.metronic-input:focus { background: #eef3f7; }
-.metronic-input.sm { padding: 8px 12px; font-size: 13px; }
-
-.metronic-btn-primary {
-  background: #009ef7;
-  color: #fff;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.metronic-btn-primary:hover { background: #0095e8; }
-.metronic-btn-primary.sm { padding: 8px 14px; font-size: 13px; }
-
-.metronic-btn-light {
-  background: #f5f8fa;
-  color: #7e8299;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.metronic-btn-light:hover { background: #e4e6ef; color: #3f4254; }
-.metronic-btn-light.sm { padding: 8px 14px; font-size: 13px; }
-
-.workspace-color-picker-v2 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #f5f8fa;
-  padding: 12px 16px;
-  border-radius: 12px;
-}
-.workspace-color-picker-v2 .color-label {
-  font-size: 13px;
-  color: #7e8299;
-  font-weight: 500;
-}
-
-.metronic-danger-zone {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 40px; padding: 20px; background: #fff5f8; border: 1px dashed #f1416c; border-radius: 8px;
-  max-width: 600px; margin-left: auto; margin-right: auto;
-}
-.danger-info h4 { margin: 0 0 4px; color: #181c32; font-size: 15px; font-weight: 700; }
-.danger-info p { margin: 0; color: #f1416c; font-size: 13px; font-weight: 500; }
-
-.metronic-btn-danger {
-  background: #f1416c; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;
-}
-.metronic-btn-danger:hover { background: #d9214e; }
-
-/* Lists UI */
-.metronic-list {
-  max-width: 650px;
-  margin: 0 auto;
-}
-
-.metronic-list-header {
-  display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e4e6ef; margin-bottom: 12px;
-}
-.metronic-list-header span { font-size: 14px; font-weight: 600; color: #3f4254; }
-
-.metronic-btn-light-primary {
-  background: #f1faff; color: #009ef7; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background 0.2s;
-}
-.metronic-btn-light-primary:hover { background: #e1f4ff; }
-
-.metronic-list-body {
-  display: flex; flex-direction: column; gap: 8px;
-}
-
-.metronic-list-item {
-  background: #f5f8fa; border-radius: 8px; overflow: hidden;
-}
-
-.item-view {
-  display: flex; align-items: center; padding: 12px 16px; gap: 16px;
-}
-
-.item-color-indicator { width: 12px; height: 12px; border-radius: 50%; }
-.item-label { flex: 1; font-size: 14px; font-weight: 600; color: #181c32; }
 .item-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
-.metronic-list-item:hover .item-actions { opacity: 1; }
-
-.action-icon {
-  background: #fff; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
-  color: #a1a5b7; font-size: 13px; display: flex; align-items: center; justify-content: center;
+.list-item:hover .item-actions { opacity: 1; }
+.small-btn {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border: none; background: rgba(0,0,0,0.05); border-radius: 8px; cursor: pointer; color: var(--dp-modal-text-secondary);
 }
-.action-icon:hover { color: #009ef7; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.action-icon.danger:hover { color: #f1416c; background: #fff5f8; }
+.dark .small-btn { background: rgba(255,255,255,0.05); }
+.small-btn:hover { color: #3b82f6; background: rgba(59,130,246,0.1); }
+.small-btn.danger:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
 
-.active-badge {
-  font-size: 10px;
-  background: #e1f4ff;
-  color: #009ef7;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-left: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
+.field-row { display: flex; flex-direction: column; gap: 8px; }
+.field-row label { font-size: 13px; font-weight: 600; color: var(--dp-modal-text-secondary); }
 
-.metronic-list-item.is-active {
-  background: #ffffff;
-  border: 1px solid #e1f4ff;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-}
+.color-picker-container { display: flex; align-items: center; gap: 16px; background: rgba(0,0,0,0.02); padding: 12px 16px; border-radius: 12px; }
+.dark .color-picker-container { background: rgba(255,255,255,0.02); }
+.helper-text { font-size: 12px; color: var(--dp-modal-text-secondary); }
 
-.item-edit {
-  display: flex; align-items: center; padding: 12px 16px; gap: 10px; background: #f1faff;
+.danger-zone-box {
+  margin-top: 16px; padding: 20px; background: rgba(239,68,68,0.05); border: 1px dashed rgba(239,68,68,0.3);
+  border-radius: 16px; display: flex; justify-content: space-between; align-items: center;
 }
-.html-color-picker {
-  width: 34px; height: 34px; border: none; padding: 0; border-radius: 8px; cursor: pointer; background: transparent;
-}
-.html-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
-.html-color-picker::-webkit-color-swatch { border: none; border-radius: 6px; }
+.danger-text-content h4 { margin: 0 0 4px; color: #ef4444; font-size: 15px; font-weight: 700; }
+.danger-text-content p { margin: 0; color: var(--dp-modal-text-secondary); font-size: 13px; }
 
-.color-picker-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.card-header-actions { display: flex; justify-content: space-between; align-items: center; }
+.accent-text { color: #3b82f6 !important; }
 
-.shuffle-btn {
-  background: #f1faff;
-  color: #009ef7;
-  border: 1px solid #e1f4ff;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+.item-content-view { display: flex; align-items: center; gap: 12px; width: 100%; }
+.item-edit-view { display: flex; align-items: center; gap: 8px; width: 100%; }
+.mini-picker { width: 32px; height: 32px; overflow: hidden; border-radius: 8px; flex-shrink: 0; }
 
-.shuffle-btn:hover {
-  background: #009ef7;
-  color: #fff;
-  border-color: #009ef7;
-}
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* Template Grid in Modal */
-.templates-grid-modal {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding: 4px 0;
-}
-
-.template-card-modal {
-  background: #f8fafc;
-  border: 1px solid #e4e6ef;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.template-card-modal:hover {
-  background: #ffffff;
-  border-color: #009ef7;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  transform: translateY(-2px);
-}
-
-.card-icon-modal {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.card-icon-modal :deep(svg) {
-  width: 20px;
-  height: 20px;
-}
+/* Transições customizadas */
+.dp-modal-fade-enter-active, .dp-modal-fade-leave-active { transition: opacity 0.2s ease; }
+.dp-modal-fade-enter-from, .dp-modal-fade-leave-to { opacity: 0; }
+</style>
 
 .card-title-modal {
   font-size: 14px;

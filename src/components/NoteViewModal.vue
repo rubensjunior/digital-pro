@@ -1,30 +1,30 @@
 <template>
   <Teleport to="body">
-    <Transition name="bv-modal-fade">
-      <div v-if="note" class="bv-reader-overlay" @click.self="close">
-        <div class="bv-reader-container">
+    <Transition name="dp-modal-fade">
+      <div v-if="note" class="dp-modal-overlay" @click.self="close">
+        <div class="dp-modal-container note-reader-width">
           <!-- Header -->
-          <div class="bv-reader-header">
-            <div class="bv-reader-meta">
-              <div class="bv-nota-icon" :style="{ backgroundColor: note.cor || '#e2e8f0' }"></div>
+          <div class="dp-modal-header">
+            <div class="note-header-meta">
+              <div class="note-color-dot" :style="{ backgroundColor: note.cor || '#3b82f6' }"></div>
               <div>
-                <h3 class="bv-reader-title">{{ note.titulo || 'Nota sem título' }}</h3>
-                <span class="bv-reader-date">{{ formatDate(note.created_at) }}</span>
+                <h3 class="dp-modal-title">{{ note.titulo || 'Nota sem título' }}</h3>
+                <span class="note-date-text">{{ formatDate(note.created_at) }}</span>
               </div>
             </div>
-            <button class="bv-reader-close" @click="close">
+            <button class="close-modal-btn" @click="close">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
 
           <!-- Content -->
-          <div class="bv-reader-body custom-scrollbar">
-            <div class="bv-rich-text" v-html="note.conteudo"></div>
+          <div class="dp-modal-body note-body-scroll">
+            <div class="note-content-rendered" v-html="note.conteudo"></div>
           </div>
 
           <!-- Footer -->
-          <div class="bv-reader-footer">
-            <button class="bv-btn-reader-close" @click="close">Fechar Leitura</button>
+          <div class="dp-modal-footer">
+            <button class="dp-btn dp-btn-ghost" @click="close">Fechar Leitura</button>
           </div>
         </div>
       </div>
@@ -59,152 +59,64 @@ function formatDate(iso: string) {
 </script>
 
 <style scoped>
-.bv-reader-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10001; /* Acima de tudo */
-  padding: 40px;
+.note-reader-width {
+  width: 800px;
+  max-width: 95vw;
+  height: 85vh;
 }
 
-.bv-reader-container {
-  width: 100%;
-  max-width: 850px;
-  height: 100%;
-  max-height: 90vh;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.note-header-meta { display: flex; align-items: center; gap: 16px; }
+.note-color-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.05);
 }
+.dark .note-color-dot { box-shadow: 0 0 0 4px rgba(255,255,255,0.05); }
 
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.note-date-text { font-size: 12px; color: var(--dp-modal-text-secondary); font-weight: 500; }
+
+.close-modal-btn {
+  background: transparent; border: none; color: var(--dp-modal-text-secondary);
+  cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.2s;
 }
+.close-modal-btn:hover { background: rgba(0,0,0,0.05); color: #f1416c; }
+.dark .close-modal-btn:hover { background: rgba(255,255,255,0.05); }
 
-.bv-reader-header {
-  padding: 24px 32px;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #ffffff;
-}
-
-.bv-reader-meta {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.bv-nota-icon {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
-}
-
-.bv-reader-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0;
-}
-
-.bv-reader-date {
-  font-size: 12px;
-  color: #94a3b8;
-  font-weight: 500;
-}
-
-.bv-reader-close {
-  background: #f1f5f9;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.bv-reader-close:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-  transform: rotate(90deg);
-}
-
-.bv-reader-body {
-  flex: 1;
-  overflow-y: auto;
+.note-body-scroll {
   padding: 40px 60px;
-  background: #ffffff;
+  background: var(--dp-modal-bg);
+  line-height: 1.6;
 }
 
-.bv-reader-footer {
-  padding: 16px 32px;
-  border-top: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: flex-end;
-  background: #f8fafc;
+.note-content-rendered {
+  color: var(--dp-modal-text-primary);
+  font-size: 16px;
 }
 
-.bv-btn-reader-close {
-  padding: 10px 24px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.2s;
+.note-content-rendered :deep(p) { margin-bottom: 1.5em; }
+.note-content-rendered :deep(h1), 
+.note-content-rendered :deep(h2), 
+.note-content-rendered :deep(h3) { 
+  color: var(--dp-modal-text-primary); 
+  margin: 1.5em 0 0.5em;
+  font-weight: 700;
 }
 
-.bv-btn-reader-close:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+.note-content-rendered :deep(ul), 
+.note-content-rendered :deep(ol) { 
+  margin-bottom: 1.5em; 
+  padding-left: 1.5em; 
 }
 
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
-}
-
-/* Modal Fade Animation */
-.bv-modal-fade-enter-active,
-.bv-modal-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.bv-modal-fade-enter-from,
-.bv-modal-fade-leave-to {
-  opacity: 0;
+.note-content-rendered :deep(blockquote) {
+  border-left: 4px solid #3b82f6;
+  padding-left: 1.5em;
+  font-style: italic;
+  color: var(--dp-modal-text-secondary);
+  margin: 1.5em 0;
 }
 
 @media (max-width: 768px) {
-  .bv-reader-body {
+  .note-body-scroll {
     padding: 24px;
   }
 }

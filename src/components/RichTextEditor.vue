@@ -1,14 +1,14 @@
 <template>
-  <div class="bv-editor-container" :class="{ 'is-focused': isFocused, 'is-loading': uploading }">
+  <div class="dp-editor-container" :class="{ 'is-focused': isFocused, 'is-loading': uploading }">
     <!-- Toolbar -->
-    <div class="bv-editor-toolbar">
-      <div class="bv-toolbar-group">
+    <div class="dp-editor-toolbar">
+      <div class="dp-toolbar-group">
         <button 
           v-for="btn in toolbarButtons" 
           :key="btn.action"
           type="button"
-          class="bv-toolbar-btn"
-          :class="{ 'is-active': btn.isActive() }"
+          class="dp-toolbar-btn"
+          :class="{ 'active': btn.isActive() }"
           @click="btn.run()"
           :title="btn.title"
         >
@@ -16,19 +16,19 @@
         </button>
       </div>
 
-      <div class="bv-toolbar-group">
+      <div class="dp-toolbar-group">
         <button 
           type="button" 
-          class="bv-toolbar-btn" 
+          class="dp-toolbar-btn" 
           @click="setLink" 
-          :class="{ 'is-active': editor?.isActive('link') }"
+          :class="{ 'active': editor?.isActive('link') }"
           title="Inserir Link"
         >
           <span>🔗</span>
         </button>
         <button 
           type="button" 
-          class="bv-toolbar-btn" 
+          class="dp-toolbar-btn btn-danger-ghost" 
           @click="editor?.chain().focus().unsetLink().run()" 
           v-if="editor?.isActive('link')"
           title="Remover Link"
@@ -37,10 +37,10 @@
         </button>
       </div>
 
-      <div class="bv-toolbar-group">
+      <div class="dp-toolbar-group">
         <button 
           type="button" 
-          class="bv-toolbar-btn" 
+          class="dp-toolbar-btn" 
           @click="triggerImageUpload"
           title="Inserir Imagem"
         >
@@ -50,7 +50,7 @@
     </div>
 
     <!-- Editor Content -->
-    <editor-content :editor="editor" class="bv-editor-content" />
+    <editor-content :editor="editor" class="dp-editor-content" />
     
     <!-- Hidden File Input -->
     <input 
@@ -62,7 +62,8 @@
     />
 
     <!-- Loading Overlay -->
-    <div v-if="uploading" class="bv-editor-loader">
+    <div v-if="uploading" class="dp-editor-loader">
+      <div class="spinner-sm"></div>
       <span>Processando imagem...</span>
     </div>
   </div>
@@ -79,7 +80,7 @@ import Image from '@tiptap/extension-image';
 const props = defineProps<{
   modelValue: string;
   placeholder?: string;
-  ideiaId?: string; // Necessário para salvar o anexo na pasta correta
+  ideiaId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -94,67 +95,47 @@ const editor = useEditor({
   content: props.modelValue,
   extensions: [
     StarterKit.configure({
-      heading: {
-        levels: [3],
-      },
+      heading: { levels: [3] },
     }),
     Underline,
     Link.configure({
       openOnClick: false,
-      HTMLAttributes: {
-        class: 'bv-editor-link',
-      },
+      HTMLAttributes: { class: 'dp-editor-link' },
     }),
     Image.configure({
-      allowBase64: true, // Permitimos base64 temporariamente antes do upload, ou para imagens externas
-      HTMLAttributes: {
-        class: 'bv-editor-image',
-      },
+      allowBase64: true,
+      HTMLAttributes: { class: 'dp-editor-image' },
     }),
   ],
   onUpdate: ({ editor }) => {
     emit('update:modelValue', editor.getHTML());
   },
-  onFocus: () => {
-    isFocused.value = true;
-  },
-  onBlur: () => {
-    isFocused.value = false;
-  },
+  onFocus: () => { isFocused.value = true; },
+  onBlur: () => { isFocused.value = false; },
   editorProps: {
     handleDrop: (view, event, slice, moved) => {
       if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
         const file = event.dataTransfer.files[0];
-        if (file.type.startsWith('image/')) {
-          handleImageUpload(file);
-          return true; // Event handled
-        }
+        if (file.type.startsWith('image/')) { handleImageUpload(file); return true; }
       }
       return false;
     },
     handlePaste: (view, event) => {
       if (event.clipboardData && event.clipboardData.files && event.clipboardData.files[0]) {
         const file = event.clipboardData.files[0];
-        if (file.type.startsWith('image/')) {
-          handleImageUpload(file);
-          return true; // Event handled
-        }
+        if (file.type.startsWith('image/')) { handleImageUpload(file); return true; }
       }
       return false;
     },
   },
 });
 
-// Watch for external content changes
 watch(() => props.modelValue, (newValue) => {
-  const isSame = editor.value?.getHTML() === newValue;
-  if (isSame) return;
+  if (editor.value?.getHTML() === newValue) return;
   editor.value?.commands.setContent(newValue, false);
 });
 
-onBeforeUnmount(() => {
-  editor.value?.destroy();
-});
+onBeforeUnmount(() => { editor.value?.destroy(); });
 
 const toolbarButtons = [
   {
@@ -212,31 +193,20 @@ function setLink() {
   const previousUrl = editor.value?.getAttributes('link').href;
   const url = window.prompt('URL do link:', previousUrl);
   if (url === null) return;
-  if (url === '') {
-    editor.value?.chain().focus().extendMarkRange('link').unsetLink().run();
-    return;
-  }
+  if (url === '') { editor.value?.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
   editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
 }
 
-function triggerImageUpload() {
-  fileInput.value?.click();
-}
+function triggerImageUpload() { fileInput.value?.click(); }
 
 function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement;
-  if (input.files && input.files[0]) {
-    handleImageUpload(input.files[0]);
-  }
+  if (input.files && input.files[0]) handleImageUpload(input.files[0]);
   input.value = '';
 }
 
 async function handleImageUpload(file: File) {
-  if (!props.ideiaId) {
-    console.error('ID da ideia não fornecido para o upload de imagem.');
-    return;
-  }
-
+  if (!props.ideiaId) return;
   uploading.value = true;
   try {
     const reader = new FileReader();
@@ -245,156 +215,138 @@ async function handleImageUpload(file: File) {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-
     const base64 = await base64Promise;
     const api = (window as any).electronAPI;
-    
-    // Salva o arquivo na pasta de anexos
-    const saved = await api.arquivos.save(
-      props.ideiaId,
-      file.name,
-      base64,
-      file.type,
-      file.size
-    );
-
+    const saved = await api.arquivos.save(props.ideiaId, file.name, base64, file.type, file.size);
     if (saved && saved.caminho) {
-      // Extrai o nome do arquivo gerado (UUID.ext) do caminho absoluto
-      // O caminho retornado pelo main.ts usa path.join, então pode ter \ ou /
       const fileName = saved.caminho.split(/[\\/]/).pop();
-      
-      // Monta a URL usando o protocolo customizado brainvault://
-      // Formato: brainvault://<ideiaId>/<fileName>
       const url = `brainvault://${props.ideiaId}/${encodeURIComponent(fileName)}`;
-      
       editor.value?.chain().focus().setImage({ src: url, alt: file.name }).run();
     }
-  } catch (e) {
-    console.error('Erro ao processar imagem:', e);
-  } finally {
-    uploading.value = false;
-  }
+  } catch (e) { console.error('Erro ao processar imagem:', e); }
+  finally { uploading.value = false; }
 }
 </script>
 
-<style>
-.bv-editor-container {
+<style scoped>
+.dp-editor-container {
   display: flex;
   flex-direction: column;
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 10px;
+  background: var(--dp-modal-bg);
+  border: 1px solid var(--dp-modal-border);
+  border-radius: 12px;
   overflow: hidden;
-  transition: all 0.15s ease;
+  transition: all 0.2s;
   position: relative;
 }
 
-.bv-editor-container.is-focused {
+.dp-editor-container.is-focused {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.bv-editor-container.is-loading {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.bv-editor-loader {
+.dp-editor-loader {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(var(--dp-modal-bg-rgb, 255, 255, 255), 0.7);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   z-index: 10;
   font-size: 12px;
   font-weight: 600;
   color: #3b82f6;
-  backdrop-filter: blur(1px);
+  backdrop-filter: blur(2px);
 }
 
-.bv-editor-toolbar {
+.dp-editor-toolbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 6px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 8px;
+  background: rgba(0,0,0,0.02);
+  border-bottom: 1px solid var(--dp-modal-border);
 }
+.dark .dp-editor-toolbar { background: rgba(255,255,255,0.02); }
 
-.bv-toolbar-group {
+.dp-toolbar-group {
   display: flex;
   align-items: center;
   gap: 2px;
   padding: 0 4px;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--dp-modal-border);
 }
+.dp-toolbar-group:last-child { border-right: none; }
 
-.bv-toolbar-group:last-child {
-  border-right: none;
-}
-
-.bv-toolbar-btn {
+.dp-toolbar-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: none;
   background: transparent;
-  color: #64748b;
-  border-radius: 6px;
+  color: var(--dp-modal-text-secondary);
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.1s;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
-.bv-toolbar-btn:hover {
-  background: #f1f5f9;
-  color: #1e293b;
-}
+.dp-toolbar-btn:hover { background: rgba(0,0,0,0.05); color: var(--dp-modal-text-primary); }
+.dark .dp-toolbar-btn:hover { background: rgba(255,255,255,0.05); }
 
-.bv-toolbar-btn.is-active {
-  background: #dbeafe;
-  color: #2563eb;
-}
+.dp-toolbar-btn.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 
-.bv-editor-content {
-  padding: 8px 12px;
-  min-height: 120px;
+.btn-danger-ghost:hover { color: #f1416c; background: rgba(241, 65, 108, 0.1); }
+
+.dp-editor-content {
+  padding: 12px 16px;
+  min-height: 150px;
   cursor: text;
 }
 
-/* Tiptap editor internal styles */
-.ProseMirror {
+:deep(.ProseMirror) {
   outline: none;
   font-size: 14px;
   line-height: 1.6;
-  color: #1e293b;
-  min-height: 120px;
+  color: var(--dp-modal-text-primary);
+  min-height: 150px;
 }
 
-.ProseMirror p.is-editor-empty:first-child::before {
+:deep(.ProseMirror p.is-editor-empty:first-child::before) {
   content: attr(data-placeholder);
   float: left;
-  color: #94a3b8;
+  color: var(--dp-modal-text-secondary);
   pointer-events: none;
   height: 0;
+  opacity: 0.5;
 }
 
-.ProseMirror h3 { font-size: 1.1em; font-weight: 700; margin: 1em 0 0.5em; color: #0f172a; }
-.ProseMirror ul, .ProseMirror ol { padding-left: 1.2em; margin: 0.5em 0; }
-.ProseMirror li { margin-bottom: 0.2em; }
-.ProseMirror blockquote { border-left: 3px solid #cbd5e1; padding-left: 1em; margin: 1em 0; color: #64748b; font-style: italic; }
-.ProseMirror a { color: #3b82f6; text-decoration: underline; cursor: pointer; }
-
-.bv-editor-image {
+:deep(.dp-editor-image) {
   max-width: 100%;
   height: auto;
-  border-radius: 8px;
-  margin: 10px 0;
-  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin: 16px 0;
+  border: 1px solid var(--dp-modal-border);
 }
+
+:deep(.dp-editor-link) {
+  color: #3b82f6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.spinner-sm {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
