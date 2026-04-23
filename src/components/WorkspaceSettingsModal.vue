@@ -584,7 +584,6 @@ defineExpose({ abrirModal });
 /* Transições customizadas */
 .dp-modal-fade-enter-active, .dp-modal-fade-leave-active { transition: opacity 0.2s ease; }
 .dp-modal-fade-enter-from, .dp-modal-fade-leave-to { opacity: 0; }
-</style>
 
 .card-title-modal {
   font-size: 14px;
@@ -592,3 +591,4 @@ defineExpose({ abrirModal });
   color: #181c32;
 }
 </style>
+
