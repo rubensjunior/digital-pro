@@ -136,6 +136,39 @@
   color: var(--dp-modal-text-primary);
 }
 
+/* Close Button Unified */
+.dp-close-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border: none;
+  color: var(--dp-modal-text-secondary);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.dark .dp-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dp-close-btn:hover {
+  background: #f1416c;
+  color: white;
+  box-shadow: 0 4px 12px rgba(241, 65, 108, 0.3);
+}
+
+
+.dp-close-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+
 /* Animations */
 @keyframes dp-fade-in {
   from { opacity: 0; }
@@ -159,7 +192,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100000;
+  z-index: 101;
 }
 
 .titlebar-drag-region {

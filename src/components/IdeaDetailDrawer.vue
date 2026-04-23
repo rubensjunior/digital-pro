@@ -2,77 +2,63 @@
   <Teleport to="body">
     <div v-if="drawerIdeia" class="dp-modal-overlay drawer-overlay-align" @mousedown.self="onOverlayMouseDown" @mouseup.self="onOverlayMouseUp">
       <div class="dp-drawer-container">
-        <div class="dp-modal-header drawer-header-spacing">
-          <div class="drawer-header-content">
-            <div class="drawer-header-top">
-              <div class="drawer-header-badges">
-                <div class="dp-badge dp-badge-indigo">{{ getTipoLabel(drawerIdeia.tipo) }}</div>
-                <div class="dp-badge dp-badge-ghost">
-                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                  {{ drawer.getWorkspaceName(drawerIdeia.workspace_id) }}
-                </div>
-              </div>
-              <div class="drawer-actions">
-                <button class="drawer-action-btn" @click="drawer.handleToggleFavorita(drawerIdeia!)" :title="drawerIdeia.is_favorita ? 'Remover dos Favoritos' : 'Favoritar'">
-                  <svg v-if="drawerIdeia.is_favorita" fill="currentColor" viewBox="0 0 24 24" class="star-active"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                  <svg v-else fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                </button>
-                <button class="drawer-action-btn" @click="$emit('edit', drawerIdeia!)" title="Editar Ideia">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                </button>
-                <button class="drawer-close-btn" @click="drawer.fecharDrawer()" title="Fechar">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-              </div>
+        <div class="dp-modal-header">
+          <div class="idea-header-left">
+            <div class="idea-icon-box">💡</div>
+            <div>
+              <h2 class="dp-modal-title">{{ drawerIdeia.nome }}</h2>
+              <p class="idea-header-sub">{{ getTipoLabel(drawerIdeia.tipo) }} &middot; {{ getStatusLabel(drawerIdeia.status) }}</p>
             </div>
-            <h2 class="dp-modal-title drawer-main-title">{{ drawerIdeia.nome }}</h2>
+          </div>
+          <div class="drawer-header-actions-unified">
+            <button class="drawer-circle-btn-modal" @click="drawer.handleToggleFavorita(drawerIdeia!)" :title="drawerIdeia.is_favorita ? 'Remover dos Favoritos' : 'Favoritar'">
+              <svg v-if="drawerIdeia.is_favorita" fill="currentColor" viewBox="0 0 24 24" class="star-active"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              <svg v-else fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" width="20" height="20"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            </button>
+            <button class="drawer-circle-btn-modal" @click="$emit('edit', drawerIdeia!)" title="Editar Ideia">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+            <button class="dp-close-btn" @click="drawer.fecharDrawer()" title="Fechar">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
           </div>
         </div>
 
-        <div class="dp-modal-body drawer-body-padding">
-          <!-- TABS -->
-          <div class="dp-tabs">
-            <button :class="['dp-tab', { active: drawerTab === 'geral' }]" @click="drawerTab = 'geral'">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              Informações
-            </button>
-            <button :class="['dp-tab', { active: drawerTab === 'doc' }]" @click="drawerTab = 'doc'">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              Documentação
-              <span v-if="notas.length + links.length + arquivos.length > 0" class="dp-tab-badge">{{ notas.length + links.length + arquivos.length }}</span>
-            </button>
-            <button :class="['dp-tab', { active: drawerTab === 'conexoes' }]" @click="drawerTab = 'conexoes'">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-              Conexões
-              <span v-if="correlacoes.length > 0" class="dp-tab-badge">{{ correlacoes.length }}</span>
-            </button>
+        <div class="modal-tabs-container">
+          <div class="dp-tabs-flex">
+            <div class="dp-tabs">
+              <button :class="['dp-tab', { active: drawerTab === 'geral' }]" @click="drawerTab = 'geral'">Informações</button>
+              <button :class="['dp-tab', { active: drawerTab === 'doc' }]" @click="drawerTab = 'doc'">Documentação</button>
+              <button :class="['dp-tab', { active: drawerTab === 'conexoes' }]" @click="drawerTab = 'conexoes'">Conexões</button>
+            </div>
+            <div class="dp-tabs-actions">
+              <button class="tab-action-btn" @click="$emit('navigate', `/dashboard/ideas/flowchart/${drawerIdeia!.id}`)" title="Ver Fluxograma">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
+                Fluxograma
+              </button>
+              <button class="tab-action-btn" @click="$emit('navigate', `/dashboard/ideas/network/${drawerIdeia!.id}`)" title="Ver Rede Neural">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Rede Neural
+              </button>
+              <button class="tab-action-btn" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawerIdeia!.id}`)" title="Ver Kanban desta Ideia">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+                Kanban
+              </button>
+            </div>
           </div>
+        </div>
+
+        <div class="dp-modal-body">
 
           <!-- ABA: GERAL -->
           <div v-show="drawerTab === 'geral'" class="drawer-tab-pane">
-            <div class="drawer-status-score-row">
-              <div class="dp-input-wrapper status-select-custom">
-                <select 
-                  class="dp-input status-select-actual"
-                  :value="drawerIdeia.status"
-                  @change="drawer.mudarStatus(drawerIdeia.id, ($event.target as HTMLSelectElement).value)"
-                >
-                  <optgroup v-for="grupo in statusOptions" :key="grupo.label" :label="grupo.label">
-                    <option v-for="opt in grupo.options" :key="opt.id" :value="opt.id">{{ opt.label }}</option>
-                  </optgroup>
-                </select>
-                <div class="status-visual-badge" :style="{ backgroundColor: getStatusColor(drawerIdeia.status) || '#94a3b8' }">
-                  {{ getStatusLabel(drawerIdeia.status) }}
-                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </div>
-              </div>
-              <div class="dp-score-stars">
-                <span v-for="n in 4" :key="n" :class="n <= drawerIdeia.score ? 'star-on' : 'star-off'">★</span>
-              </div>
-            </div>
+
 
             <div class="drawer-section-card" v-if="ecosistemaArvore.length > 1 || ideiasFilhas.length > 0">
-              <div class="section-title">Ecossistema da Ideia</div>
+              <div class="eco-header-row">
+                <div class="section-title">Ecossistema da Ideia</div>
+                <button class="dp-btn dp-btn-primary dp-btn-sm" @click="cadastrarDerivada()">+ Nova Derivada</button>
+              </div>
               <div class="eco-tree-container">
                 <div
                   v-for="no in ecosistemaArvore"
@@ -94,10 +80,6 @@
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="eco-actions-grid">
-                <button class="dp-btn dp-btn-ghost dp-btn-sm" @click="cadastrarDerivada()">+ Nova Derivada</button>
-                <button class="dp-btn dp-btn-primary dp-btn-sm" @click="$emit('navigate', `/dashboard/ideas/kanban/${drawerIdeia!.id}`)">Admin Kanban</button>
               </div>
             </div>
 
@@ -306,14 +288,13 @@
           </div>
         </div>
 
-        <div class="dp-modal-footer drawer-footer-btns">
+        <div class="dp-modal-footer">
           <div class="footer-left-group">
             <button class="dp-btn dp-btn-ghost" @click="handleToggleArquivar(drawerIdeia!)">{{ drawerIdeia.is_arquivada ? 'Desarquivar' : 'Arquivar' }}</button>
             <button class="dp-btn dp-btn-ghost" @click="handleDuplicar(drawerIdeia!)">Duplicar</button>
             <button class="dp-btn dp-btn-ghost btn-danger-text" @click="confirmarDelete(drawerIdeia!.id)">Excluir</button>
           </div>
           <div class="footer-right-group">
-            <button v-if="showBrainVaultLink" class="dp-btn dp-btn-ghost" @click="$emit('navigate', '/dashboard/ideas?openDrawer=' + drawerIdeia!.id)">Ver no Brain Vault</button>
             <button class="dp-btn dp-btn-primary" @click="$emit('edit', drawerIdeia!)">Editar Ideia</button>
           </div>
         </div>
@@ -451,7 +432,7 @@ defineExpose({
 .drawer-overlay-align { justify-content: flex-end; align-items: stretch; padding: 0; }
 
 .dp-drawer-container {
-  width: 50vw;
+  width: 65vw;
   min-width: 500px;
   max-width: 90vw;
   height: 100vh;
@@ -462,35 +443,48 @@ defineExpose({
   animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-
-.drawer-header-spacing { padding: 32px 32px 24px; flex-shrink: 0; border: none; }
-.drawer-header-content { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-.drawer-header-top { display: flex; justify-content: space-between; align-items: center; }
-.drawer-header-badges { display: flex; gap: 8px; }
-
-.drawer-actions { display: flex; gap: 8px; align-items: center; }
-.drawer-action-btn {
-  background: transparent; border: 1px solid var(--dp-modal-border); color: var(--dp-modal-text-secondary);
-  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.2s;
+.idea-header-left { display: flex; align-items: center; gap: 16px; }
+.idea-icon-box {
+  width: 44px; height: 44px; border-radius: 12px; background: rgba(59,130,246,0.1);
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
 }
-.drawer-action-btn:hover { background: rgba(0,0,0,0.03); color: var(--dp-modal-text-primary); border-color: var(--dp-modal-text-secondary); }
-.dark .drawer-action-btn:hover { background: rgba(255,255,255,0.05); }
+.idea-header-sub { font-size: 13px; color: var(--dp-modal-text-secondary); margin: 0; }
+
+.drawer-header-actions-unified { display: flex; gap: 12px; align-items: center; }
+.drawer-circle-btn-modal {
+  background: transparent; border: none; color: #64748b; 
+  cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.2s;
+}
+.drawer-circle-btn-modal:hover { background: rgba(0,0,0,0.05); color: #3b82f6; }
+
+.modal-tabs-container { padding: 0 24px; border-bottom: 1px solid var(--dp-modal-border); background: rgba(0,0,0,0.01); }
+.dark .modal-tabs-container { background: rgba(255,255,255,0.01); }
+
+.dp-tabs-flex { display: flex; justify-content: space-between; align-items: center; }
+.dp-tabs { display: flex; gap: 20px; }
+.dp-tabs-actions { display: flex; gap: 12px; }
+
+.tab-action-btn {
+  background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.1); 
+  color: #3b82f6;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+  transition: all 0.2s;
+}
+.tab-action-btn:hover { background: #3b82f6; color: #ffffff; box-shadow: 0 4px 12px rgba(59,130,246,0.2); }
+.tab-action-btn svg { opacity: 1; }
+
+.dp-tab {
+  background: none; border: none; padding: 14px 4px; font-size: 14px; font-weight: 600;
+  color: var(--dp-modal-text-secondary); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.dp-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+.dp-modal-body { padding: 0; flex: 1; overflow-y: auto; }
+.drawer-tab-pane { display: flex; flex-direction: column; gap: 24px; padding: 24px 32px; }
+
 .star-active { color: #f59e0b; }
-
-.drawer-close-btn {
-  background: var(--dp-modal-border); border: none; color: var(--dp-modal-text-secondary);
-  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.2s; margin-left: 4px;
-}
-.drawer-close-btn:hover { background: #f1416c; color: white; transform: rotate(90deg); }
-
-.drawer-main-title { font-size: 24px; line-height: 1.2; margin: 0; }
-
-.drawer-body-padding { padding: 0 32px 32px; background: transparent; overflow-y: auto; flex: 1; }
-
-.drawer-tab-pane { display: flex; flex-direction: column; gap: 24px; padding-top: 24px; }
 
 .drawer-status-score-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 
@@ -517,7 +511,10 @@ defineExpose({
 .section-title { font-size: 12px; font-weight: 800; color: var(--dp-modal-text-secondary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
 .section-subtitle { font-size: 13px; color: var(--dp-modal-text-secondary); margin-bottom: 16px; }
 
-.eco-tree-container { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+.eco-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.eco-header-row .section-title { margin-bottom: 0; }
+
+.eco-tree-container { display: flex; flex-direction: column; gap: 4px; }
 .eco-node-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
 .eco-node-item:hover { background: rgba(var(--dp-modal-primary-rgb, 59,130,246), 0.05); }
 .eco-node-item.is-current { background: rgba(var(--dp-modal-primary-rgb, 59,130,246), 0.08); cursor: default; }
@@ -529,8 +526,6 @@ defineExpose({
 .eco-current-text { color: var(--dp-modal-primary); font-weight: 400; font-size: 12px; }
 .eco-node-meta { font-size: 11px; color: var(--dp-modal-text-secondary); display: flex; gap: 6px; margin-top: 2px; }
 .dot-separator { opacity: 0.5; }
-
-.eco-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .drawer-content-grid { display: grid; gap: 20px; }
 .content-item label { font-size: 11px; font-weight: 800; color: var(--dp-modal-text-secondary); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 6px; }

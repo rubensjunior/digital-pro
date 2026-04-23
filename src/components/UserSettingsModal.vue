@@ -4,8 +4,14 @@
       <div v-if="isOpen" class="dp-modal-overlay" @mousedown.self="fecharModal">
         <div class="dp-modal-container user-settings-width">
           <div class="dp-modal-header">
-            <h2 class="dp-modal-title">Configurações da Conta</h2>
-            <button class="close-modal-btn" @click="fecharModal">
+            <div class="idea-header-left">
+              <div class="idea-icon-box">⚙️</div>
+              <div>
+                <h2 class="dp-modal-title">Configurações da Conta</h2>
+                <p class="idea-header-sub">Gerencie seu perfil e dados do sistema</p>
+              </div>
+            </div>
+            <button class="dp-close-btn" @click="fecharModal" title="Fechar">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
@@ -204,18 +210,14 @@ defineExpose({ abrirModal, fecharModal });
   max-width: 90vw;
 }
 
-.close-modal-btn {
-  background: transparent;
-  border: none;
-  color: var(--dp-modal-text-secondary);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.2s;
+.idea-header-left { display: flex; align-items: center; gap: 16px; }
+.idea-icon-box {
+  width: 44px; height: 44px; border-radius: 12px; background: rgba(59,130,246,0.1);
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
 }
-.close-modal-btn:hover { background: rgba(0,0,0,0.05); color: #f1416c; }
-.dark .close-modal-btn:hover { background: rgba(255,255,255,0.05); }
-.close-modal-btn svg { width: 20px; height: 20px; }
+.idea-header-sub { font-size: 13px; color: var(--dp-modal-text-secondary); margin: 0; }
+
+
 
 .settings-section { margin-bottom: 24px; }
 .section-title { margin: 0 0 4px 0; font-size: 16px; font-weight: 700; color: var(--dp-modal-text-primary); }

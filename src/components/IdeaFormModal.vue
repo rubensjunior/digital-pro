@@ -11,7 +11,7 @@
                 <p class="idea-header-sub">{{ editando ? 'Atualize os dados da ideia' : 'Capture e classifique sua ideia' }}</p>
               </div>
             </div>
-            <button class="close-modal-btn" @click="fecharModal">
+            <button class="dp-close-btn" @click="fecharModal" title="Fechar">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
@@ -361,12 +361,7 @@ defineExpose({ abrirModal, abrirEdicao });
 }
 .idea-header-sub { font-size: 13px; color: var(--dp-modal-text-secondary); margin: 0; }
 
-.close-modal-btn {
-  background: transparent; border: none; color: var(--dp-modal-text-secondary);
-  cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.2s;
-}
-.close-modal-btn:hover { background: rgba(0,0,0,0.05); color: #f1416c; }
-.dark .close-modal-btn:hover { background: rgba(255,255,255,0.05); }
+
 
 .modal-tabs-container { padding: 0 24px; border-bottom: 1px solid var(--dp-modal-border); background: rgba(0,0,0,0.01); }
 .dark .modal-tabs-container { background: rgba(255,255,255,0.01); }

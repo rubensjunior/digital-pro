@@ -756,8 +756,10 @@ function registerIdeiaHandlers() {
         )
       `).run(row);
 
-      // Salva histórico
-      logHistorico(id, 'Criou a ideia', 'Status inicial: ' + row.status);
+      // Salva histórico com label do status
+      const statusRow = db.prepare('SELECT label FROM workspace_status WHERE id = ?').get(row.status) as { label: string } | undefined;
+      const statusLabel = statusRow ? statusRow.label : row.status;
+      logHistorico(id, 'Criou a ideia', 'Status inicial: ' + statusLabel);
 
       return db.prepare('SELECT * FROM ideias WHERE id = ?').get(id);
     } catch (e) {
@@ -815,7 +817,12 @@ function registerIdeiaHandlers() {
   // UPDATE STATUS (atalho para drag & drop do Kanban)
   ipcMain.handle('ideias:updateStatus', (_, { id, status }: { id: string; status: string }) => {
     db.prepare(`UPDATE ideias SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
-    logHistorico(id, 'Mudou o status', `Novo status: ${status}`);
+    
+    // Busca o label do status para o histórico
+    const statusRow = db.prepare('SELECT label FROM workspace_status WHERE id = ?').get(status) as { label: string } | undefined;
+    const statusLabel = statusRow ? statusRow.label : status;
+    
+    logHistorico(id, 'Mudou o status', `Novo status: ${statusLabel}`);
     return true;
   });
 

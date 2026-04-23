@@ -5,14 +5,14 @@
         <div class="dp-modal-container note-reader-width">
           <!-- Header -->
           <div class="dp-modal-header">
-            <div class="note-header-meta">
-              <div class="note-color-dot" :style="{ backgroundColor: note.cor || '#3b82f6' }"></div>
+            <div class="idea-header-left">
+              <div class="idea-icon-box">📝</div>
               <div>
                 <h3 class="dp-modal-title">{{ note.titulo || 'Nota sem título' }}</h3>
                 <span class="note-date-text">{{ formatDate(note.created_at) }}</span>
               </div>
             </div>
-            <button class="close-modal-btn" @click="close">
+            <button class="dp-close-btn" @click="close" title="Fechar">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
@@ -65,21 +65,14 @@ function formatDate(iso: string) {
   height: 85vh;
 }
 
-.note-header-meta { display: flex; align-items: center; gap: 16px; }
-.note-color-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.05);
+.idea-header-left { display: flex; align-items: center; gap: 16px; }
+.idea-icon-box {
+  width: 44px; height: 44px; border-radius: 12px; background: rgba(59,130,246,0.1);
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
 }
-.dark .note-color-dot { box-shadow: 0 0 0 4px rgba(255,255,255,0.05); }
-
 .note-date-text { font-size: 12px; color: var(--dp-modal-text-secondary); font-weight: 500; }
 
-.close-modal-btn {
-  background: transparent; border: none; color: var(--dp-modal-text-secondary);
-  cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.2s;
-}
-.close-modal-btn:hover { background: rgba(0,0,0,0.05); color: #f1416c; }
-.dark .close-modal-btn:hover { background: rgba(255,255,255,0.05); }
+
 
 .note-body-scroll {
   padding: 40px 60px;
