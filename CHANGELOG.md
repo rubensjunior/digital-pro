@@ -2,6 +2,43 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.2.3] - 2026-04-23
+
+### Corrigido
+- **Linting no IdeaManager**: Resolvidos erros de TypeScript relacionados a propriedades de estado e silenciados avisos de compatibilidade do `line-clamp` no Tailwind v4.
+- **Configuração do Tailwind**: Ajustadas diretivas `@custom-variant` e `@theme` no `index.css` para conformidade com a versão mais recente do framework.
+
+## [1.2.2] - 2026-04-23
+
+### Adicionado
+- **Sistema de Design Unificado**: Refatoração completa do `IdeaDetailDrawer.vue` para alinhar com o padrão `.dp-modal`.
+- **Ações de Navegação**: Adicionados atalhos diretos para Kanban, Fluxograma e Rede Neural dentro do Drawer de ideias.
+- **Melhorias de UI**: Botão "Nova Derivada" movido para linha principal e labels de histórico de dados tornados amigáveis ao usuário.
+
+### Corrigido
+- **Conflito de Z-Index**: Resolvido problema de sobreposição entre o Drawer lateral e os modais de edição.
+- **Tags de Estilo**: Corrigidas tags malformadas e duplicadas no `WorkspaceSettingsModal` e `ConfirmModal`.
+
+## [1.2.1] - 2026-04-23
+
+### Alterado
+- **Estratégia de Empacotamento**: Mudança de `asarUnpack` para `extraResources` para garantir que binários nativos do `better-sqlite3` sejam carregados de forma robusta em todos os ambientes.
+
+## [1.2.0] - 2026-04-22
+
+### Corrigido
+- **Débito Técnico**: Limpeza de erros de linting no `src/main.ts`, incluindo a tipagem correta para o módulo `BetterSqlite3` e remoção de declarações `require` fora de padrão.
+
+## [1.1.9] - 2026-04-22
+
+### Alterado
+- **Estabilização de Release**: Consolidação das correções de infraestrutura para o lançamento da série v1.1.x.
+
+## [1.1.8] - 2026-04-22
+
+### Corrigido
+- **Carregamento de Módulos Nativos**: Implementada estratégia de carregamento multi-path para `better-sqlite3`, garantindo que o app encontre o banco de dados mesmo em caminhos de instalação não padronizados.
+
 ## [1.1.7] - 2026-04-22
 
 ### Corrigido
