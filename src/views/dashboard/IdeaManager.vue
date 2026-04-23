@@ -246,6 +246,7 @@ const route  = useRoute();
 
 const ideaDrawerRef = ref<InstanceType<typeof IdeaDetailDrawer> | null>(null);
 const ideaFormRef = ref<InstanceType<typeof IdeaFormModal> | null>(null);
+const view = ref('lista');
 
 function abrirDrawer(ideia: Ideia) {
   ideaDrawerRef.value?.abrirDrawer(ideia);
@@ -302,6 +303,7 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 // Sincronizar view com parâmetro da URL
 watch(() => route.query, (q) => {
   console.log('IdeiaManager: Mudança de filtros detectada:', q);
+  if (q.view) view.value = q.view as string;
   if (q.tipo) filtro.tipo = q.tipo as string;
   if (q.status) filtro.status = q.status as string;
 }, { immediate: true, deep: true });
@@ -661,7 +663,7 @@ function formatDate(iso: string): string {
 .bv-card-desc {
   font-size: 13px;
   color: var(--text-secondary);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
 .bv-card-tags {
