@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell, protocol, dialog } from 'electron';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import started from 'electron-squirrel-startup';
 import { updateElectronApp } from 'update-electron-app';
 import type Database from 'better-sqlite3';
@@ -20,37 +21,83 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'brainvault', privileges: { standard: true, secure: true, supportFetchAPI: true } }
 ]);
 
+// Injetar caminhos de módulos externos e corrigir dependências nativas em produção
+if (app.isPackaged) {
+  const resourcesPath = process.resourcesPath;
+  const requireNative = createRequire(import.meta.url);
+  
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const Module = requireNative('node:module');
+    const originalRequire = Module.prototype.require;
+
+    // Monkey-patch para resolver módulos externos que o better-sqlite3 usa internamente
+    const externalModules = ['bindings', 'file-uri-to-path'];
+
+    Module.prototype.require = function (name: string, ...args: unknown[]) {
+      if (externalModules.includes(name)) {
+        const modulePath = path.join(resourcesPath, name);
+        return originalRequire.call(this, modulePath);
+      }
+      return originalRequire.apply(this, [name, ...args]);
+    };
+    
+    // Adiciona a pasta de recursos ao caminho global para garantir que better-sqlite3 seja encontrado
+    if (Module.globalPaths) {
+      Module.globalPaths.push(resourcesPath);
+    }
+  } catch (err) {
+    console.error('[SQLite] Erro ao aplicar monkey-patch de módulos:', err);
+  }
+}
+
 // ─── SQLite — Brain Vault ─────────────────────────────────────────────────────
 // Importação dinâmica para compatibilidade com o empacotamento do Electron Forge
 let BetterSqlite3: typeof Database | null = null;
 
 function loadBetterSqlite3() {
-  const pathsToTry = [
-    path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3', 'lib', 'index.js'),
-    path.join(process.resourcesPath, 'node_modules', 'better-sqlite3'),
+  const requireNative = createRequire(import.meta.url);
+  const isProd = app.isPackaged;
+
+  // No modo produção, tentamos carregar diretamente da pasta de recursos (onde o extraResource colocou)
+  // O monkey-patch acima cuidará de resolver o 'bindings' interno
+  const pathsToTry = isProd ? [
+    path.join(process.resourcesPath, 'better-sqlite3'),
+  ] : [
     'better-sqlite3'
   ];
 
-  console.log('[SQLite] Iniciando carregamento do módulo...');
+  console.log(`[SQLite] Iniciando carregamento v5 (Produção: ${isProd})...`);
   
   for (const p of pathsToTry) {
     try {
-      if (path.isAbsolute(p) && !fs.existsSync(p)) continue;
+      if (path.isAbsolute(p) && !fs.existsSync(p)) {
+        console.log(`[SQLite] Caminho não mapeado ou inexistente: ${p}`);
+        continue;
+      }
       
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const mod = require(p);
-      // Alguns bundlers envolvem CJS em { default: ... }
+      const mod = requireNative(p);
       const Constructor = (mod && typeof mod === 'object' && 'default' in mod) ? mod.default : mod;
       
       if (typeof Constructor === 'function') {
-        console.log(`[SQLite] ✅ Carregado de: ${p}`);
+        console.log(`[SQLite] ✅ Carregado com sucesso de: ${p}`);
         return Constructor;
       }
-      console.warn(`[SQLite] ⚠️ Módulo em ${p} carregado, mas não é uma função. Tipo: ${typeof Constructor}`);
+      console.warn(`[SQLite] ⚠️ Módulo carregado em ${p}, mas não é uma função.`);
     } catch (err) {
       console.warn(`[SQLite] ❌ Falha ao tentar carregar de ${p}:`, err.message);
     }
   }
+
+  // Última tentativa cega
+  try {
+    const mod = requireNative('better-sqlite3');
+    const Constructor = (mod && typeof mod === 'object' && 'default' in mod) ? mod.default : mod;
+    if (typeof Constructor === 'function') return Constructor;
+  } catch (e) {
+    console.error('[SQLite] ❌ Falha crítica: Módulo não encontrado.');
+  }
+
   return null;
 }
 
@@ -234,7 +281,7 @@ function initDatabase(userId: string) {
   try {
     const user = db.prepare('SELECT id FROM user_profile WHERE id = ?').get('default');
     if (!user) {
-      db.prepare('INSERT INTO user_profile (id, nickname) VALUES (?, ?)').run('default', 'Usuário');
+      db.prepare('INSERT INTO user_profile (id, nickname) VALUES (?, ?)').run('default', '');
     }
   } catch (e) {
     console.warn('Erro ao inicializar perfil:', e);

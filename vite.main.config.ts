@@ -6,7 +6,7 @@ export default defineConfig({
     rollupOptions: {
       // Módulos nativos não podem ser bundlizados pelo Vite/Rollup.
       // 'better-sqlite3' usa binários .node compilados nativamente.
-      external: ['better-sqlite3'],
+      external: ['better-sqlite3', 'bindings'],
     },
   },
 });

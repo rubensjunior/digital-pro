@@ -286,12 +286,16 @@ onMounted(async () => {
     await loadProfile();
 
     const hasWorkspace = workspaces.value.length > 0;
-    const hasProfile = profile.value && profile.value.nickname && profile.value.nickname.trim() !== '' && profile.value.nickname.trim() !== 'Usuário';
+    const hasProfile = profile.value && profile.value.nickname && profile.value.nickname.trim() !== '';
+
+    console.log('[DashboardLayout] Status:', { hasProfile, hasWorkspace, nickname: profile.value.nickname });
 
     if (!hasProfile) {
+      console.log('[DashboardLayout] Perfil não preenchido. Redirecionando para Onboarding Passo 0.');
       router.replace({ path: '/onboarding', query: { step: '0' } });
       return;
     } else if (!hasWorkspace) {
+      console.log('[DashboardLayout] Nenhum workspace encontrado. Redirecionando para Onboarding Passo 1.');
       router.replace({ path: '/onboarding', query: { step: '1' } });
       return;
     }
