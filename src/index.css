@@ -168,6 +168,36 @@
   height: 18px;
 }
 
+/* Base Form Inputs */
+.dp-input, .dp-textarea {
+  background: var(--dp-modal-bg);
+  border: 1px solid var(--dp-modal-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--dp-modal-text-primary);
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+}
+
+.dp-input:focus, .dp-textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dp-input.has-error {
+  border-color: #ef4444;
+}
+
+.dp-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%2364748b' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 14px;
+}
+
 
 /* Animations */
 @keyframes dp-fade-in {

@@ -40,23 +40,25 @@
 
               <div class="field-grid">
                 <div class="dp-field">
-                  <label class="dp-label">Tipo *</label>
-                  <select v-model="form.tipo" :class="['dp-input dp-select', { 'has-error': formErros.tipo }]" @change="formErros.tipo = false">
-                    <option value="">Selecione o tipo</option>
-                    <optgroup v-for="grupo in tiposAgrupados" :key="grupo.label" :label="grupo.label">
-                      <option v-for="t in grupo.options" :key="t.id" :value="t.id">{{ t.label }}</option>
-                    </optgroup>
-                  </select>
+                  <CreatableSelect
+                    v-model="form.tipo"
+                    label="Tipo *"
+                    placeholder="Selecione ou crie um tipo"
+                    :options="tiposAgrupados"
+                    :has-error="formErros.tipo"
+                    @create="handleCreateTipo"
+                  />
                   <span v-if="formErros.tipo" class="field-error-msg">Tipo é obrigatório</span>
                 </div>
 
                 <div class="dp-field">
-                  <label class="dp-label">Status</label>
-                  <select v-model="form.status" class="dp-input dp-select">
-                    <optgroup v-for="grupo in statusAgrupados" :key="grupo.label" :label="grupo.label">
-                      <option v-for="s in grupo.options" :key="s.id" :value="s.id">{{ s.label }}</option>
-                    </optgroup>
-                  </select>
+                  <CreatableSelect
+                    v-model="form.status"
+                    label="Status"
+                    placeholder="Selecione ou crie um status"
+                    :options="statusAgrupados"
+                    @create="handleCreateStatus"
+                  />
                 </div>
               </div>
 
@@ -142,11 +144,13 @@
                 <span class="helper-text">A qual ideia macro esta ideia pertence?</span>
               </div>
               <div class="dp-field" v-if="form.parent_id">
-                <label class="dp-label">Tipo de Relação *</label>
-                <select v-model="form.relationship_type" class="dp-input dp-select">
-                  <option value="">Selecione o tipo de relação</option>
-                  <option v-for="rel in relacionamentos" :key="rel.id" :value="rel.label">{{ rel.label }}</option>
-                </select>
+                <CreatableSelect
+                  v-model="form.relationship_type"
+                  label="Tipo de Relação *"
+                  placeholder="Ex: Refinamento, Desdobramento"
+                  :options="relacionamentos"
+                  @create="handleCreateRelacionamento"
+                />
               </div>
             </div>
           </div>
@@ -170,8 +174,9 @@ import { useIdeias } from '../composables/useIdeias';
 import { useTaxonomy } from '../composables/useTaxonomy';
 import { useWorkspaces } from '../composables/useWorkspaces';
 import { useConfirm } from '../composables/useConfirm';
+import CreatableSelect from './CreatableSelect.vue';
 
-const { tiposAgrupados, statusAgrupados, status, relacionamentos } = useTaxonomy();
+const { tiposAgrupados, statusAgrupados, status, relacionamentos, createTipo, createStatus, createRelacionamento } = useTaxonomy();
 const { currentWorkspaceId } = useWorkspaces();
 
 const props = defineProps<{
@@ -246,6 +251,40 @@ const opcoesPaiDisponiveis = computed(() => {
   const descendentes = getDescendentes(editando.value);
   return props.ideias.filter(i => i.id !== editando.value && !descendentes.has(i.id));
 });
+
+async function handleCreateTipo(nome: string) {
+  if (!currentWorkspaceId.value) return;
+  const novo = await createTipo({
+    workspace_id: currentWorkspaceId.value,
+    label: nome,
+    grupo: 'Geral'
+  });
+  if (novo) {
+    form.tipo = novo.id;
+    formErros.tipo = false;
+  }
+}
+
+async function handleCreateStatus(nome: string) {
+  if (!currentWorkspaceId.value) return;
+  const novo = await createStatus({
+    workspace_id: currentWorkspaceId.value,
+    label: nome,
+    grupo: 'Geral',
+    meta_status: 'backlog',
+    order_index: status.value.length
+  });
+  if (novo) form.status = novo.id;
+}
+
+async function handleCreateRelacionamento(nome: string) {
+  if (!currentWorkspaceId.value) return;
+  const novo = await createRelacionamento({
+    workspace_id: currentWorkspaceId.value,
+    label: nome
+  });
+  if (novo) form.relationship_type = novo.label; // O banco de ideias usa o label para relação
+}
 
 function addTag(key: string, event: Event) {
   const input = event.target as HTMLInputElement;
@@ -380,19 +419,6 @@ defineExpose({ abrirModal, abrirEdicao });
 .dp-label { font-size: 11px; font-weight: 700; color: var(--dp-modal-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-.dp-input, .dp-textarea {
-  background: var(--dp-modal-bg); border: 1px solid var(--dp-modal-border);
-  border-radius: 12px; padding: 12px 16px; font-size: 14px; color: var(--dp-modal-text-primary);
-  outline: none; transition: all 0.2s; width: 100%;
-}
-.dp-input:focus, .dp-textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-.dp-input.has-error { border-color: #ef4444; }
-
-.dp-select {
-  appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%2364748b' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 16px center; background-size: 14px;
-}
 
 .field-error-msg { font-size: 11px; color: #ef4444; margin-top: -4px; }
 

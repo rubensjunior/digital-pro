@@ -606,18 +606,33 @@ function formatDate(iso: string): string {
 .bv-card {
   position: relative;
   background: var(--surface);
-  border: 1px dashed var(--border);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.bv-card:hover { border-color: var(--accent); transform: translateX(4px); }
+.bv-card:hover { 
+  border-color: var(--accent); 
+  transform: translateX(4px); 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.bv-card-sub {
+  background: rgba(0, 0, 0, 0.01);
+  border: 1px solid var(--border);
+  opacity: 0.95;
+}
+
+.dark .bv-card-sub {
+  background: rgba(255, 255, 255, 0.02);
+}
 
 .bv-fav-star {
   display: flex;
@@ -731,13 +746,32 @@ function formatDate(iso: string): string {
 .bv-kanban-card-nome { font-size: 13.5px; font-weight: 600; margin: 4px 0; }
 
 .bv-tree-vline {
-  position: absolute; top: -8px; height: calc(100% + 8px); 
-  border-left: 2px solid rgba(148, 163, 184, 0.4);
+  position: absolute; 
+  top: -12px; 
+  height: calc(100% + 24px); 
+  border-left: 1.5px solid var(--border);
+  z-index: 1;
 }
+
 .bv-tree-elbow {
-  position: absolute; left: -14px; top: -12px; height: calc(50% + 12px); width: 14px;
-  border-left: 2px solid rgba(148, 163, 184, 0.4); border-bottom: 2px solid rgba(148, 163, 184, 0.4);
-  border-bottom-left-radius: 6px;
+  position: absolute; 
+  left: -14px; 
+  top: -16px; 
+  height: calc(50% + 16px); 
+  width: 14px;
+  border-left: 1.5px solid var(--border); 
+  border-bottom: 1.5px solid var(--border);
+  border-bottom-left-radius: 8px;
+  z-index: 1;
+}
+
+.bv-tree-vline-continue {
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  height: 50%;
+  border-left: 1.5px solid var(--border);
+  z-index: 1;
 }
 
 .bv-tag-expand {

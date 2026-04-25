@@ -97,7 +97,11 @@
                       :model-value="selectedWorkspace.color || '#009ef7'" 
                       @update:model-value="atualizarCorWs"
                     />
-                    <span class="helper-text">Toque para selecionar a cor principal.</span>
+                    <button class="dp-btn dp-btn-ghost" @click="atualizarCorWs(generateRandomHex())" title="Cor Aleatória">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                      <span>Aleatória</span>
+                    </button>
+                    <span class="helper-text">Toque para selecionar ou randomizar.</span>
                   </div>
                 </div>
 
@@ -138,6 +142,9 @@
                         <div class="mini-picker">
                           <ModernColorPicker v-model="editTipoForm.color" />
                         </div>
+                        <button class="dp-btn dp-btn-ghost sm" @click="editTipoForm.color = generateRandomHex()" title="Cor Aleatória">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        </button>
                         <button class="dp-btn dp-btn-primary sm" @click="salvarTipo(t.id)">Ok</button>
                         <button class="dp-btn dp-btn-ghost sm" @click="editTipoId = null">X</button>
                       </div>
@@ -149,6 +156,9 @@
                         <div class="mini-picker">
                           <ModernColorPicker v-model="newTipoForm.color" />
                         </div>
+                        <button class="dp-btn dp-btn-ghost sm" @click="newTipoForm.color = generateRandomHex()" title="Cor Aleatória">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        </button>
                         <button class="dp-btn dp-btn-primary sm" @click="salvarNovoTipo">Criar</button>
                         <button class="dp-btn dp-btn-ghost sm" @click="addingTipo = false">X</button>
                       </div>
@@ -185,6 +195,9 @@
                         <div class="mini-picker">
                           <ModernColorPicker v-model="editStatusForm.color" />
                         </div>
+                        <button class="dp-btn dp-btn-ghost sm" @click="editStatusForm.color = generateRandomHex()" title="Cor Aleatória">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        </button>
                         <button class="dp-btn dp-btn-primary sm" @click="salvarStatus(s.id)">Ok</button>
                         <button class="dp-btn dp-btn-ghost sm" @click="editStatusId = null">X</button>
                       </div>
@@ -196,6 +209,9 @@
                         <div class="mini-picker">
                           <ModernColorPicker v-model="newStatusForm.color" />
                         </div>
+                        <button class="dp-btn dp-btn-ghost sm" @click="newStatusForm.color = generateRandomHex()" title="Cor Aleatória">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        </button>
                         <button class="dp-btn dp-btn-primary sm" @click="salvarNovoStatus">Criar</button>
                         <button class="dp-btn dp-btn-ghost sm" @click="addingStatus = false">X</button>
                       </div>
@@ -232,6 +248,9 @@
                         <div class="mini-picker">
                           <ModernColorPicker v-model="editRelForm.color" />
                         </div>
+                        <button class="dp-btn dp-btn-ghost sm" @click="editRelForm.color = generateRandomHex()" title="Cor Aleatória">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        </button>
                         <button class="dp-btn dp-btn-primary sm" @click="salvarRel(r.id)">Ok</button>
                         <button class="dp-btn dp-btn-ghost sm" @click="editRelId = null">X</button>
                       </div>
@@ -243,6 +262,9 @@
                         <div class="mini-picker">
                           <ModernColorPicker v-model="newRelForm.color" />
                         </div>
+                        <button class="dp-btn dp-btn-ghost sm" @click="newRelForm.color = generateRandomHex()" title="Cor Aleatória">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        </button>
                         <button class="dp-btn dp-btn-primary sm" @click="salvarNovoRel">Criar</button>
                         <button class="dp-btn dp-btn-ghost sm" @click="addingRel = false">X</button>
                       </div>
@@ -292,6 +314,10 @@ function getRandomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
+function generateRandomHex() {
+  return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+}
+
 const selectedWorkspace = computed(() => workspaces.value.find(w => w.id === selectedWorkspaceId.value));
 
 // -- Workspaces Edit
@@ -319,7 +345,7 @@ function selecionarParaConfig(id: string) {
 const newWsName = ref('');
 async function handleCreateNewWs() {
   if (!newWsName.value.trim()) return;
-  const ws = await createWorkspace(newWsName.value.trim(), '#009ef7');
+  const ws = await createWorkspace(newWsName.value.trim(), getRandomColor());
   if (ws) {
     newWsName.value = '';
     selecionarParaConfig(ws.id);
@@ -558,8 +584,6 @@ defineExpose({ abrirModal });
 .field-row { display: flex; flex-direction: column; gap: 8px; }
 .field-row label { font-size: 13px; font-weight: 600; color: var(--dp-modal-text-secondary); }
 
-.color-picker-container { display: flex; align-items: center; gap: 16px; background: rgba(0,0,0,0.02); padding: 12px 16px; border-radius: 12px; }
-.dark .color-picker-container { background: rgba(255,255,255,0.02); }
 .helper-text { font-size: 12px; color: var(--dp-modal-text-secondary); }
 
 .danger-zone-box {
@@ -585,5 +609,22 @@ defineExpose({ abrirModal });
   font-weight: 700;
   color: #181c32;
 }
+
+.dp-btn.sm { 
+  padding: 8px 12px; 
+  font-size: 13px; 
+  height: 36px; /* Altura padronizada para os botões das linhas */
+  border-radius: 10px;
+}
+
+.color-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.02);
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+.dark .color-picker-container { background: rgba(255,255,255,0.02); }
 </style>
 

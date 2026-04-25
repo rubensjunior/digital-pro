@@ -288,15 +288,10 @@
           </div>
         </div>
 
-        <div class="dp-modal-footer">
-          <div class="footer-left-group">
-            <button class="dp-btn dp-btn-ghost" @click="handleToggleArquivar(drawerIdeia!)">{{ drawerIdeia.is_arquivada ? 'Desarquivar' : 'Arquivar' }}</button>
-            <button class="dp-btn dp-btn-ghost" @click="handleDuplicar(drawerIdeia!)">Duplicar</button>
-            <button class="dp-btn dp-btn-ghost btn-danger-text" @click="confirmarDelete(drawerIdeia!.id)">Excluir</button>
-          </div>
-          <div class="footer-right-group">
-            <button class="dp-btn dp-btn-primary" @click="$emit('edit', drawerIdeia!)">Editar Ideia</button>
-          </div>
+        <div class="dp-modal-footer" style="justify-content: flex-start;">
+          <button class="dp-btn dp-btn-ghost" @click="handleToggleArquivar(drawerIdeia!)">{{ drawerIdeia.is_arquivada ? 'Desarquivar' : 'Arquivar' }}</button>
+          <button class="dp-btn dp-btn-ghost" @click="handleDuplicar(drawerIdeia!)">Duplicar</button>
+          <button class="dp-btn dp-btn-ghost btn-danger-text" @click="confirmarDelete(drawerIdeia!.id)">Excluir</button>
         </div>
       </div>
     </div>
