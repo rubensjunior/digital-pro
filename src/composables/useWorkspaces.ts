@@ -30,9 +30,14 @@ export function useWorkspaces() {
       const data = await window.electronAPI.workspaces.getAll();
       workspaces.value = data;
       
-      // Auto-selection: se não tiver nenhum selecionado, escolhe o primeiro
-      if (data.length > 0 && !currentWorkspaceId.value) {
-        currentWorkspaceId.value = data[0].id;
+      // Auto-selection: garante que tenhamos um workspace válido selecionado
+      if (data.length > 0) {
+        const currentExists = data.some(w => w.id === currentWorkspaceId.value);
+        if (!currentWorkspaceId.value || !currentExists) {
+          currentWorkspaceId.value = data[0].id;
+        }
+      } else {
+        currentWorkspaceId.value = null;
       }
     } catch (e) {
       console.error('[useWorkspaces] Erro ao buscar workspaces:', e);

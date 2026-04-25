@@ -18,7 +18,7 @@
                 <button :class="['dp-tab', { 'active': tabAtiva === 'detalhes' }]" @click="tabAtiva = 'detalhes'">Detalhes</button>
                 <button :class="['dp-tab', { 'active': tabAtiva === 'tipos' }]" @click="tabAtiva = 'tipos'">Tipos</button>
                 <button :class="['dp-tab', { 'active': tabAtiva === 'status' }]" @click="tabAtiva = 'status'">Status</button>
-                <button :class="['dp-tab', { 'active': tabAtiva === 'relacionamentos' }]" @click="tabAtiva = 'relacionamentos'">Ecossistema</button>
+                <button :class="['dp-tab', { 'active': tabAtiva === 'relacionamentos' }]" @click="tabAtiva = 'relacionamentos'">Relacionamento</button>
               </template>
             </div>
           </div>
@@ -207,7 +207,7 @@
               <!-- ABA RELACIONAMENTOS -->
               <div v-show="tabAtiva === 'relacionamentos'" class="tab-pane">
                 <div class="pane-intro">
-                  <h3>Ecossistema e Relações</h3>
+                  <h3>Relacionamentos</h3>
                   <p>Como suas ideias se conectam hierarquicamente.</p>
                 </div>
 

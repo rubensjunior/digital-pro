@@ -129,7 +129,7 @@
               </div>
             </div>
 
-            <!-- ABA 4 — Ecossistema -->
+            <!-- ABA 4 — Relacionamento -->
             <div v-show="tabAtiva === 3" class="tab-pane">
               <div class="dp-field">
                 <label class="dp-label">Ideia Principal (Opcional)</label>
@@ -186,7 +186,7 @@ const emit = defineEmits<{
 const { createIdeia, updateIdeia } = useIdeias();
 const { alert: bvAlert } = useConfirm();
 
-const TABS = ['Identificação', 'Descrição', 'Tags', 'Ecossistema'];
+const TABS = ['Identificação', 'Descrição', 'Tags', 'Relacionamento'];
 const SCORE_LABELS = ['Baixo', 'Médio', 'Alto', 'Muito alto'];
 
 const defaultLabels = {

@@ -54,9 +54,9 @@
           <div v-show="drawerTab === 'geral'" class="drawer-tab-pane">
 
 
-            <div class="drawer-section-card" v-if="ecosistemaArvore.length > 1 || ideiasFilhas.length > 0">
+            <div class="drawer-section-card">
               <div class="eco-header-row">
-                <div class="section-title">Ecossistema da Ideia</div>
+                <div class="section-title">Relacionamento da Ideia</div>
                 <button class="dp-btn dp-btn-primary dp-btn-sm" @click="cadastrarDerivada()">+ Nova Derivada</button>
               </div>
               <div class="eco-tree-container">
@@ -240,7 +240,7 @@
           <div v-show="drawerTab === 'conexoes'" class="drawer-tab-pane">
             <div class="drawer-section-card">
               <div class="section-title">Conexões de Valor</div>
-              <p class="section-subtitle">Mapeie como esta ideia interage com outros elementos do seu ecossistema.</p>
+              <p class="section-subtitle">Mapeie como esta ideia interage com outros elementos do seu relacionamento.</p>
               
               <div class="connections-list-premium">
                 <div v-for="c in correlacoes" :key="c.id" class="connection-item-premium">

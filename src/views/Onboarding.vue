@@ -138,7 +138,7 @@ import { TEMPLATES } from '../lib/templates';
 
 const router = useRouter();
 const route = useRoute();
-const { workspaces, fetchWorkspaces, createWorkspace } = useWorkspaces();
+const { workspaces, fetchWorkspaces, createWorkspace, setupTemplateWorkspace } = useWorkspaces();
 const { profile, loadProfile, updateProfile } = useProfile();
 const currentStep = ref(0);
 const selectedTemplate = ref('marketing');
@@ -202,8 +202,7 @@ async function handleSetup() {
   if (!selectedTemplate.value) return;
   loading.value = true;
   try {
-    await window.electronAPI.workspaces.setupTemplate(selectedTemplate.value);
-    await fetchWorkspaces();
+    await setupTemplateWorkspace(selectedTemplate.value);
     router.replace('/dashboard/ideas');
   } catch (e) {
     console.error('Erro ao configurar template:', e);
