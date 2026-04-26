@@ -84,17 +84,35 @@
       <!-- Header Row 2: Secondary Nav (Tabs) -->
       <nav class="header-secondary">
         <div class="nav-content">
-          <router-link to="/dashboard" class="nav-tab" active-class="tab-active" exact-active-class="tab-active">
-            Home
-          </router-link>
-          <router-link to="/dashboard/ideas" class="nav-tab" active-class="tab-active">
-            Brain Vault
-          </router-link>
+          <div class="nav-tabs-container">
+            <router-link to="/dashboard" class="nav-tab" active-class="tab-active" exact-active-class="tab-active">
+              Home
+            </router-link>
+            <router-link to="/dashboard/ideas" class="nav-tab" active-class="tab-active">
+              Brain Vault
+            </router-link>
+          </div>
+
+          <!-- Ações movidas para cá no Canvas -->
+          <div v-if="isCanvasLayout && route.path.includes('/ideas')" class="canvas-header-actions">
+            <button class="canvas-action-btn" @click="handleAction('abrirFluxogramaGeral')" title="Ver como Fluxograma">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
+              Fluxograma
+            </button>
+            <button class="canvas-action-btn" @click="handleAction('abrirRedeNeuralGeral')" title="Ver como Rede Neural">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              Rede Neural
+            </button>
+            <button class="canvas-action-btn primary" @click="handleAction('abrirModalNovaIdeia')">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Nova Ideia
+            </button>
+          </div>
         </div>
       </nav>
 
       <!-- Page Header: Breadcrumbs & Title & Actions -->
-      <div class="page-subheader">
+      <div class="page-subheader" v-if="!isCanvasLayout">
         <div class="subheader-content">
           <div class="subheader-left">
             <div class="breadcrumb-container">
@@ -155,6 +173,8 @@ import { useTheme } from '../composables/useTheme';
 import { supabase } from '../lib/supabase';
 import { useBus } from '../composables/useBus';
 import { useWorkspaces } from '../composables/useWorkspaces';
+import { useTaxonomy } from '../composables/useTaxonomy';
+import { useIdeias } from '../composables/useIdeias';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal.vue';
 import UserSettingsModal from '../components/UserSettingsModal.vue';
 import { useProfile } from '../composables/useProfile';
@@ -192,7 +212,7 @@ const userNameDisplay = computed(() => {
 });
 
 const isCanvasLayout = computed(() => 
-  route.path.includes('/network') || route.path.includes('/flowchart')
+  route.path.includes('network') || route.path.includes('flowchart')
 );
 
 // ─── Breadcrumbs & Titles ──────────────────────────────────
@@ -284,6 +304,16 @@ onMounted(async () => {
     // 4. Agora podemos acionar as APIs locais seguramente
     await fetchWorkspaces();
     await loadProfile();
+
+    // 5. Garantir que as stores secundárias também carreguem com o ID recém-verificado
+    if (currentWorkspaceId.value) {
+      const { fetchTaxonomies } = useTaxonomy();
+      const { fetchIdeias } = useIdeias();
+      await Promise.all([
+        fetchTaxonomies(currentWorkspaceId.value),
+        fetchIdeias()
+      ]);
+    }
 
     const hasWorkspace = workspaces.value.length > 0;
     const hasProfile = profile.value && profile.value.nickname && profile.value.nickname.trim() !== '';
@@ -599,9 +629,16 @@ function handleAction(action: string) {
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
   height: 100%;
   padding: 0 30px;
+}
+
+.nav-tabs-container {
+  display: flex;
+  gap: 8px;
+  height: 100%;
 }
 
 .nav-tab {
@@ -737,6 +774,26 @@ function handleAction(action: string) {
   background: var(--border);
   margin: 0 4px;
 }
+
+/* Canvas Header Actions in Secondary Nav */
+.canvas-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.canvas-action-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.05); color: #a1a5b7;
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 12px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s;
+}
+
+.canvas-action-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.canvas-action-btn.primary { background: var(--accent); color: #fff; border: none; }
+.canvas-action-btn.primary:hover { opacity: 0.9; }
+.canvas-action-btn svg { width: 14px; height: 14px; }
 
 /* ─── Page Content Area ──────────────────────────────────── */
 .page-content {
