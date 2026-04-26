@@ -51,6 +51,7 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  max-height: calc(100vh - 60px);
   animation: dp-modal-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

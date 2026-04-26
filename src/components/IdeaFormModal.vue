@@ -448,6 +448,10 @@ defineExpose({ abrirModal, abrirEdicao });
 
 .helper-text { font-size: 11px; color: var(--dp-modal-text-secondary); margin-top: 4px; }
 
+.dp-modal-body {
+  min-height: 400px;
+}
+
 .dp-modal-fade-enter-active, .dp-modal-fade-leave-active { transition: opacity 0.2s ease; }
 .dp-modal-fade-enter-from, .dp-modal-fade-leave-to { opacity: 0; }
 </style>

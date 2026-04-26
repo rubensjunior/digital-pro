@@ -2,7 +2,7 @@
   <div class="creatable-select-container" ref="containerRef">
     <label v-if="label" class="dp-label">{{ label }}</label>
     
-    <div class="select-wrapper" :class="{ 'is-open': isOpen, 'has-error': hasError }">
+    <div class="select-wrapper" :class="{ 'is-open': isOpen, 'has-error': hasError }" ref="wrapperRef">
       <input
         type="text"
         class="dp-input select-input"
@@ -20,13 +20,32 @@
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
       </div>
 
-      <div v-if="isOpen" class="select-dropdown dp-custom-scrollbar">
-        <!-- Resultados Agrupados -->
-        <template v-if="groupedResults.length > 0">
-          <div v-for="group in groupedResults" :key="group.label" class="select-group">
-            <div class="group-label">{{ group.label }}</div>
+      <Teleport to="body">
+        <div v-if="isOpen" class="select-dropdown dp-custom-scrollbar" :style="dropdownStyle">
+          <!-- Resultados Agrupados -->
+          <template v-if="groupedResults.length > 0">
+            <div v-for="group in groupedResults" :key="group.label" class="select-group">
+              <div class="group-label">{{ group.label }}</div>
+              <div
+                v-for="option in group.options"
+                :key="option.id"
+                class="select-option"
+                :class="{ 'is-highlighted': highlightedId === option.id, 'is-selected': modelValue === option.id }"
+                @click="selectOption(option)"
+                @mouseenter="highlightedId = option.id"
+              >
+                <span class="option-label">{{ option.label }}</span>
+                <svg v-if="modelValue === option.id" class="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+            </div>
+          </template>
+
+          <!-- Resultados Simples (sem grupo) -->
+          <template v-else-if="filteredOptions.length > 0">
             <div
-              v-for="option in group.options"
+              v-for="option in filteredOptions"
               :key="option.id"
               class="select-option"
               :class="{ 'is-highlighted': highlightedId === option.id, 'is-selected': modelValue === option.id }"
@@ -38,44 +57,27 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
             </div>
-          </div>
-        </template>
+          </template>
 
-        <!-- Resultados Simples (sem grupo) -->
-        <template v-else-if="filteredOptions.length > 0">
-          <div
-            v-for="option in filteredOptions"
-            :key="option.id"
-            class="select-option"
-            :class="{ 'is-highlighted': highlightedId === option.id, 'is-selected': modelValue === option.id }"
-            @click="selectOption(option)"
-            @mouseenter="highlightedId = option.id"
-          >
-            <span class="option-label">{{ option.label }}</span>
-            <svg v-if="modelValue === option.id" class="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
+          <!-- Opção de Criar -->
+          <div v-if="canCreate" class="create-option" @click="handleCreate">
+            <div class="create-plus">+</div>
+            <div class="create-text">
+              Criar novo: <strong>{{ searchQuery }}</strong>
+            </div>
           </div>
-        </template>
 
-        <!-- Opção de Criar -->
-        <div v-if="canCreate" class="create-option" @click="handleCreate">
-          <div class="create-plus">+</div>
-          <div class="create-text">
-            Criar novo: <strong>{{ searchQuery }}</strong>
+          <div v-if="filteredOptions.length === 0 && groupedResults.length === 0 && !canCreate" class="no-results">
+            Nenhum resultado encontrado
           </div>
         </div>
-
-        <div v-if="filteredOptions.length === 0 && groupedResults.length === 0 && !canCreate" class="no-results">
-          Nenhum resultado encontrado
-        </div>
-      </div>
+      </Teleport>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 
 interface Option {
   id: string;
@@ -102,9 +104,18 @@ const emit = defineEmits<{
 }>();
 
 const containerRef = ref<HTMLElement | null>(null);
+const wrapperRef = ref<HTMLElement | null>(null);
 const isOpen = ref(false);
 const searchQuery = ref('');
 const highlightedId = ref<string | null>(null);
+
+const dropdownStyle = ref({
+  top: '0px',
+  left: '0px',
+  width: '0px',
+  position: 'fixed' as const,
+  zIndex: 16000 // Acima da modal (z-index 15000)
+});
 
 // Normalizar opções para busca
 const flatOptions = computed(() => {
@@ -124,6 +135,32 @@ watch(() => props.modelValue, (newVal) => {
     searchQuery.value = '';
   }
 }, { immediate: true });
+
+// Lógica de posicionamento
+function updateDropdownPosition() {
+  if (!wrapperRef.value) return;
+  const rect = wrapperRef.value.getBoundingClientRect();
+  dropdownStyle.value = {
+    top: `${rect.bottom + 8}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    position: 'fixed',
+    zIndex: 16000
+  };
+}
+
+// Observar abertura para atualizar posição
+watch(isOpen, async (val) => {
+  if (val) {
+    await nextTick();
+    updateDropdownPosition();
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    window.addEventListener('resize', updateDropdownPosition);
+  } else {
+    window.removeEventListener('scroll', updateDropdownPosition, true);
+    window.removeEventListener('resize', updateDropdownPosition);
+  }
+});
 
 // Filtragem
 const filteredOptions = computed(() => {
@@ -225,8 +262,15 @@ function handleClickOutside(e: MouseEvent) {
   }
 }
 
-onMounted(() => document.addEventListener('click', handleClickOutside));
-onUnmounted(() => document.removeEventListener('click', handleClickOutside));
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', updateDropdownPosition, true);
+  window.removeEventListener('resize', updateDropdownPosition);
+});
 </script>
 
 <style scoped>
@@ -263,15 +307,10 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 }
 
 .select-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
   background: var(--dp-modal-bg);
   border: 1px solid var(--dp-modal-border);
   border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
   max-height: 280px;
   overflow-y: auto;
   padding: 8px;
