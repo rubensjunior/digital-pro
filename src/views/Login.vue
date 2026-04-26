@@ -256,21 +256,6 @@ onMounted(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) return; // Nenhuma sessão → mostra tela de login normalmente
 
-    // Verificar status antes de inicializar o banco
-    if (navigator.onLine) {
-      const { data: clientData } = await supabase
-        .from('clientes')
-        .select('status')
-        .eq('id', session.user.id)
-        .single();
-
-      if (clientData && clientData.status !== 'ativo') {
-        await supabase.auth.signOut();
-        router.push('/pending-payment');
-        return;
-      }
-    }
-
     // Inicializar banco SQLite e redirecionar
     await window.electronAPI.user.initDb(session.user.id);
     await configurarNavegacaoAoSucesso();
@@ -296,8 +281,24 @@ const handleLogin = async () => {
 
     if (authError) throw authError;
 
-    if (authData.user) {
-      // 2. Verificar o status do cliente diretamente do banco
+    if (authData.user && authData.session) {
+      // 2. Sincronizar status com Asaas ANTES de verificar o banco
+      // Isso garante que se o pagamento já foi feito no Asaas, o banco seja atualizado
+      try {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-asaas`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authData.session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+          },
+        });
+      } catch (syncErr) {
+        // Não bloqueia o login se a sync falhar (offline, etc)
+        console.warn('[Login] sync-asaas falhou (não bloqueante):', syncErr);
+      }
+
+      // 3. Verificar o status do cliente DEPOIS da sincronização
       const { data: clientData, error: clientError } = await supabase
         .from('clientes')
         .select('status')
@@ -306,14 +307,14 @@ const handleLogin = async () => {
         
       if (clientError) throw clientError;
 
-      // 3. Bloquear e redirecionar se a conta não estiver ativa
-      if (clientData && clientData.status !== 'ativo') {
+      // 4. Bloquear se a conta não existir ou estiver cancelada (excluída)
+      if (!clientData || clientData.status === 'cancelado') {
         await supabase.auth.signOut();
-        router.push('/pending-payment');
+        errorMessage.value = 'Esta conta foi excluída ou não existe.';
         return;
       }
 
-      // 4. Inicializar o banco SQLite local com o userId do usuário autenticado
+      // 5. Inicializar o banco SQLite local com o userId do usuário autenticado
       // CRÍTICO: sem isso, workspaces.getAll() retorna [] porque `db` está indefinido
       await window.electronAPI.user.initDb(authData.user.id);
 

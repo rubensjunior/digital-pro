@@ -47,7 +47,28 @@
           </div>
 
           <div class="w-full flex flex-col space-y-3">
-            <router-link to="/login" class="w-full text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-indigo-800 font-semibold rounded-xl text-sm px-5 py-4 text-center shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all duration-300 transform hover:-translate-y-0.5">
+            <!-- Botão de verificação ativa de pagamento -->
+            <button
+              @click="verificarPagamento"
+              :disabled="isVerifying"
+              class="w-full text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-indigo-800 font-semibold rounded-xl text-sm px-5 py-4 text-center shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <span v-if="isVerifying" class="flex items-center justify-center gap-2">
+                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Verificando pagamento...
+              </span>
+              <span v-else>✓ Já paguei — Verificar Agora</span>
+            </button>
+
+            <!-- Mensagem de erro/sucesso -->
+            <div v-if="statusMsg" :class="['text-sm font-medium text-center px-4 py-2.5 rounded-xl', statusMsgType === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50' : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50']">
+              {{ statusMsg }}
+            </div>
+
+            <router-link to="/login" class="w-full text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium rounded-xl text-sm px-5 py-3 text-center transition-all duration-200 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600">
               Voltar para o Login
             </router-link>
           </div>
@@ -71,7 +92,80 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useTheme } from '../composables/useTheme';
+import { supabase } from '../lib/supabase.js';
 
 const { isDark, toggleTheme } = useTheme();
+const router = useRouter();
+
+const isVerifying = ref(false);
+const statusMsg = ref('');
+const statusMsgType = ref<'success' | 'error'>('error');
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const verificarPagamento = async () => {
+  isVerifying.value = true;
+  statusMsg.value = '';
+
+  try {
+    // 1. Obtém sessão atual
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      statusMsg.value = 'Sessão expirada. Faça o login novamente.';
+      statusMsgType.value = 'error';
+      return;
+    }
+
+    // 2. Chama a Edge Function sync-asaas para sincronizar status com o Asaas
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/sync-asaas`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Erro ao verificar pagamento.');
+    }
+
+    // 3. Se status retornou como 'ativo', libera o acesso
+    if (result.status === 'ativo') {
+      statusMsg.value = '✅ Pagamento confirmado! Acessando...';
+      statusMsgType.value = 'success';
+
+      // Inicializa o banco SQLite local antes de redirecionar
+      await window.electronAPI.user.initDb(session.user.id);
+
+      // Verifica se já tem workspace criado
+      const workspaces = await window.electronAPI.workspaces.getAll();
+      setTimeout(() => {
+        if (!workspaces || workspaces.length === 0) {
+          router.push('/onboarding');
+        } else {
+          router.push('/dashboard');
+        }
+      }, 1200);
+    } else {
+      // Status ainda pendente no Asaas
+      const asaasStatus = result.asaasStatus || 'pendente';
+      statusMsg.value = `Pagamento ainda não confirmado no Asaas (status: ${asaasStatus}). Aguarde alguns instantes e tente novamente.`;
+      statusMsgType.value = 'error';
+    }
+  } catch (err: any) {
+    console.error('[PendingPayment] Erro ao verificar:', err);
+    statusMsg.value = err.message || 'Erro ao verificar pagamento. Tente novamente.';
+    statusMsgType.value = 'error';
+  } finally {
+    isVerifying.value = false;
+  }
+};
 </script>

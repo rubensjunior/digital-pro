@@ -44,6 +44,48 @@
                     <label>Profissão / Foco</label>
                     <input v-model="profile.profession" type="text" placeholder="Ex: Gestor de Tráfego" class="settings-input" @blur="handleSaveProfile" />
                   </div>
+                  <div class="field-group">
+                    <label>E-mail (Login)</label>
+                    <input :value="userEmail" type="text" readonly class="settings-input read-only-input" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-divider"></div>
+
+            <!-- Seção de Assinatura -->
+            <div class="settings-section subscription-section">
+              <h3 class="section-title">Assinatura e Faturamento</h3>
+              <p class="section-desc">Gerencie os detalhes do seu plano atual.</p>
+
+              <div class="subscription-card">
+                <div class="sub-details">
+                  <div class="sub-plan-name">{{ subPlanName || 'Plano PRO' }}</div>
+                  <div class="sub-status">
+                    Status: 
+                    <span v-if="subStatus === 'ativo'" class="text-green-500 font-bold">Ativa</span>
+                    <span v-else-if="subStatus === 'cancelado'" class="text-orange-500 font-bold">Cancelada</span>
+                    <span v-else-if="subStatus === 'FREE_TRIAL'" class="text-blue-500 font-bold">Plano Gratuito</span>
+                    <span v-else class="text-slate-500 font-bold">{{ subStatus }}</span>
+                  </div>
+                  <div class="sub-date" v-if="subNextDate && subStatus !== 'FREE_TRIAL'">
+                    {{ subStatus === 'cancelado' ? 'Acesso válido até:' : 'Próxima cobrança:' }} <span class="font-semibold">{{ subNextDate }}</span>
+                  </div>
+                </div>
+                <div class="sub-actions flex justify-end mt-2" v-if="subStatus === 'ativo'">
+                  <button v-if="!confirmingCancelSub" class="dp-btn dp-btn-ghost sub-cancel-btn" @click="confirmingCancelSub = true">
+                    Cancelar Assinatura
+                  </button>
+                  <div v-else class="confirm-cancel-box">
+                    <p class="text-xs text-orange-500 font-medium mb-2 text-right">Tem certeza? O acesso ficará disponível apenas até {{ subNextDate }}.</p>
+                    <div class="confirm-actions justify-end">
+                      <button class="dp-btn dp-btn-ghost sm" @click="cancelCancelSub">Voltar</button>
+                      <button class="dp-btn sm bg-orange-500 text-white border-none cursor-pointer" :disabled="isCancelingSub" @click="handleCancelSubscription">
+                        {{ isCancelingSub ? 'Cancelando...' : 'Confirmar Cancelamento' }}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -122,10 +164,94 @@ const confirmingDelete = ref(false);
 const deleteText = ref('');
 const isDeleting = ref(false);
 
-function abrirModal() {
+const userEmail = ref('');
+const subStatus = ref('');
+const subNextDate = ref('');
+const subPlanName = ref('');
+
+const isCancelingSub = ref(false);
+const confirmingCancelSub = ref(false);
+
+function cancelCancelSub() {
+  confirmingCancelSub.value = false;
+}
+
+async function abrirModal() {
   isOpen.value = true;
   cancelClear();
   cancelDelete();
+  cancelCancelSub();
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.email) {
+      userEmail.value = session.user.email;
+      
+      const { data: assinatura } = await supabase
+        .from('assinaturas')
+        .select('status, proxima_cobranca, nome_plano')
+        .eq('cliente_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (assinatura) {
+        subStatus.value = assinatura.status || '';
+        subPlanName.value = assinatura.nome_plano || 'Plano PRO';
+        
+        if (assinatura.proxima_cobranca) {
+          // Parse da data corretamente
+          const parts = assinatura.proxima_cobranca.split('-');
+          if (parts.length === 3) {
+            subNextDate.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+          } else {
+            subNextDate.value = assinatura.proxima_cobranca;
+          }
+        } else {
+          subNextDate.value = '';
+        }
+      }
+    }
+  } catch(e) {
+    console.error('Erro ao buscar dados do usuário/assinatura:', e);
+  }
+}
+
+async function handleCancelSubscription() {
+  isCancelingSub.value = true;
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Sessão expirada. Faça login novamente.');
+
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/cancel-subscription`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Erro ao processar cancelamento da assinatura.');
+    }
+    
+    // Sucesso, atualiza a modal local
+    subStatus.value = 'cancelado';
+    bvAlert({ title: 'Assinatura Cancelada', message: 'Sua assinatura foi cancelada. Você ainda terá acesso ao sistema até o fim do ciclo vigente.', type: 'success' });
+    cancelCancelSub();
+    
+  } catch (error: any) {
+    console.error('Erro geral ao cancelar assinatura:', error);
+    bvAlert({ title: 'Erro', message: error.message || 'Erro inesperado.', type: 'danger' });
+  } finally {
+    isCancelingSub.value = false;
+  }
 }
 
 async function handleSelectAvatar() {
@@ -181,21 +307,34 @@ async function handleDeleteAccount() {
   isDeleting.value = true;
   
   try {
-    const { error: rpcError } = await supabase.rpc('delete_my_account');
-    if (rpcError) {
-      console.error('Supabase Delete Error:', rpcError);
-      bvAlert({ title: 'Erro de Autenticação', message: 'Erro ao processar exclusão remota: ' + rpcError.message, type: 'danger' });
-      isDeleting.value = false;
-      return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Sessão expirada. Faça login novamente.');
+
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Erro ao processar exclusão remota.');
     }
     
+    // Sucesso na exclusão remota, agora limpa os dados locais
     await window.electronAPI.user.clearDatabase();
     await supabase.auth.signOut();
     router.push('/login');
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro geral ao excluir conta:', error);
-    bvAlert({ title: 'Erro Crítico', message: 'Erro inesperado ao excluir conta.', type: 'danger' });
+    bvAlert({ title: 'Erro', message: error.message || 'Erro inesperado ao excluir conta.', type: 'danger' });
   } finally {
     isDeleting.value = false;
   }
@@ -250,6 +389,29 @@ defineExpose({ abrirModal, fecharModal });
   transition: all 0.2s;
 }
 .settings-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.settings-input.read-only-input {
+  background: rgba(0, 0, 0, 0.05); /* Um pouco mais escuro para indicar readonly no light/dark mode dependendo do tema */
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Assinatura Card */
+.subscription-card {
+  background: rgba(59, 130, 246, 0.03);
+  border: 1px solid var(--dp-modal-border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sub-plan-name { font-size: 15px; font-weight: 700; color: var(--dp-modal-text-primary); }
+.sub-status, .sub-date { font-size: 13px; color: var(--dp-modal-text-secondary); margin-top: 4px; }
+.sub-cancel-btn { color: #f97316 !important; border-color: rgba(249, 115, 22, 0.3) !important; }
+.sub-cancel-btn:hover { background: rgba(249, 115, 22, 0.1) !important; border-color: #f97316 !important; }
+.confirm-cancel-box { display: flex; flex-direction: column; align-items: flex-end; width: 100%; }
+.bg-orange-500 { background-color: #f97316; }
+.bg-orange-500:hover { filter: brightness(1.1); }
 
 .modal-divider { height: 1px; background: var(--dp-modal-border); margin: 8px 0 24px 0; opacity: 0.6; }
 

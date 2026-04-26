@@ -43,9 +43,10 @@ const requireActivePlan = async () => {
       return true;
     }
 
-    if (!clientData || clientData.status !== 'ativo') {
+    // O cliente 'cancelado' (excluído) é deslogado na hora
+    if (!clientData || clientData.status === 'cancelado') {
       await supabase.auth.signOut();
-      return '/pending-payment';
+      return '/login';
     }
 
     // 2) Verifica se a assinatura ainda está dentro do prazo
@@ -57,22 +58,37 @@ const requireActivePlan = async () => {
       .limit(1)
       .single();
 
-    if (searchError && searchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    if (searchError && searchError.code !== 'PGRST116') {
       console.error('Erro ao verificar assinatura:', searchError);
       return true;
     }
 
-    if (assinatura) {
-      const vencida =
-        assinatura.status === 'cancelado' ||
-        (assinatura.proxima_cobranca && new Date(assinatura.proxima_cobranca) < new Date());
+    let hasValidAccess = false;
 
-      if (vencida) {
-        return '/pending-payment';
+    if (assinatura) {
+      if (assinatura.proxima_cobranca) {
+        const dataVencimento = new Date(assinatura.proxima_cobranca);
+        dataVencimento.setHours(23, 59, 59, 999);
+        hasValidAccess = dataVencimento >= new Date();
+      } else {
+        hasValidAccess = assinatura.status === 'ativo' || assinatura.status === 'FREE_TRIAL';
       }
     }
-    
-    return true;
+
+    // 3) Decisão final:
+    // Se a assinatura garante acesso, deixa passar (mesmo que o cliente esteja inativo).
+    if (hasValidAccess) {
+      return true;
+    }
+
+    // Se não tem acesso garantido pela assinatura, mas o cliente está 'ativo' sem assinatura vinculada?
+    // Exemplo: Admins ou erro de DB. Vamos bloquear se o cliente não tiver 'ativo' e não tiver assinatura.
+    if (clientData.status === 'ativo') {
+      return true; 
+    }
+
+    // Se a assinatura venceu e o cliente está pendente/inativo
+    return '/pending-payment';
   } catch (error) {
     console.error('Falha crítica na verificação de acesso:', error);
     // Em caso de erro catastrófico (ex: rede), tentamos deixar o usuário entrar se ele tiver sessão

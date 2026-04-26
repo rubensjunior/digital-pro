@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="dp-modal-fade">
-      <div v-if="show" class="dp-modal-overlay" @click.self="cancel">
+      <div v-if="show" class="dp-modal-overlay confirm-overlay" @click.self="cancel">
         <div class="dp-modal-container confirm-modal-width">
           <div class="dp-modal-header">
             <div class="idea-header-left">
@@ -110,6 +110,11 @@ function cancel() {
 .dp-modal-fade-enter-from,
 .dp-modal-fade-leave-to {
   opacity: 0;
+}
+
+/* Garante que o confirm apareça sobre outras modais */
+.dp-modal-overlay.confirm-overlay {
+  z-index: 16000 !important;
 }
 </style>
 

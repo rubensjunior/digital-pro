@@ -27,7 +27,7 @@
         </div>
 
         <!-- Subscription Plan Card -->
-        <div class="bg-slate-900 rounded-2xl p-5 mb-8 flex w-full relative overflow-hidden group shadow-xl">
+        <div v-if="!couponApplied" class="bg-slate-900 rounded-2xl p-5 mb-4 flex w-full relative overflow-hidden group shadow-xl transition-all duration-500">
           <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-600/30 rounded-full blur-2xl group-hover:bg-blue-500/40 transition-all duration-500"></div>
           <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-indigo-600/30 rounded-full blur-2xl group-hover:bg-indigo-500/40 transition-all duration-500"></div>
           <div class="relative z-10 flex w-full items-center justify-between">
@@ -50,6 +50,80 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Free Beta Banner (aparece quando cupom aplicado) -->
+        <div v-if="couponApplied" class="rounded-2xl p-5 mb-4 flex w-full relative overflow-hidden shadow-xl bg-gradient-to-br from-emerald-900 to-teal-900 border border-emerald-500/30 animate-fade-in-up">
+          <div class="absolute -right-10 -top-10 w-32 h-32 bg-emerald-500/30 rounded-full blur-2xl"></div>
+          <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-teal-500/20 rounded-full blur-2xl"></div>
+          <div class="relative z-10 flex w-full items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+              </div>
+              <div>
+                <div class="flex items-center space-x-2">
+                  <h3 class="text-white font-bold text-base tracking-wide">ACESSO BETA</h3>
+                  <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 uppercase tracking-widest">Free</span>
+                </div>
+                <p class="text-emerald-300/80 text-xs mt-0.5 font-medium">Cupom <span class="font-bold text-emerald-300">{{ couponCode }}</span> aplicado com sucesso!</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="flex items-baseline space-x-1 justify-end">
+                <span class="text-white font-black text-2xl">R$0</span>
+                <span class="text-emerald-400 text-sm font-medium">/mês</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Campo de Cupom -->
+        <div class="mb-6">
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                <svg class="w-4 h-4" :class="couponApplied ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+              </div>
+              <input
+                v-model="couponCode"
+                type="text"
+                id="coupon-code"
+                :disabled="couponApplied"
+                :class="[
+                  'text-sm rounded-xl block w-full pl-10 p-3.5 transition-all outline-none shadow-sm border',
+                  couponApplied
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-400 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300 cursor-not-allowed'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-300 dark:hover:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500'
+                ]"
+                placeholder="Tem um cupom? Ex: digital-free"
+                @keyup.enter="applyCoupon"
+              />
+            </div>
+            <button
+              v-if="!couponApplied"
+              type="button"
+              @click="applyCoupon"
+              :disabled="!couponCode.trim() || isCouponLoading"
+              class="px-4 py-3.5 rounded-xl text-sm font-semibold transition-all border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 flex-shrink-0 shadow-sm"
+            >
+              <svg v-if="isCouponLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+              <span v-else>Aplicar</span>
+            </button>
+            <button
+              v-if="couponApplied"
+              type="button"
+              @click="removeCoupon"
+              class="px-4 py-3.5 rounded-xl text-sm font-semibold transition-all border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 flex items-center gap-1.5 flex-shrink-0 shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              Remover
+            </button>
+          </div>
+          <p v-if="couponError" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            {{ couponError }}
+          </p>
         </div>
 
 
@@ -200,16 +274,32 @@
             <button v-if="currentStep > 1" type="button" @click="prevStep" class="text-slate-600 dark:text-slate-400 font-medium text-sm px-6 py-3.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors border border-slate-200 dark:border-slate-700 shadow-sm flex-shrink-0 focus:ring-4 focus:ring-slate-100 dark:focus:ring-slate-800 focus:outline-none">
               Voltar
             </button>
-            <button type="submit" :disabled="isLoading" class="flex-1 text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-indigo-800 font-medium rounded-xl text-sm px-5 py-3.5 text-center shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none" :key="currentStep === 3 ? 'submit' : 'next'">
+            <button
+              type="submit"
+              :disabled="isLoading"
+              :class="[
+                'flex-1 text-white font-medium rounded-xl text-sm px-5 py-3.5 text-center shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none focus:ring-4 focus:outline-none',
+                couponApplied
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-600/30 hover:shadow-emerald-600/50 focus:ring-emerald-300 dark:focus:ring-teal-800'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-600/30 hover:shadow-blue-600/50 focus:ring-blue-300 dark:focus:ring-indigo-800'
+              ]"
+              :key="currentStep === 3 ? 'submit' : 'next'"
+            >
               <span v-if="isLoading && currentStep === 3" class="flex items-center justify-center gap-2">
                 <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 Processando...
               </span>
-              <span v-else>{{ currentStep === 3 ? 'Assinar e Criar Conta' : 'Próximo Passo' }}</span>
+              <span v-else>
+                <template v-if="currentStep === 3">
+                  {{ couponApplied ? '🎉 Criar Conta Gratuita' : 'Assinar e Criar Conta' }}
+                </template>
+                <template v-else>Próximo Passo</template>
+              </span>
             </button>
           </div>
           <p v-if="currentStep === 3" class="text-xs text-slate-500 dark:text-slate-400 mt-4 text-center">
-            Ao assinar, você concorda com nossos <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline">Termos de Serviço</a>.
+            <template v-if="couponApplied">Ao criar sua conta beta, você concorda com nossos <a href="#" class="text-emerald-600 dark:text-emerald-400 hover:underline">Termos de Serviço</a>.</template>
+            <template v-else>Ao assinar, você concorda com nossos <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline">Termos de Serviço</a>.</template>
           </p>
         </form>
 
@@ -293,6 +383,36 @@ const { alert: bvAlert } = useConfirm();
 
 const currentStep = ref(1);
 const isLoading = ref(false);
+
+// Cupom
+const couponCode = ref('');
+const couponApplied = ref(false);
+const couponError = ref('');
+const isCouponLoading = ref(false);
+
+const VALID_COUPON_CODES = ['digital-free']; // validação client-side leve (a real é server-side)
+
+const applyCoupon = () => {
+  couponError.value = '';
+  const code = couponCode.value.trim().toLowerCase();
+  if (!code) return;
+  isCouponLoading.value = true;
+  setTimeout(() => {
+    if (VALID_COUPON_CODES.includes(code)) {
+      couponApplied.value = true;
+      couponCode.value = code;
+    } else {
+      couponError.value = 'Cupom inválido. Verifique o código e tente novamente.';
+    }
+    isCouponLoading.value = false;
+  }, 600);
+};
+
+const removeCoupon = () => {
+  couponApplied.value = false;
+  couponCode.value = '';
+  couponError.value = '';
+};
 
 const formData = ref({
   name: '',
@@ -390,18 +510,24 @@ const handleNextOrSubmit = async () => {
         state:        formData.value.state,
         number:       formData.value.number,
         complement:   formData.value.complement,
+        coupon_code:  couponApplied.value ? couponCode.value : undefined,
       },
     });
 
     if (fnError) throw new Error(fnError.message);
     if (asaasData?.error) throw new Error(asaasData.error);
 
-    // ── Step 3: Open Asaas payment link so user can enter card details ─────
-    if (asaasData?.invoice_url) {
-      openExternal(asaasData.invoice_url);
+    // ── Step 3: Redirecionar conforme tipo de acesso ───────────────────────
+    if (asaasData?.free_access) {
+      // Beta tester com cupom free → acesso imediato
+      router.push('/onboarding');
+    } else {
+      // Fluxo normal → aguardar pagamento
+      if (asaasData?.invoice_url) {
+        openExternal(asaasData.invoice_url);
+      }
+      router.push('/pending-payment');
     }
-
-    router.push('/pending-payment');
   } catch (err: any) {
     console.error('[Signup] Erro na criação de conta:', err);
     bvAlert({ 

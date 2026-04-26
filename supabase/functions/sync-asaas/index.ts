@@ -67,15 +67,40 @@ Deno.serve(async (req: Request) => {
     }
 
     const asaasData = await asaasRes.json();
-    // Asaas status pode ser: ACTIVE, EXPIRED, INACTIVE, etc.
+    // Asaas status pode ser: ACTIVE, EXPIRED, INACTIVE, PENDING, etc.
     const realStatus = asaasData.status; // EX: 'ACTIVE'
     const nextDueDate = asaasData.nextDueDate; // EX: '2026-05-26'
 
-    // Definir o status interno (ativo ou inativo/cancelado)
-    // No frontend verificamos vencimento pela proxima_cobranca tbm
+    // Definir o status interno inicial baseado na assinatura
     let internalStatus = 'ativo';
     if (realStatus === 'EXPIRED' || realStatus === 'INACTIVE') {
       internalStatus = 'cancelado';
+    }
+
+    // ── 3b. Se assinatura ainda está PENDING, verificar cobranças ─────────────
+    // O Asaas pode manter status PENDING mesmo após pagamento da 1ª cobrança.
+    // Neste caso, verificamos se há ao menos uma cobrança confirmada.
+    if (realStatus === 'PENDING' || realStatus === 'OVERDUE') {
+      try {
+        const chargesRes = await fetch(
+          `${ASAAS_API_URL}/subscriptions/${asaasAssinaturaId}/charges?limit=10`,
+          { headers: { "access_token": ASAAS_API_KEY } }
+        );
+        if (chargesRes.ok) {
+          const chargesData = await chargesRes.json();
+          const charges: Array<{ status: string }> = chargesData?.data ?? [];
+          // Se qualquer cobrança foi confirmada/recebida, libera o acesso
+          const hasConfirmedCharge = charges.some(
+            (c) => c.status === "CONFIRMED" || c.status === "RECEIVED"
+          );
+          if (hasConfirmedCharge) {
+            internalStatus = 'ativo';
+          }
+        }
+      } catch (_) {
+        // Não critico: se falhar, usa o status da assinatura
+        console.warn("[sync-asaas] Falha ao buscar cobranças, usando status da assinatura.");
+      }
     }
 
     let changed = false;
