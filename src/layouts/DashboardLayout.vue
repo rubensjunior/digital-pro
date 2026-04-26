@@ -298,6 +298,16 @@ onMounted(async () => {
     // 3. Sincronizar e Carregar Perfil
     await loadProfile(); // Tenta carregar do local primeiro para UI rápida
     if (navigator.onLine) {
+      // 3.1 Sincronizar status do Asaas
+      try {
+        console.log('[DashboardLayout] Sincronizando status com Asaas...');
+        const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-asaas');
+        if (syncError) console.error('[DashboardLayout] Erro ao sincronizar Asaas:', syncError);
+        else console.log('[DashboardLayout] Sync Asaas completado:', syncData);
+      } catch (err) {
+        console.error('[DashboardLayout] Falha ao invocar sync-asaas:', err);
+      }
+
       await syncProfile(); // Sincroniza do Supabase para o local
     }
 
@@ -334,6 +344,9 @@ onMounted(async () => {
     console.error('Erro ao inicializar dados do usuário e banco:', error);
   }
 
+  // Verifica a assinatura logo após o sync inicial, para redirecionar se venceu agora
+  await checkSubscription();
+  
   subscriptionCheckTimer = setInterval(checkSubscription, SUBSCRIPTION_CHECK_INTERVAL_MS);
 
   supabase.auth.onAuthStateChange((event) => {

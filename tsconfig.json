@@ -12,5 +12,6 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "types": ["vite/client", "node"]
-  }
+  },
+  "exclude": ["node_modules", "dist", "supabase"]
 }

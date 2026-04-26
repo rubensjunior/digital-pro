@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "types": ["deno"]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.d.ts"
+  ]
+}
