@@ -120,8 +120,15 @@ Deno.serve(async (req: Request) => {
       changed = true;
     }
 
-    // Atualizar o cliente (opcional, manter o cliente alinhado com a assinatura mais recente)
-    const clientStatus = internalStatus === 'cancelado' ? 'inativo' : 'ativo';
+    // Atualizar o cliente. Só inativa se a assinatura está cancelada E o prazo de vigência já expirou.
+    let isPastDueDate = false;
+    if (nextDueDate) {
+      isPastDueDate = new Date(nextDueDate) < new Date();
+    } else {
+      isPastDueDate = true; // Se não tem data, já expirou
+    }
+    
+    const clientStatus = (internalStatus === 'cancelado' && isPastDueDate) ? 'inativo' : 'ativo';
     const { data: cliente, error: clientError } = await supabaseAdmin
       .from("clientes")
       .select("status")

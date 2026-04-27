@@ -1036,6 +1036,8 @@ const createWindow = () => {
 
   // IPC básicos
   ipcMain.handle('ping', () => 'pong');
+  ipcMain.handle('app:getVersion', () => app.getVersion());
+
 
   ipcMain.on('window-minimize', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);

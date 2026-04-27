@@ -4,7 +4,7 @@
     <div class="layout-header">
       <!-- Espaçador para compensar a titlebar customizada do Electron (32px) -->
       <div class="titlebar-spacer">
-        <span class="top-version">v1.0.0</span>
+        <span class="top-version">v{{ appVersion }}</span>
       </div>
 
       <!-- Header Row 1: Primary Nav (Dark) -->
@@ -187,6 +187,7 @@ const { workspaces, currentWorkspaceId, fetchWorkspaces, createWorkspace } = use
 const { profile, loadProfile, syncProfile } = useProfile();
 const workspaceSettingsModalRef = ref<InstanceType<typeof WorkspaceSettingsModal> | null>(null);
 const userSettingsModalRef = ref<InstanceType<typeof UserSettingsModal> | null>(null);
+const appVersion = ref('');
 
 const currentWorkspace = computed(() => workspaces.value.find(w => w.id === currentWorkspaceId.value));
 
@@ -271,9 +272,8 @@ async function checkSubscription(): Promise<void> {
     if (scrollError && scrollError.code !== 'PGRST116') return;
 
     if (assinatura) {
-      const vencida =
-        assinatura.status === 'cancelado' ||
-        (assinatura.proxima_cobranca && new Date(assinatura.proxima_cobranca) < new Date());
+      const pastDueDate = assinatura.proxima_cobranca && new Date(assinatura.proxima_cobranca) < new Date();
+      const vencida = pastDueDate || (assinatura.status === 'cancelado' && !assinatura.proxima_cobranca);
       if (vencida) router.push('/pending-payment');
     }
   } catch (err) {
@@ -342,6 +342,14 @@ onMounted(async () => {
 
   } catch (error) {
     console.error('Erro ao inicializar dados do usuário e banco:', error);
+  }
+
+  // Busca a versão atual do sistema
+  try {
+    appVersion.value = await window.electronAPI.appVersion();
+  } catch (err) {
+    console.error('Erro ao buscar versão do app:', err);
+    appVersion.value = '1.0.0'; // fallback
   }
 
   // Verifica a assinatura logo após o sync inicial, para redirecionar se venceu agora

@@ -3,6 +3,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 // Expose safe APIs to the frontend
 contextBridge.exposeInMainWorld('electronAPI', {
   ping: () => ipcRenderer.invoke('ping'),
+  appVersion: () => ipcRenderer.invoke('app:getVersion'),
+
   windowMinimize: () => ipcRenderer.send('window-minimize'),
   windowMaximize: () => ipcRenderer.send('window-maximize'),
   windowClose: () => ipcRenderer.send('window-close'),

@@ -25,7 +25,7 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     const {
-      user_id, name, email, document, phone,
+      user_id, accountType, name, tradeName, email, document, phone,
       cep, address, neighborhood, city, state, number, complement,
       coupon_code, // ← novo campo opcional
     } = body;
@@ -72,27 +72,33 @@ Deno.serve(async (req: Request) => {
     const cepClean = String(cep).replace(/\D/g, "");
 
     // ── 1. Create customer in Asaas ──────────────────────────────────────────
+    const customerPayload: any = {
+      name,
+      email,
+      cpfCnpj: cpfCnpjClean,
+      mobilePhone: phoneClean,
+      address,
+      addressNumber: number,
+      complement: complement || "",
+      province: neighborhood,
+      postalCode: cepClean,
+      city,
+      state,
+      country: "BR",
+      notificationDisabled: isFreeAccess, // sem notificações para free
+    };
+
+    if (accountType === 'PJ' && tradeName) {
+      customerPayload.company = tradeName;
+    }
+
     const customerRes = await fetch(`${ASAAS_API_URL}/customers`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "access_token": ASAAS_API_KEY,
       },
-      body: JSON.stringify({
-        name,
-        email,
-        cpfCnpj: cpfCnpjClean,
-        mobilePhone: phoneClean,
-        address,
-        addressNumber: number,
-        complement: complement || "",
-        province: neighborhood,
-        postalCode: cepClean,
-        city,
-        state,
-        country: "BR",
-        notificationDisabled: isFreeAccess, // sem notificações para free
-      }),
+      body: JSON.stringify(customerPayload),
     });
 
     const customerData = await customerRes.json();
@@ -157,6 +163,8 @@ Deno.serve(async (req: Request) => {
       .insert({
         id: user_id,
         nome_completo: name,
+        tipo_pessoa: accountType || 'PF',
+        nome_fantasia: accountType === 'PJ' ? tradeName : null,
         cpf_cnpj: document,
         telefone: phone,
         asaas_cliente_id: asaasClienteId,

@@ -72,6 +72,9 @@
                   </div>
                   <div class="sub-date" v-if="subNextDate && subStatus !== 'FREE_TRIAL'">
                     {{ subStatus === 'cancelado' ? 'Acesso válido até:' : 'Próxima cobrança:' }} <span class="font-semibold">{{ subNextDate }}</span>
+                    <span v-if="daysRemaining !== null" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                      {{ daysRemaining === 0 ? 'Expira hoje' : `Expira em ${daysRemaining} dia${daysRemaining > 1 ? 's' : ''}` }}
+                    </span>
                   </div>
                 </div>
                 <div class="sub-actions flex justify-end mt-2" v-if="subStatus === 'ativo'">
@@ -145,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProfile } from '../composables/useProfile';
 import { supabase } from '../lib/supabase';
@@ -172,6 +175,29 @@ const subPlanName = ref('');
 
 const isCancelingSub = ref(false);
 const confirmingCancelSub = ref(false);
+
+const daysRemaining = computed(() => {
+  if (subStatus.value !== 'cancelado' || !subNextDate.value) return null;
+  
+  const parts = subNextDate.value.split('/');
+  let dateObj: Date;
+  if (parts.length === 3) {
+    dateObj = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+  } else {
+    dateObj = new Date(subNextDate.value);
+  }
+  
+  if (isNaN(dateObj.getTime())) return null;
+  
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  dateObj.setHours(0,0,0,0);
+  
+  const diffTime = dateObj.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays > 0 ? diffDays : 0;
+});
 
 function cancelCancelSub() {
   confirmingCancelSub.value = false;
