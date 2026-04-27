@@ -103,3 +103,6 @@ supabase/seed.sql
 
 # OS
 Thumbs.db
+
+# Supabase temp
+supabase/.temp/
