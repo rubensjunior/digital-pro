@@ -66,7 +66,8 @@
                     Status: 
                     <span v-if="subStatus === 'ativo'" class="text-green-500 font-bold">Ativa</span>
                     <span v-else-if="subStatus === 'cancelado'" class="text-orange-500 font-bold">Cancelada</span>
-                    <span v-else-if="subStatus === 'FREE_TRIAL'" class="text-blue-500 font-bold">Plano Gratuito</span>
+                    <span v-else-if="subStatus === 'FREE_TRIAL' || subStatus === 'gratuito'" class="text-blue-500 font-bold">Plano Gratuito</span>
+                    <span v-else-if="!subStatus" class="text-slate-400 italic">Nenhuma assinatura vinculada</span>
                     <span v-else class="text-slate-500 font-bold">{{ subStatus }}</span>
                   </div>
                   <div class="sub-date" v-if="subNextDate && subStatus !== 'FREE_TRIAL'">
@@ -182,34 +183,46 @@ async function abrirModal() {
   cancelDelete();
   cancelCancelSub();
   
+  // Resetar estados antes da busca
+  userEmail.value = '';
+  subStatus.value = '';
+  subNextDate.value = '';
+  subPlanName.value = '';
+  
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user?.email) {
       userEmail.value = session.user.email;
       
-      const { data: assinatura } = await supabase
+      console.log('[UserSettings] Buscando assinatura para:', session.user.id);
+      const { data: assinatura, error: subError } = await supabase
         .from('assinaturas')
         .select('status, proxima_cobranca, nome_plano')
         .eq('cliente_id', session.user.id)
-        .order('created_at', { ascending: false })
+        .order('criado_em', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle(); // maybeSingle evita erro de 0 rows
         
+      if (subError) {
+        console.error('[UserSettings] Erro na query de assinatura:', subError);
+      }
+
+      console.log('[UserSettings] Resultado assinatura:', assinatura);
+
       if (assinatura) {
         subStatus.value = assinatura.status || '';
         subPlanName.value = assinatura.nome_plano || 'Plano PRO';
         
         if (assinatura.proxima_cobranca) {
-          // Parse da data corretamente
           const parts = assinatura.proxima_cobranca.split('-');
           if (parts.length === 3) {
             subNextDate.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
           } else {
             subNextDate.value = assinatura.proxima_cobranca;
           }
-        } else {
-          subNextDate.value = '';
         }
+      } else {
+        console.warn('[UserSettings] Nenhuma assinatura encontrada para este cliente.');
       }
     }
   } catch(e) {

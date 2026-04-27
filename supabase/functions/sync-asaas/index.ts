@@ -36,7 +36,7 @@ Deno.serve(async (req: Request) => {
       .from("assinaturas")
       .select("id, asaas_assinatura_id, status, proxima_cobranca")
       .eq("cliente_id", userId)
-      .order("created_at", { ascending: false })
+      .order("criado_em", { ascending: false })
       .limit(1)
       .single();
 
