@@ -40,18 +40,22 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Iniciando cancelamento de assinatura para o usuário: ${userId}`);
 
-    // 2. Buscar o ID da assinatura do Asaas na tabela assinaturas
+    // 2. Buscar a assinatura ATIVA do usuário com ID Asaas válido
     const { data: assinatura, error: subError } = await supabaseAdmin
       .from("assinaturas")
       .select("id, asaas_assinatura_id, status")
       .eq("cliente_id", userId)
-      .order("created_at", { ascending: false })
+      .eq("status", "ativo")
+      .not("asaas_assinatura_id", "is", null)
+      .order("criado_em", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (subError && subError.code !== 'PGRST116') {
+    if (subError) {
       console.warn(`Erro ao buscar assinatura no BD: ${subError.message}`);
     }
+
+    console.log(`[cancel-subscription] Assinatura encontrada:`, JSON.stringify(assinatura));
 
     // 3. Cancelar a assinatura no Asaas (se existir)
     let asaasCanceled = false;
