@@ -8,7 +8,7 @@
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
-          Voltar ao Brain Vault
+          Voltar à Base de Ideias
         </button>
         <button class="nn-back-btn" @click="subirNivel" title="Subir Nível">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

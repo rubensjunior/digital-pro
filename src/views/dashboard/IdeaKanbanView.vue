@@ -17,7 +17,7 @@
       </div>
       <div>
         <button class="bv-btn-ghost" @click="voltar">
-          ← Voltar para Brain Vault
+          ← Voltar para Base de Ideias
         </button>
       </div>
     </div>
@@ -102,6 +102,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useTaxonomy } from '../../composables/useTaxonomy';
 import IdeaDetailDrawer from '../../components/IdeaDetailDrawer.vue';
 import IdeaFormModal from '../../components/IdeaFormModal.vue';
+import type { Ideia, IdeiaStatus } from '../../types/ideia';
 
 // ─── Composable ───────────────────────────────────────────────────────────────────
 const { 
@@ -378,7 +379,7 @@ async function onDrop(event: DragEvent, novoStatus: IdeiaStatus) {
 
 .bv-eco-rel { font-size: 10px; color: #8b5cf6; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1; margin-bottom: 4px; }
 
-.bv-kanban-card-desc { font-size: 12.5px; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; line-height: 1.4; }
+.bv-kanban-card-desc { font-size: 12.5px; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; line-height: 1.4; }
 
 .bv-kanban-card-footer {
   display: flex;

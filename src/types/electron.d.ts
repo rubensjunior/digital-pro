@@ -1,4 +1,5 @@
 export interface IElectronAPI {
+  appVersion: () => Promise<string>;
   ping: () => Promise<string>;
   windowMinimize: () => void;
   windowMaximize: () => void;
@@ -10,10 +11,10 @@ export interface IElectronAPI {
   };
 
   ideias: {
-    getAll: (workspace_id?: string) => Promise<any[]>;
-    getHistorico: (id: string) => Promise<any[]>;
-    create: (payload: Record<string, unknown>) => Promise<any>;
-    update: (payload: Record<string, unknown>) => Promise<any>;
+    getAll: (workspace_id?: string) => Promise<Record<string, unknown>[]>;
+    getHistorico: (id: string) => Promise<Record<string, unknown>[]>;
+    create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    update: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
     delete: (id: string) => Promise<boolean>;
     updateStatus: (id: string, status: string) => Promise<boolean>;
     updateAcesso: (id: string) => Promise<boolean>;
@@ -22,65 +23,65 @@ export interface IElectronAPI {
   };
 
   workspaces: {
-    getAll: () => Promise<any[]>;
-    create: (payload: Record<string, unknown>) => Promise<any>;
-    update: (payload: Record<string, unknown>) => Promise<any>;
+    getAll: () => Promise<Record<string, unknown>[]>;
+    create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    update: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
     delete: (id: string) => Promise<boolean>;
-    setupTemplate: (templateId: string) => Promise<any>;
+    setupTemplate: (templateId: string) => Promise<Record<string, unknown>>;
   };
 
   taxonomia: {
     tipos: {
-      getAll: (workspace_id: string) => Promise<any[]>;
-      create: (payload: Record<string, unknown>) => Promise<any>;
-      update: (payload: Record<string, unknown>) => Promise<any>;
+      getAll: (workspace_id: string) => Promise<Record<string, unknown>[]>;
+      create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+      update: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
       delete: (id: string) => Promise<boolean>;
     },
     status: {
-      getAll: (workspace_id: string) => Promise<any[]>;
-      create: (payload: Record<string, unknown>) => Promise<any>;
-      update: (payload: Record<string, unknown>) => Promise<any>;
+      getAll: (workspace_id: string) => Promise<Record<string, unknown>[]>;
+      create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+      update: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
       delete: (id: string) => Promise<boolean>;
     },
     relacionamentos: {
-      getAll: (workspace_id: string) => Promise<any[]>;
-      create: (payload: Record<string, unknown>) => Promise<any>;
-      update: (payload: Record<string, unknown>) => Promise<any>;
+      getAll: (workspace_id: string) => Promise<Record<string, unknown>[]>;
+      create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+      update: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
       delete: (id: string) => Promise<boolean>;
     }
   };
 
   notas: {
-    getAll: (ideia_id: string) => Promise<any[]>;
-    create: (payload: Record<string, unknown>) => Promise<any>;
-    update: (payload: Record<string, unknown>) => Promise<any>;
+    getAll: (ideia_id: string) => Promise<Record<string, unknown>[]>;
+    create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    update: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
     delete: (id: string) => Promise<boolean>;
   };
 
   links: {
-    getAll: (ideia_id: string) => Promise<any[]>;
-    create: (payload: Record<string, unknown>) => Promise<any>;
+    getAll: (ideia_id: string) => Promise<Record<string, unknown>[]>;
+    create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
     delete: (id: string) => Promise<boolean>;
   };
 
   arquivos: {
-    getAll: (ideia_id: string) => Promise<any[]>;
-    save: (ideia_id: string, nome: string, base64: string, tipo: string, tamanho: number) => Promise<any>;
+    getAll: (ideia_id: string) => Promise<Record<string, unknown>[]>;
+    save: (ideia_id: string, nome: string, base64: string, tipo: string, tamanho: number) => Promise<Record<string, unknown>>;
     delete: (id: string) => Promise<boolean>;
     open: (id: string) => Promise<boolean>;
   };
 
   correlacoes: {
-    getAll: (ideia_id: string) => Promise<any[]>;
-    getAllTodos: () => Promise<any[]>;
+    getAll: (ideia_id: string) => Promise<Record<string, unknown>[]>;
+    getAllTodos: () => Promise<Record<string, unknown>[]>;
     create: (payload: Record<string, unknown>) => Promise<boolean>;
     update: (payload: Record<string, unknown>) => Promise<boolean>;
     delete: (id: string) => Promise<boolean>;
   };
   user: {
     initDb: (userId: string) => Promise<boolean>;
-    getProfile: () => Promise<any>;
-    updateProfile: (payload: Record<string, unknown>) => Promise<any>;
+    getProfile: () => Promise<Record<string, unknown>>;
+    updateProfile: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
     selectAvatar: () => Promise<string | null>;
     clearDatabase: () => Promise<{ success: boolean; error?: string }>;
   };

@@ -23,7 +23,7 @@ const requireActivePlan = async () => {
     }
 
     // Se estiver offline, permitimos o acesso baseado na sessão local
-    // (Pois os dados do Brain Vault são locais no SQLite)
+    // (Pois os dados da Base de Ideias são locais no SQLite)
     if (!navigator.onLine) {
       console.log('App em modo offline. Ignorando verificação remota de assinatura.');
       return true;
@@ -130,16 +130,16 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(() => {
   isRouting.value = true;
-  next();
+  return true;
 });
 
 router.afterEach(() => {
   // Pequeno delay para a animação da barra e do overlay ser mais visível e suave
   setTimeout(() => {
     isRouting.value = false;
-  }, 400);
+  }, 2000);
 });
 
 export default router;

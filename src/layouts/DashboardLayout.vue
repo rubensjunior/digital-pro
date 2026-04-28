@@ -89,7 +89,7 @@
               Home
             </router-link>
             <router-link to="/dashboard/ideas" class="nav-tab" active-class="tab-active">
-              Brain Vault
+              Base de Ideias
             </router-link>
           </div>
 
@@ -129,7 +129,7 @@
           </div>
 
           <div class="subheader-right">
-            <!-- Ações dinâmicas injetadas se estiver no Brain Vault -->
+            <!-- Ações dinâmicas injetadas se estiver na Base de Ideias -->
             <template v-if="route.path.includes('/ideas')">
               <div class="subheader-actions">
                 <!-- Botões secundários -->
@@ -231,7 +231,7 @@ const breadcrumbs = computed(() => {
   const crumbs = [{ label: 'Home', path: '/dashboard' }];
   
   if (route.path.includes('/ideas')) {
-    crumbs.push({ label: 'Brain Vault', path: '/dashboard/ideas' });
+    crumbs.push({ label: 'Base de Ideias', path: '/dashboard/ideas' });
   }
   
   return crumbs;
@@ -239,7 +239,7 @@ const breadcrumbs = computed(() => {
 
 const pageTitle = computed(() => {
   if (route.path === '/dashboard') return 'Dashboard';
-  if (route.path.includes('/ideas')) return 'Brain Vault';
+  if (route.path.includes('/ideas')) return 'Base de Ideias';
   return 'Dashboard';
 });
 
