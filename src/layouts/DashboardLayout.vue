@@ -156,9 +156,9 @@
     <!-- Main Content Area -->
     <main class="page-content" :class="{ 'no-padding': isCanvasLayout }">
       <div v-if="!isCanvasLayout" class="page-container">
-        <router-view />
+        <router-view :key="currentWorkspaceId || 'no-ws'" />
       </div>
-      <router-view v-else />
+      <router-view v-else :key="currentWorkspaceId || 'no-ws'" />
     </main>
     
     <WorkspaceSettingsModal ref="workspaceSettingsModalRef" />
@@ -167,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useTheme } from '../composables/useTheme';
 import { supabase } from '../lib/supabase';
@@ -178,6 +178,7 @@ import { useIdeias } from '../composables/useIdeias';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal.vue';
 import UserSettingsModal from '../components/UserSettingsModal.vue';
 import { useProfile } from '../composables/useProfile';
+import { isRouting } from '../router/index';
 
 const router = useRouter();
 const route = useRoute();
@@ -190,6 +191,15 @@ const userSettingsModalRef = ref<InstanceType<typeof UserSettingsModal> | null>(
 const appVersion = ref('');
 
 const currentWorkspace = computed(() => workspaces.value.find(w => w.id === currentWorkspaceId.value));
+
+watch(currentWorkspaceId, (newId, oldId) => {
+  if (newId && oldId && newId !== oldId) {
+    isRouting.value = true;
+    setTimeout(() => {
+      isRouting.value = false;
+    }, 400);
+  }
+});
 
 function handleOpenUserSettings() {
   userSettingsModalRef.value?.abrirModal();

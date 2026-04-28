@@ -114,8 +114,7 @@ const closeApp = () => {
   left: 0;
   width: 100vw;
   height: calc(100vh - 32px);
-  background: rgba(248, 250, 252, 0.5);
-  backdrop-filter: blur(4px);
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
