@@ -1,318 +1,429 @@
 <template>
-  <div class="manual-grid-layout">
-    <div class="manual-grid-content">
-      <!-- Coluna Principal: FLUXO DE TRABALHO -->
-      <section class="manual-card-box workflow-card">
-        <div class="section-header">
-          <h2 class="section-title">Fluxo de Trabalho Estratégico</h2>
-          <p class="section-desc">Siga o roteiro para transformar ideias em inteligência estratégica.</p>
-        </div>
+  <div class="wiki-base-container">
+    <div class="wiki-hero-banner">
+      <div class="hero-content">
+        <h1 class="hero-title">Guia Definitivo do Digital PRO</h1>
+        <p class="hero-subtitle">Mergulhe em nossa filosofia de gestão através de um caso real de Implantação de E-commerce. Você senta. Olha para a tela. E a produtividade acontece.</p>
+      </div>
+    </div>
 
-        <div class="workflow-grid-details">
-          <div v-for="(step, index) in workflowSteps" :key="index" class="detailed-step-item" :style="{ '--step-color': step.color }">
-            <div class="step-header">
-              <div class="step-icon-circle" :style="{ backgroundColor: step.color + '15', color: step.color }">
-                <div class="icon-inner" v-html="step.icon"></div>
-              </div>
-              <h3 class="step-name">{{ step.title }}</h3>
-            </div>
-            <div class="step-body">
-              <p class="step-description">{{ step.description }}</p>
-              <ul class="step-features">
-                <li v-for="feature in step.features" :key="feature">{{ feature }}</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Coluna Lateral -->
-      <aside class="sidebar-column">
-        <!-- Glossário com Carrossel -->
-        <div class="manual-card-box glossary-card">
-          <div class="section-header glossary-header">
-            <h2 class="section-title">Glossário</h2>
-            <div class="carousel-nav">
-              <button @click="prevGlossary" class="nav-btn" :disabled="currentGlossaryIndex === 0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 19l-7-7 7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <button @click="nextGlossary" class="nav-btn" :disabled="currentGlossaryIndex >= glossaryItems.length - 2">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="glossary-carousel-viewport">
-            <div class="glossary-items-wrapper">
-              <div v-for="item in visibleGlossaryItems" :key="item.title" class="glossary-expanded-item" :style="{ '--color': item.color }">
-                <div class="item-top">
-                  <div class="mini-icon-box" v-html="item.icon"></div>
-                  <strong>{{ item.title }}</strong>
-                </div>
-                <p class="item-desc-long">{{ item.description }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="carousel-dots">
-            <span v-for="i in Math.ceil(glossaryItems.length / 2)" :key="i" class="dot" :class="{ active: Math.floor(currentGlossaryIndex / 2) === i - 1 }"></span>
-          </div>
-        </div>
-
-        <!-- Segurança (Destaque Máximo) -->
-        <div class="manual-card-box security-highlight-card">
-          <div class="section-header">
-            <h2 class="section-title">Segurança de Dados</h2>
-          </div>
-          <div class="security-detailed-content">
-            <div class="security-hero-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="security-info-group">
-              <div class="sec-detail-item">
-                <strong>Privacidade Radical (Offline-First)</strong>
-                <p>Diferente de outras ferramentas, seus dados <strong>nunca</strong> saem do seu computador. A Base de Ideias é um banco de dados local criptografado.</p>
-              </div>
-              <div class="sec-detail-item warning-item">
-                <div class="warning-badge">IMPORTANTE</div>
-                <strong>Cuidado com seu Patrimônio</strong>
-                <p>Como o armazenamento é local, se o seu computador falhar, seus dados podem ser perdidos. Faça <strong>backups regulares</strong> exportando sua base.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div class="wiki-layout-grid">
+      <!-- Sidebar / Sumário -->
+      <aside class="wiki-sidebar">
+        <h3 class="sidebar-title">Sumário</h3>
+        <nav class="wiki-nav-menu">
+          <button 
+            v-for="tab in tabs" 
+            :key="tab.id" 
+            @click="activeTab = tab.id"
+            :class="['wiki-nav-btn', { active: activeTab === tab.id }]"
+          >
+            <span class="nav-icon" v-html="tab.icon"></span>
+            {{ tab.label }}
+          </button>
+        </nav>
       </aside>
+
+      <!-- Main Content / Viewport -->
+      <main class="wiki-content-area">
+        
+        <!-- Tab 1: Filosofia -->
+        <div v-if="activeTab === 'intro'" class="wiki-pane fade-in">
+          <h2 class="wiki-h2">1. A Filosofia: O seu "Segundo Cérebro"</h2>
+          <p class="wiki-p">
+            A maioria das ferramentas de produtividade falha por um motivo simples: elas forçam você a listar tarefas em uma única dimensão plana. O Digital PRO nasceu de uma filosofia diferente. Ele atua como um verdadeiro <strong>Segundo Cérebro</strong> para você e sua equipe.
+          </p>
+          <p class="wiki-p">
+            Nós acreditamos que ecossistemas grandiosos — como lançar uma nova marca ou implantar um grande E-commerce — não podem ser traduzidos em simples "checklists". Eles precisam de um ambiente tridimensional, onde as informações convergem, se correlacionam e evoluem sem poluição visual.
+          </p>
+          <div class="wiki-alert info-alert">
+            <strong>Dica de Ouro:</strong> No Digital PRO, esqueça os nomes "projetos", "tarefas" ou "pastas". Aqui, <b>absolutamente tudo é uma "Ideia"</b>. O E-commerce inteiro é uma Ideia. A fase de contratação é uma Ideia. A tarefa de recortar o fundo de uma foto é uma Ideia. O que muda é apenas o nível de profundidade em que elas se encontram.
+          </div>
+        </div>
+
+        <!-- Tab 2: Árvores -->
+        <div v-if="activeTab === 'hierarchy'" class="wiki-pane fade-in">
+          <h2 class="wiki-h2">2. Hierarquia Infinita (Árvores)</h2>
+          <p class="wiki-p">
+            Em vez de uma tela bagunçada com centenas de cards, você organiza a informação criando um modelo mental de <strong>Pais, Filhos e Netos</strong>. Você começa no macro e vai quebrando o problema até chegar no micro, em camadas infinitas.
+          </p>
+          <p class="wiki-p">
+            Na prática: Você cria a Ideia Pai no painel. Depois, você "entra" nela (com um clique simples) e cria suas Ideias Filhas. Você entra nas filhas, e cria os Netos. É assim que o escopo colossal de um E-commerce se torna extremamente gerenciável.
+          </p>
+          
+          <div class="wiki-example-box">
+            <h4 class="example-title">📦 O E-commerce Desdobrado</h4>
+            <p class="wiki-p-sm">Veja como a implantação é quebrada estruturalmente. Cada nível para baixo é um "mergulho" (clique) a mais que você dá na interface:</p>
+            <ul class="tree-view-list">
+              <li><span class="tag tag-root">Projeto Raiz Pai</span> <strong>Implantação Nova Marca: AtletaPro Fitness</strong>
+                <ul>
+                  <li><span class="tag tag-phase">Fase 1 (Filho)</span> <strong>Infraestrutura e Tecnologia</strong>
+                    <ul>
+                      <li><span class="tag tag-task">Tarefa (Neto)</span> Setup Inicial da Loja (Shopify)
+                        <ul>
+                          <li><span class="tag tag-subtask">Subtarefa (Bisneto)</span> Integração de Gateway (Mercado Pago)</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                  <li><span class="tag tag-phase">Fase 2 (Filho)</span> <strong>Catálogo e Design</strong>
+                    <ul>
+                      <li><span class="tag tag-task">Tarefa (Neto)</span> Sessão de Fotos (Shooting de Verão)</li>
+                      <li><span class="tag tag-task">Tarefa (Neto)</span> Cadastro de 50 SKUs Iniciais</li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 3: Taxonomia -->
+        <div v-if="activeTab === 'types'" class="wiki-pane fade-in">
+          <h2 class="wiki-h2">3. Taxonomia e Identidade (Tipos)</h2>
+          <p class="wiki-p">
+            O cérebro humano processa cores e formas 60.000 vezes mais rápido que textos. Por isso, no Digital PRO nós abolimos a necessidade de você ler card por card para entender do que se trata.
+          </p>
+          <p class="wiki-p">
+            Ao criar uma Ideia, você atribui um <strong>Tipo</strong> a ela. O Tipo encapsula uma cor vibrante e um ícone representativo. Isso transforma o seu painel em um mapa de calor visual onde o "contexto" da tarefa é transmitido de forma instantânea.
+          </p>
+          <div class="wiki-example-box">
+            <h4 class="example-title">🎨 A Identidade do E-commerce</h4>
+            <p class="wiki-p-sm">Durante a implantação, você classificará as tarefas da seguinte forma:</p>
+            <ul class="wiki-bullet-list">
+              <li>A etapa de "Integração de Gateway" e "Setup de Domínio" recebem o tipo <b>⚙️ Tecnologia (Cinza Escuro)</b>. A equipe de TI bate o olho e já sabe que aquilo é de responsabilidade deles.</li>
+              <li>A tarefa "Cadastro de SKUs" e "Descrição Técnica" recebem o tipo <b>📦 Catálogo (Verde)</b>.</li>
+              <li>As "Campanhas de Lançamento" e "Copywriter" recebem o tipo <b>📺 Marketing (Roxo)</b>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 4: Kanban -->
+        <div v-if="activeTab === 'kanban'" class="wiki-pane fade-in">
+          <h2 class="wiki-h2">4. Controle Pelo Kanban (Status)</h2>
+          <p class="wiki-p">
+            A vida de um projeto não é estática. Ele respira e flui. O Status (apresentado no formato clássico de Kanban) ajuda você e sua equipe a arrastarem fisicamente as Ideias pelo pipeline de execução.
+          </p>
+          <p class="wiki-p">
+            Diferente de sistemas rígidos, você tem a liberdade de ajustar suas colunas de acordo com o ritmo do seu negócio, controlando desde a etapa da idealização até a glória da entrega final.
+          </p>
+          <div class="wiki-example-box">
+            <h4 class="example-title">📈 O Fluxo da Implantação</h4>
+            <p class="wiki-p-sm">No nosso template de E-commerce, o ciclo de vida funciona assim:</p>
+            <p class="wiki-p-sm">As necessidades nascem na coluna de <strong>Planejamento / Briefing</strong>. Quando você terceiriza algo (como um fotógrafo), a Ideia é movida para <strong>Aguardando Ativos</strong>. Assim que o material chega, o card vai para <strong>Em Configuração / Setup</strong>. Antes da loja ir pro ar, os testes ocorrem na coluna de <strong>Homologação (QA)</strong> e, quando o dinheiro já pode cair na conta, a Ideia repousa eternamente em <strong>Publicado / Integrado</strong>.</p>
+          </div>
+        </div>
+
+        <!-- Tab 5: Correlações -->
+        <div v-if="activeTab === 'correlations'" class="wiki-pane fade-in">
+          <h2 class="wiki-h2">5. A Mágica das Correlações</h2>
+          <p class="wiki-p">
+            O seu negócio real não acontece em caixas isoladas. O time de design sofre quando o time de copywriter atrasa os textos. O Digital PRO resolve a cegueira de dependências corporativas usando <strong>Correlações Lógicas</strong>.
+          </p>
+          <p class="wiki-p">
+            Acessando os detalhes de uma Ideia, você pode interligá-la a outra, informando ao sistema a natureza emocional ou logística dessa união. O sistema alertará automaticamente sobre os impactos de atrasos ou exclusões.
+          </p>
+          <div class="wiki-example-box border-warning">
+            <h4 class="example-title">⚠️ Identificando Gargalos Antes de Explodirem</h4>
+            <ul class="wiki-bullet-list">
+              <li>A <b>"Sessão de Fotos"</b> recebe a correlação <span class="badge-red">Bloqueia</span> o <b>"Cadastro de 50 SKUs"</b>. É logicamente impossível cadastrar um produto sem a foto do mesmo prontas.</li>
+              <li>A <b>"Integração do Gateway"</b> recebe a correlação <span class="badge-purple">Depende de</span> o cálculo de frete estar devidamente testado na plataforma, prevenindo que o cliente compre sem poder receber.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 6: Foco Vertical -->
+        <div v-if="activeTab === 'focus'" class="wiki-pane fade-in">
+          <h2 class="wiki-h2">6. Foco Vertical (O Poder da Visão Limpa)</h2>
+          <p class="wiki-p">
+            O grande colapso das ferramentas tradicionais é o ruído. Quando a Implantação do seu E-commerce tiver mais de 200 tarefas mapeadas, olhar para o quadro principal causará ansiedade. É aqui que entra o nosso conceito de <strong>Foco Vertical</strong>.
+          </p>
+          <p class="wiki-p">
+            Você não precisa ver a árvore inteira o tempo todo. Você pode clicar no título de qualquer "Fase" ou "Subfase" e o sistema dará um "zoom in" imediato.
+          </p>
+          <div class="wiki-alert info-alert">
+            <strong>Modo Túnel:</strong> Ao focar na <em>"Fase 2: Catálogo"</em>, todo o ecossistema de TI, Marketing e Infraestrutura desaparecem da sua tela. O painel se reinicia exibindo unica e exclusivamente as tarefas da equipe de design. Reduza a poluição visual, acabe com as distrações e execute a sua próxima ação com extrema clareza mental.
+          </div>
+        </div>
+
+        <!-- Tab 7: Glossário -->
+        <div v-if="activeTab === 'glossary'" class="wiki-pane fade-in">
+          <h2 class="wiki-h2">Glossário Rápido da Interface</h2>
+          <div class="glossary-grid">
+            <div class="glossary-card">
+              <div class="gl-card-header text-indigo-500">
+                <span v-html="tabs.find(t=>t.id==='glossary')?.icon"></span>
+                <strong>Workspace</strong>
+              </div>
+              <p>Sua "Área de Trabalho". Contêiner onde um ecossistema vive sob as mesmas regras visuais.</p>
+            </div>
+            <div class="glossary-card">
+              <div class="gl-card-header text-emerald-500">
+                <span v-html="tabs.find(t=>t.id==='hierarchy')?.icon"></span>
+                <strong>Ideia</strong>
+              </div>
+              <p>A unidade básica. Tudo no sistema é uma Ideia (projetos, tarefas, notas, etc).</p>
+            </div>
+            <div class="glossary-card">
+              <div class="gl-card-header text-blue-500">
+                <span v-html="tabs.find(t=>t.id==='types')?.icon"></span>
+                <strong>Tipo</strong>
+              </div>
+              <p>Categoria visual (ícone/cor) que dá identidade a uma Ideia para leitura imediata.</p>
+            </div>
+            <div class="glossary-card">
+              <div class="gl-card-header text-purple-500">
+                <span v-html="tabs.find(t=>t.id==='kanban')?.icon"></span>
+                <strong>Status (Kanban)</strong>
+              </div>
+              <p>Mostra em qual etapa do funil a Ideia está aguardando ou operando.</p>
+            </div>
+            <div class="glossary-card">
+              <div class="gl-card-header text-amber-500">
+                <span v-html="tabs.find(t=>t.id==='correlations')?.icon"></span>
+                <strong>Relacionamentos</strong>
+              </div>
+              <p>O que conecta duas Ideias. Ajuda a prever quem bloqueia ou acelera quem.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 8: Segurança -->
+        <div v-if="activeTab === 'security'" class="wiki-pane fade-in">
+          <div class="security-banner">
+            <div class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div>
+            <h3 class="sec-title">Privacidade Offline-First</h3>
+            <p class="sec-p">Diferente de sistemas web comuns, sua Base de Ideias é um banco criptografado local.<br/><strong>Os dados nunca saem do seu computador.</strong></p>
+          </div>
+          <div class="wiki-alert warning-alert mt-6">
+            <strong>⚠️ Atenção a Backups:</strong> Se o seu computador estragar, não temos cópias na nuvem. Nós garantimos a privacidade não monitorando nada. Em contrapartida, você precisa lembrar de acessar as configurações e exportar a sua base frequentemente.
+          </div>
+        </div>
+
+      </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 
-const currentGlossaryIndex = ref(0);
+const activeTab = ref('intro');
 
-const workflowSteps = [
-  {
-    title: '1. Prepare seu Espaço',
-    description: 'Tudo começa com a organização. O Workspace é a "casa" do seu projeto, onde você define sobre o que vai falar e quem quer atingir.',
-    color: '#3b82f6',
-    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>`,
-    features: ['Escolha o tema do projeto', 'Defina seu público (Avatar)', 'Crie as regras de organização', 'Isole dados por projeto']
-  },
-  {
-    title: '2. Colha suas Ideias',
-    description: 'Não deixe nenhum insight escapar. A Captura é o ato de registrar termos e conceitos importantes conforme eles surgem.',
-    color: '#10b981',
-    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>`,
-    features: ['Dê um nome para a ideia', 'Classifique o que ela é', 'Marque a maturidade (Status)', 'Adicione notas rápidas']
-  },
-  {
-    title: '3. Crie Profundidade',
-    description: 'Uma ideia grande sempre tem partes menores. Use a Ramificação para detalhar e criar "filhos" para suas ideias principais.',
-    color: '#8b5cf6',
-    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>`,
-    features: ['Divida temas complexos', 'Crie sub-categorias lógicas', 'Organize em árvores', 'Evolução de conceitos']
-  },
-  {
-    title: '4. Ligue os Pontos',
-    description: 'A mágica acontece aqui. Conecte ideias de lugares diferentes para criar uma rede de conhecimento inteligente.',
-    color: '#f59e0b',
-    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/></svg>`,
-    features: ['Pontes inter-ecossistemas', 'Descubra relações ocultas', 'Enxergue o quadro completo', 'Gere insights inovadores']
-  }
+const tabs = [
+  { id: 'intro', label: '1. A Filosofia e Conceitos', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  { id: 'hierarchy', label: '2. Hierarquia (Árvores)', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  { id: 'types', label: '3. Taxonomia (Tipos)', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 7h10M7 12h10m-10 5h10" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  { id: 'kanban', label: '4. Controle por Status', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  { id: 'correlations', label: '5. Mágica das Correlações', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  { id: 'focus', label: '6. O Foco Vertical', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  { id: 'glossary', label: 'Glossário da Interface', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+  { id: 'security', label: 'Segurança de Dados', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
 ];
-
-const glossaryItems = [
-  { 
-    title: 'Base de Ideias', 
-    color: '#6366f1', 
-    description: 'O Coração do Digital PRO. Imagine um cofre digital onde cada fragmento da sua inteligência é guardado com segurança máxima. É onde toda a sua base reside.', 
-    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>` 
-  },
-  { 
-    title: 'Tipos', 
-    color: '#3b82f6', 
-    description: 'A Identidade da Informação. Classifique se o registro é uma Persona, um Produto ou uma Estratégia. Isso ajuda a organizar seu pensamento de forma lógica.', 
-    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 7h10M7 12h10m-10 5h10"/></svg>` 
-  },
-  { 
-    title: 'Status', 
-    color: '#10b981', 
-    description: 'O Ciclo de Vida da Ideia. Saiba se o conceito é apenas um rascunho rápido ou algo pronto para execução. Ajuda a priorizar o que realmente importa.', 
-    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>` 
-  },
-  { 
-    title: 'Ecossistema', 
-    color: '#8b5cf6', 
-    description: 'O Jardim do Conhecimento. Uma ideia central e todas as suas ramificações. Agrupe assuntos relacionados para aprofundar temas sem perder o foco.', 
-    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>` 
-  },
-  { 
-    title: 'Conexões', 
-    color: '#f59e0b', 
-    description: 'Pontes de Inteligência. Ligue ideias de ecossistemas diferentes. Isso cria uma teia orgânica, simulando como o cérebro humano realmente funciona.', 
-    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0"/></svg>` 
-  },
-  { 
-    title: 'Rede Neural', 
-    color: '#06b6d4', 
-    description: 'O Mapa da Mente. Uma visão dinâmica onde as ideias flutuam e se conectam. Perfeito para descobrir padrões invisíveis em listas comuns.', 
-    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4a8 8 0 100 16 8 8 0 000-16z"/></svg>` 
-  }
-];
-
-const visibleGlossaryItems = computed(() => {
-  return glossaryItems.slice(currentGlossaryIndex.value, currentGlossaryIndex.value + 2);
-});
-
-function nextGlossary() {
-  if (currentGlossaryIndex.value < glossaryItems.length - 2) {
-    currentGlossaryIndex.value += 2;
-  }
-}
-
-function prevGlossary() {
-  if (currentGlossaryIndex.value > 0) {
-    currentGlossaryIndex.value -= 2;
-  }
-}
 </script>
 
 <style scoped>
-.manual-grid-layout {
+.wiki-base-container {
+  padding: 10px 0 60px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Hero Banner Solid Style */
+.wiki-hero-banner {
+  position: relative;
+  min-height: 250px;
+  border-radius: 16px;
+  margin-bottom: 40px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding: 10px 0 40px;
+  justify-content: center;
+  padding: 48px;
+  background-color: #3b82f6;
+  box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.3);
 }
 
-.manual-grid-content {
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+}
+
+.hero-title {
+  color: #ffffff;
+  font-size: 40px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16.5px;
+  line-height: 1.6;
+  margin: 0;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+}
+
+/* Grid Layout */
+.wiki-layout-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 24px;
-  align-items: flex-start;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: start;
 }
 
-.manual-card-box {
+/* Sidebar Menu */
+.wiki-sidebar {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  margin: 0 0 16px 12px;
+}
+
+.wiki-nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wiki-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wiki-nav-btn:hover {
+  background: rgba(148, 163, 184, 0.05);
+  color: var(--text-primary);
+}
+
+.wiki-nav-btn.active {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.nav-icon { display: flex; align-items: center; justify-content: center; }
+.nav-icon svg { width: 18px; height: 18px; }
+.wiki-nav-btn.active .nav-icon { color: var(--accent); }
+
+/* Main Area */
+.wiki-content-area {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 4px 20px -12px rgba(0,0,0,0.05);
+  padding: 40px 48px;
+  min-height: 500px; /* Evita que a tela pule bruscamente */
+  box-shadow: 0 4px 20px -12px rgba(0,0,0,0.04);
 }
 
-.section-header { margin-bottom: 24px; }
-.section-title { font-size: 19px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px; }
-.section-desc { font-size: 13px; color: var(--text-secondary); }
-
-/* Workflow */
-.workflow-grid-details {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
+/* Animations & Panes */
+.fade-in { animation: fadeIn 0.3s ease forwards; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.detailed-step-item {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 20px;
-  background: rgba(var(--step-color-rgb, 148, 163, 184), 0.02);
-  border: 1px solid var(--border);
-  transition: all 0.3s ease;
-}
+/* Text Content Formats */
+.wiki-h2 { font-size: 22px; font-weight: 800; color: var(--text-primary); margin: 0 0 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.wiki-p { font-size: 15.5px; line-height: 1.75; color: var(--text-secondary); margin: 0 0 24px; }
+.wiki-p-sm { font-size: 14.5px; color: var(--text-secondary); margin: 0 0 16px; }
 
-.detailed-step-item:hover {
-  border-color: var(--step-color);
-  background: var(--surface);
-  transform: translateY(-4px);
-}
+/* Alerts */
+.wiki-alert { padding: 18px 24px; border-radius: 16px; font-size: 14.5px; line-height: 1.6; }
+.info-alert { background: rgba(59, 130, 246, 0.08); border-left: 4px solid #3b82f6; color: var(--text-primary); }
+.warning-alert { background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; color: var(--text-primary); }
+.mt-6 { margin-top: 24px; }
 
-.step-header { display: flex; align-items: center; gap: 12px; }
-.step-icon-circle { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-.step-name { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0; }
-.step-description { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
-.step-features { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
-.step-features li { font-size: 11.5px; color: var(--text-primary); position: relative; padding-left: 14px; }
-.step-features li::before { content: ''; position: absolute; left: 0; top: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--step-color); opacity: 0.6; }
-
-/* Glossary Carousel */
-.glossary-header { display: flex; justify-content: space-between; align-items: center; }
-.carousel-nav { display: flex; gap: 8px; }
-.nav-btn {
-  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--text-primary); cursor: pointer;
-  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-}
-.nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.nav-btn svg { width: 16px; height: 16px; }
-
-.glossary-carousel-viewport { overflow: hidden; min-height: 220px; }
-.glossary-items-wrapper { display: flex; flex-direction: column; gap: 16px; }
-
-.glossary-expanded-item {
-  padding: 20px;
+/* Exemplo Box */
+.wiki-example-box {
   background: rgba(148, 163, 184, 0.03);
   border: 1px solid var(--border);
   border-radius: 16px;
+  padding: 28px;
+  margin-top: 24px;
+}
+.border-warning { border-left: 4px solid #f59e0b; }
+.example-title { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+
+/* Bullet list (Taxonomia / Correlação) */
+.wiki-bullet-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.wiki-bullet-list li { font-size: 14.5px; color: var(--text-primary); line-height: 1.6; position: relative; padding-left: 20px; }
+.wiki-bullet-list li::before { content: ''; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--text-secondary); opacity: 0.5; }
+
+/* Tree List */
+.tree-view-list { list-style: none; padding: 0; margin: 0; }
+.tree-view-list ul { list-style: none; padding-left: 32px; margin-top: 12px; border-left: 1px solid var(--border); position: relative; }
+.tree-view-list li { margin-bottom: 16px; position: relative; font-size: 14.5px; color: var(--text-primary); line-height: 1.6; display: block; }
+.tree-view-list li::before { content: ''; position: absolute; left: -32px; top: 12px; width: 24px; height: 1px; background: var(--border); }
+.tree-view-list > li::before { display: none; }
+
+.tag { display: inline-block; padding: 2px 8px; color: white; border-radius: 6px; font-size: 11px; font-weight: 700; margin-right: 8px; margin-bottom: 4px; vertical-align: middle; }
+.tag-root { background: #8b5cf6; }
+.tag-phase { background: #3b82f6; }
+.tag-task { background: #10b981; }
+.tag-subtask { background: #f59e0b; }
+
+.badge-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+.badge-purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+
+/* Glossário Grid */
+.glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.glossary-card {
+  background: rgba(148, 163, 184, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+.gl-card-header { display: flex; align-items: center; gap: 10px; font-size: 15px; margin-bottom: 12px; }
+.gl-card-header svg { width: 20px; height: 20px; }
+.glossary-card p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+
+/* Security Tab */
+.security-banner {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  border-radius: 20px;
+  padding: 40px;
+  color: white;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
 }
+.sec-icon { width: 64px; height: 64px; background: rgba(255,255,255,0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #10b981; margin-bottom: 24px; }
+.sec-icon svg { width: 32px; height: 32px; }
+.sec-title { font-size: 22px; font-weight: 800; margin: 0 0 16px; }
+.sec-p { font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.8); margin: 0; }
 
-.item-top { display: flex; align-items: center; gap: 12px; }
-.mini-icon-box { width: 32px; height: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--color); }
-.item-top strong { font-size: 14px; color: var(--text-primary); }
-.item-desc-long { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
-
-.carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
-.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
-.dot.active { width: 18px; background: var(--accent); border-radius: 10px; }
-
-/* Security Highlight */
-.security-highlight-card {
-  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-  border: none;
-  color: white;
-}
-
-.security-highlight-card .section-title { color: white; }
-
-.security-hero-icon {
-  width: 56px; height: 56px; background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 16px; color: #10b981;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 24px;
-}
-
-.security-hero-icon svg { width: 32px; height: 32px; }
-
-.security-info-group { display: flex; flex-direction: column; gap: 24px; }
-
-.sec-detail-item strong { display: block; font-size: 14px; color: #fff; margin-bottom: 6px; }
-.sec-detail-item p { font-size: 12.5px; color: rgba(255,255,255,0.7); line-height: 1.6; margin: 0; }
-
-.warning-item {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  padding: 16px;
-  border-radius: 12px;
-}
-
-.warning-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  background: #f59e0b;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 800;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-@media (max-width: 1100px) {
-  .manual-grid-content { grid-template-columns: 1fr; }
+@media (max-width: 900px) {
+  .wiki-layout-grid { grid-template-columns: 1fr; }
+  .wiki-sidebar { position: relative; top: 0; }
+  .wiki-nav-menu { flex-direction: row; flex-wrap: wrap; }
 }
 </style>
