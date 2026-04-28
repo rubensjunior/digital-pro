@@ -17,10 +17,24 @@
     </div>
   </div>
 
+  <!-- Global Top Progress Bar -->
+  <div class="global-loader-bar" :class="{ 'is-loading': isRouting }"></div>
+
   <!-- Main Router View -->
   <main id="app-router">
-    <router-view class="router-view-fill"></router-view>
+    <router-view v-slot="{ Component }">
+      <transition name="page-fade" mode="out-in">
+        <component :is="Component" class="router-view-fill" />
+      </transition>
+    </router-view>
   </main>
+
+  <!-- Global Loading Overlay -->
+  <transition name="fade">
+    <div v-if="isRouting" class="global-loading-overlay">
+      <div class="spinner"></div>
+    </div>
+  </transition>
 
   <ConfirmModal 
     :show="show"
@@ -39,6 +53,7 @@
 <script setup lang="ts">
 import { useConfirm } from './composables/useConfirm';
 import ConfirmModal from './components/ConfirmModal.vue';
+import { isRouting } from './router/index';
 
 const { show, options, handleConfirm, handleCancel } = useConfirm();
 
@@ -69,5 +84,81 @@ const closeApp = () => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* --- Global Loading & Transitions --- */
+
+/* Top Progress Bar */
+.global-loader-bar {
+  position: fixed;
+  top: 32px; /* Altura do titlebar */
+  left: 0;
+  height: 3px;
+  background: #3b82f6;
+  width: 0%;
+  z-index: 9999;
+  transition: width 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.global-loader-bar.is-loading {
+  width: 100%;
+  opacity: 1;
+  transition: width 2s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.1s ease;
+}
+
+/* Spinner Overlay */
+.global-loading-overlay {
+  position: fixed;
+  top: 32px;
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 32px);
+  background: rgba(248, 250, 252, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(59, 130, 246, 0.2);
+  border-left-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Page Transitions */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
+import { ref } from 'vue';
 import { supabase } from '../lib/supabase';
 import Login from '../views/Login.vue';
 import Signup from '../views/Signup.vue';
@@ -96,6 +97,8 @@ const requireActivePlan = async () => {
   }
 };
 
+export const isRouting = ref(false);
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -125,6 +128,18 @@ const router = createRouter({
       ],
     },
   ],
+});
+
+router.beforeEach((to, from, next) => {
+  isRouting.value = true;
+  next();
+});
+
+router.afterEach(() => {
+  // Pequeno delay para a animação da barra e do overlay ser mais visível e suave
+  setTimeout(() => {
+    isRouting.value = false;
+  }, 400);
 });
 
 export default router;

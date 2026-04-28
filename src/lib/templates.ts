@@ -2,17 +2,18 @@ export const TEMPLATES = [
   {
     id: 'marketing',
     name: 'Marketing & Infoprodutos',
-    description: 'Focado em funis de vendas de alta conversão, copywriting estratégico e escala de produtos digitais.',
+    description: 'Inclui exemplo real de Lançamento Interno. Estruturas completas para funis, copy, tráfego e conteúdo.',
     color: '#f59e0b',
     icon: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>',
-    tags: ['Lançamento', 'Copywriting', 'Estratégia'],
+    tags: ['Exemplo Real', 'Lançamentos', 'Funis', 'Copywriting', 'Tráfego'],
     relacionamentos: [
       { label: 'Upsell de', color: '#f59e0b' },
       { label: 'Downsell de', color: '#ef4444' },
       { label: 'Order bump de', color: '#10b981' },
-      { label: 'Bônus de', color: '#8b5cf6' },
-      { label: 'Anúncio de', color: '#3b82f6' },
+      { label: 'Isca de', color: '#3b82f6' },
       { label: 'Página de', color: '#6366f1' },
+      { label: 'Anúncio de', color: '#8b5cf6' },
+      { label: 'E-mail de', color: '#ec4899' },
       { label: 'Outro', color: '#64748b' }
     ]
   },
@@ -62,6 +63,39 @@ export const TEMPLATES = [
       { label: 'Contradiz', color: '#ef4444' },
       { label: 'Corrobora', color: '#10b981' },
       { label: 'Prática de', color: '#f59e0b' },
+    ]
+  },
+  {
+    id: 'lowticket_funnel',
+    name: 'Funil Low-Ticket (Alta Escala)',
+    description: 'Estrutura avançada de 5 camadas para funis de baixo custo focados em escalar volume de clientes pagantes com alta conversão em Upsells e Downsells.',
+    color: '#8b5cf6',
+    icon: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
+    tags: ['Low-Ticket', 'Order Bump', 'Upsell/Downsell', 'Aquisição', 'Alta Escala'],
+    relacionamentos: [
+      { label: 'Upsell de', color: '#f59e0b' },
+      { label: 'Downsell de', color: '#ef4444' },
+      { label: 'Order bump de', color: '#10b981' },
+      { label: 'Tráfego para', color: '#3b82f6' },
+      { label: 'Página de', color: '#6366f1' },
+      { label: 'Página de', color: '#6366f1' },
+      { label: 'E-mail de', color: '#ec4899' },
+      { label: 'Outro', color: '#64748b' }
+    ]
+  },
+  {
+    id: 'ecommerce_setup',
+    name: 'Implantação de E-commerce',
+    description: 'Roadmap de ponta a ponta: do Planejamento e Escolha de Plataforma até a Configuração, Catálogo, ERP e Go-to-Market.',
+    color: '#14b8a6',
+    icon: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>',
+    tags: ['E-commerce', 'Roadmap', 'Plataforma', 'Logística', 'Catálogo'],
+    relacionamentos: [
+      { label: 'Bloqueia', color: '#ef4444' },
+      { label: 'Pré-requisito de', color: '#f59e0b' },
+      { label: 'Integrado com', color: '#10b981' },
+      { label: 'Aprovado por', color: '#3b82f6' },
+      { label: 'Depende de', color: '#8b5cf6' },
       { label: 'Relacionado', color: '#64748b' }
     ]
   }

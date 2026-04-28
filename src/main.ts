@@ -392,39 +392,224 @@ function registerIdeiaHandlers() {
           name = 'Marketing & Infoprodutos';
           color = '#f59e0b';
           types = [
-            { label: 'Produto', grupo: '📣 Ofertas' },
+            { label: 'Produto Principal', grupo: '📦 Produtos' },
+            { label: 'Isca Digital', grupo: '📦 Produtos' },
+            { label: 'Order Bump', grupo: '📦 Produtos' },
+            { label: 'Upsell', grupo: '📦 Produtos' },
+            { label: 'Lançamento', grupo: '📈 Estratégia' },
+            { label: 'Funil Perpétuo', grupo: '📈 Estratégia' },
             { label: 'VSL (Vídeo de Vendas)', grupo: '🎬 Conteúdo' },
-            { label: 'Headline', grupo: '✍️ Copywriting' },
-            { label: 'Funil de Vendas', grupo: '📈 Estratégia' },
-            { label: 'Criativo (Anúncio)', grupo: '📺 Tráfego' },
-            { label: 'Página de Vendas', grupo: '🌐 Web' }
+            { label: 'CPL (Vídeo de Lançamento)', grupo: '🎬 Conteúdo' },
+            { label: 'Sequência de E-mails', grupo: '✍️ Copywriting' },
+            { label: 'Página de Vendas', grupo: '🌐 Web' },
+            { label: 'Página de Captura', grupo: '🌐 Web' },
+            { label: 'Criativo (Anúncio)', grupo: '📺 Tráfego' }
           ];
           statuses = [
-            { label: 'Capturada (Bruta)', grupo: 'Fluxo', meta: 'backlog' },
-            { label: 'Em Pesquisa', grupo: 'Fluxo', meta: 'in_progress' },
-            { label: 'Redação/Copy', grupo: 'Fluxo', meta: 'in_progress' },
-            { label: 'Validada', grupo: 'Fluxo', meta: 'done' }
+            { label: 'Backlog / Ideia', grupo: 'Fluxo', meta: 'backlog' },
+            { label: 'Briefing / Pesquisa', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Em Produção (Copy)', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Em Produção (Design/Vídeo)', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Aguardando Aprovação', grupo: 'Fluxo', meta: 'review' },
+            { label: 'Finalizado / Ativo', grupo: 'Fluxo', meta: 'done' }
           ];
           ideas = [
-            { id_key: 'p1', nome: 'Lançamento: Workshop Digital', tipo: 'Funil de Vendas', status: 'Em Pesquisa', descricao: 'Evento de 3 dias para vender o curso principal.' },
-            { id_key: 'p1_f1', parent_key: 'p1', nome: 'Página de Inscrição (Capture)', tipo: 'Página de Vendas', status: 'Validada', descricao: 'Focada em leads frios do Instagram.' },
-            { id_key: 'p1_f1_n1', parent_key: 'p1_f1', nome: 'Headline: O Fim do Caos Digital', tipo: 'Headline', status: 'Validada', descricao: 'Gancho principal da página de captura.' },
-            { id_key: 'p2', nome: 'Ebook: 101 Headlines de Alta Conversão', tipo: 'Produto', status: 'Capturada (Bruta)', descricao: 'Isca digital para alimentar o funil.' }
+            { id_key: 'p_raiz', nome: 'Lançamento Interno: Mestres do Copy (Turma 1)', tipo: 'Lançamento', status: 'Em Produção (Copy)', descricao: 'Projeto principal do lançamento interno de 3 CPLs para a primeira turma.' },
+            
+            // Isca Digital (Captura de Leads)
+            { id_key: 'i1', parent_key: 'p_raiz', nome: 'Isca: E-book 10 Segredos da Conversão', tipo: 'Isca Digital', status: 'Finalizado / Ativo', descricao: 'E-book em PDF oferecido em troca do e-mail do lead para iniciar o funil.' },
+            { id_key: 'i1_pg', parent_key: 'i1', nome: 'Página de Captura do E-book', tipo: 'Página de Captura', status: 'Finalizado / Ativo', descricao: 'Landing page otimizada com form de captura simples.' },
+            
+            // Conteúdo do Lançamento (CPLs)
+            { id_key: 'cpl1', parent_key: 'p_raiz', nome: 'CPL 1 - A Oportunidade Oculta', tipo: 'CPL (Vídeo de Lançamento)', status: 'Em Produção (Design/Vídeo)', descricao: 'Vídeo 1: Mostra o problema de não saber copy e apresenta a grande oportunidade do mercado.' },
+            { id_key: 'cpl2', parent_key: 'p_raiz', nome: 'CPL 2 - A Ponte (Mecanismo Único)', tipo: 'CPL (Vídeo de Lançamento)', status: 'Em Produção (Copy)', descricao: 'Vídeo 2: Como sair do estado atual e ir para o desejado através do nosso método exclusivo.' },
+            { id_key: 'cpl3', parent_key: 'p_raiz', nome: 'CPL 3 - A Solução Completa (Pitch)', tipo: 'CPL (Vídeo de Lançamento)', status: 'Briefing / Pesquisa', descricao: 'Vídeo 3: Abertura de carrinho e revelação da oferta irresistível.' },
+            
+            // Tráfego e Anúncios
+            { id_key: 'traf1', parent_key: 'p_raiz', nome: 'Campanha de Captação CPL', tipo: 'Criativo (Anúncio)', status: 'Aguardando Aprovação', descricao: 'Vídeos curtos estilo Reels para convidar as pessoas para a série de vídeos gratuitos.' },
+            
+            // E-mail Marketing
+            { id_key: 'em_seq1', parent_key: 'p_raiz', nome: 'Sequência de Aquecimento (5 E-mails)', tipo: 'Sequência de E-mails', status: 'Aguardando Aprovação', descricao: 'E-mails enviados logo após o cadastro na página de captura para nutrir o lead até o CPL 1.' },
+            { id_key: 'em_seq2', parent_key: 'p_raiz', nome: 'Sequência de Vendas (Escassez)', tipo: 'Sequência de E-mails', status: 'Briefing / Pesquisa', descricao: 'E-mails pós CPL 3 lembrando o encerramento do carrinho e os bônus que vão expirar.' }
           ];
-          // Exemplo de correlação livre
-          ideas.push({ correlation: { from: 'p1', to: 'p2', desc: 'Ebook serve como order-bump deste lançamento.' } });
+
+          // Correlações ricas
+          ideas.push({ correlation: { from: 'traf1', to: 'i1_pg', desc: 'Anúncio direciona tráfego pago diretamente para esta landing page.' } });
+          ideas.push({ correlation: { from: 'i1_pg', to: 'em_seq1', desc: 'Lead cadastrado entra automaticamente nesta sequência de e-mails.' } });
+          ideas.push({ correlation: { from: 'em_seq1', to: 'cpl1', desc: 'Último e-mail da sequência convida para assistir o primeiro vídeo do lançamento.' } });
+          ideas.push({ correlation: { from: 'em_seq2', to: 'cpl3', desc: 'E-mails reforçam o pitch de vendas apresentado no final do CPL 3.' } });
 
           // Relacionamentos específicos
           relacionamentos = [
             { label: 'Upsell de', color: '#f59e0b' },
             { label: 'Downsell de', color: '#ef4444' },
             { label: 'Order bump de', color: '#10b981' },
-            { label: 'Bônus de', color: '#8b5cf6' },
-            { label: 'Anúncio de', color: '#3b82f6' },
+            { label: 'Isca de', color: '#3b82f6' },
             { label: 'Página de', color: '#6366f1' },
+            { label: 'Anúncio de', color: '#8b5cf6' },
+            { label: 'E-mail de', color: '#ec4899' },
             { label: 'Outro', color: '#64748b' }
           ];
+        } else if (templateId === 'lowticket_funnel') {
+          name = 'Funil Low-Ticket (Alta Escala)';
+          color = '#8b5cf6';
+          types = [
+            { label: 'Projeto Raiz', grupo: '🏛️ Organização' },
+            { label: 'Fase do Funil', grupo: '🏛️ Organização' },
+            { label: 'Produto Front-End', grupo: '📦 Produtos' },
+            { label: 'Order Bump', grupo: '📦 Produtos' },
+            { label: 'Upsell', grupo: '📦 Produtos' },
+            { label: 'Downsell', grupo: '📦 Produtos' },
+            { label: 'Página de Vendas', grupo: '🌐 Ativos' },
+            { label: 'Página VSL', grupo: '🌐 Ativos' },
+            { label: 'Checkout Personalizado', grupo: '🌐 Ativos' },
+            { label: 'Sequência de E-mails', grupo: '✍️ Componentes' },
+            { label: 'Copy / Roteiro', grupo: '✍️ Componentes' },
+            { label: 'Design / Seção', grupo: '🎨 Componentes' },
+            { label: 'Criativo (Anúncio)', grupo: '📺 Tráfego' }
+          ];
+          statuses = [
+            { label: 'Mapeamento / Big Idea', grupo: 'Fluxo', meta: 'backlog' },
+            { label: 'Redação de Copy', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Design & Diagramação', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Edição Audiovisual', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Configuração (Plataforma)', grupo: 'Fluxo', meta: 'review' },
+            { label: 'Aprovado / Rodando', grupo: 'Fluxo', meta: 'done' }
+          ];
+          ideas = [
+            // Nível 1
+            { id_key: 'lt_raiz', nome: 'Funil de Aquisição: Pack de E-books 100 Prompts', tipo: 'Projeto Raiz', status: 'Aprovado / Rodando', descricao: 'Funil perpétuo focado em escala e ROAS imediato no front-end.' },
+            
+            // Nível 2
+            { id_key: 'fase1', parent_key: 'lt_raiz', nome: 'Fase 1: Captação e Front-End', tipo: 'Fase do Funil', status: 'Aprovado / Rodando', descricao: 'A isca principal de baixo valor para converter o lead em cliente imediatamente.' },
+            { id_key: 'fase2', parent_key: 'lt_raiz', nome: 'Fase 2: Esteira Oculta (LTV)', tipo: 'Fase do Funil', status: 'Configuração (Plataforma)', descricao: 'Ofertas feitas logo após a compra inicial para maximizar o ticket médio.' },
+            { id_key: 'fase3', parent_key: 'lt_raiz', nome: 'Fase 3: Tráfego e Escala', tipo: 'Fase do Funil', status: 'Redação de Copy', descricao: 'Alimentação do funil com MetaAds e TikTok Ads.' },
 
+            // Nível 3 (Filhos da Fase 1)
+            { id_key: 'prod_fe', parent_key: 'fase1', nome: 'E-book Principal "100 Prompts de IA" ($7)', tipo: 'Produto Front-End', status: 'Aprovado / Rodando', descricao: 'O produto de entrada.' },
+            { id_key: 'prod_ob', parent_key: 'fase1', nome: 'Order Bump: "Planilha de Gestão" ($17)', tipo: 'Order Bump', status: 'Aprovado / Rodando', descricao: 'Oferta complementar de um clique.' },
+
+            // Nível 4 (Filhos do Produto FE)
+            { id_key: 'pg_fe', parent_key: 'prod_fe', nome: 'Página de Vendas do E-book', tipo: 'Página de Vendas', status: 'Design & Diagramação', descricao: 'Página de alta conversão para tráfego frio.' },
+            { id_key: 'chk_fe', parent_key: 'prod_fe', nome: 'Checkout Customizado', tipo: 'Checkout Personalizado', status: 'Configuração (Plataforma)', descricao: 'Checkout focado em velocidade e sem distrações.' },
+
+            // Nível 5 (Filhos da Página FE)
+            { id_key: 'copy_head', parent_key: 'pg_fe', nome: 'Copy: Headline Principal (Gancho)', tipo: 'Copy / Roteiro', status: 'Mapeamento / Big Idea', descricao: 'A promessa mais forte para fisgar a atenção nos primeiros 3 segundos.' },
+            { id_key: 'des_garantia', parent_key: 'pg_fe', nome: 'Design: Seção de Garantia Incondicional', tipo: 'Design / Seção', status: 'Aprovado / Rodando', descricao: 'Selo visual forte para redução de risco.' },
+
+            // Nível 5 (Filhos do Checkout)
+            { id_key: 'copy_ob', parent_key: 'chk_fe', nome: 'Copy: Caixa do Order Bump', tipo: 'Copy / Roteiro', status: 'Redação de Copy', descricao: 'Texto curto "Piscou Levou" para a planilha de $17.' },
+
+            // Nível 3 (Filhos da Fase 2)
+            { id_key: 'prod_up1', parent_key: 'fase2', nome: 'Upsell 1: Masterclass de Automação ($97)', tipo: 'Upsell', status: 'Edição Audiovisual', descricao: 'Oferta premium apresentada após a compra do FE.' },
+            { id_key: 'prod_dw1', parent_key: 'fase2', nome: 'Downsell 1: Masterclass (Sem Suporte) ($47)', tipo: 'Downsell', status: 'Configuração (Plataforma)', descricao: 'Oferta de resgate caso recusem o Upsell 1.' },
+
+            // Nível 4 (Filhos do Upsell)
+            { id_key: 'pg_up1', parent_key: 'prod_up1', nome: 'Página de Upsell VSL One-Click', tipo: 'Página VSL', status: 'Edição Audiovisual', descricao: 'Página contendo apenas o vídeo VSL e o botão que compra direto sem pedir cartão.' },
+
+            // Nível 5 (Filhos da Página de Upsell)
+            { id_key: 'roteiro_vsl', parent_key: 'pg_up1', nome: 'Roteiro da VSL (Upsell)', tipo: 'Copy / Roteiro', status: 'Aprovado / Rodando', descricao: 'Script em formato Causa/Efeito para vender a Masterclass.' },
+
+            // Nível 4 (Filhos do Downsell)
+            { id_key: 'pg_dw1', parent_key: 'prod_dw1', nome: 'Página de Downsell (Segunda Chance)', tipo: 'Página VSL', status: 'Redação de Copy', descricao: 'Quebra objeção de preço, retirando o bônus principal (Suporte).' },
+
+            // Nível 3 (Filhos da Fase 3)
+            { id_key: 'camp_meta', parent_key: 'fase3', nome: 'Campanha MetaAds Frio (Conversão)', tipo: 'Criativo (Anúncio)', status: 'Mapeamento / Big Idea', descricao: 'Direcionado para público aberto buscando CPA de até R$ 15.' }
+          ];
+
+          // Correlações ricas
+          ideas.push({ correlation: { from: 'camp_meta', to: 'pg_fe', desc: 'Todo o tráfego desta campanha é jogado direto nesta Landing Page.' } });
+          ideas.push({ correlation: { from: 'prod_ob', to: 'chk_fe', desc: 'O Order Bump é ofertado ativamente dentro deste checkout.' } });
+          ideas.push({ correlation: { from: 'prod_fe', to: 'pg_up1', desc: 'Ao aprovar a compra do FE, o usuário é redirecionado instantaneamente para o Upsell.' } });
+          ideas.push({ correlation: { from: 'pg_up1', to: 'pg_dw1', desc: 'Se o usuário clicar em "Não quero", cai no Downsell.' } });
+
+          // Relacionamentos específicos
+          relacionamentos = [
+            { label: 'Direciona tráfego para', color: '#3b82f6' },
+            { label: 'Ofertado dentro de', color: '#10b981' },
+            { label: 'Redireciona para', color: '#f59e0b' },
+            { label: 'Downsell de', color: '#ef4444' },
+            { label: 'Componente de', color: '#8b5cf6' },
+            { label: 'Outro', color: '#64748b' }
+          ];
+        } else if (templateId === 'ecommerce_setup') {
+          name = 'Implantação de E-commerce';
+          color = '#14b8a6';
+          types = [
+            { label: 'Projeto Raiz', grupo: '🏛️ Organização' },
+            { label: 'Fase de Implantação', grupo: '🏛️ Organização' },
+            { label: 'Planejamento', grupo: '📝 Estratégia' },
+            { label: 'Plataforma / Setup', grupo: '⚙️ Tecnologia' },
+            { label: 'Integração (ERP/Logística)', grupo: '⚙️ Tecnologia' },
+            { label: 'Produto / SKU', grupo: '📦 Catálogo' },
+            { label: 'Sessão de Fotos (Mídia)', grupo: '📦 Catálogo' },
+            { label: 'Design de Interface', grupo: '🎨 Vitrine' },
+            { label: 'Copy Institucional', grupo: '🎨 Vitrine' },
+            { label: 'Campanha de Tráfego', grupo: '📺 Marketing' },
+            { label: 'Automação (CRM)', grupo: '📺 Marketing' }
+          ];
+          statuses = [
+            { label: 'Planejamento / Briefing', grupo: 'Fluxo', meta: 'backlog' },
+            { label: 'Aguardando Ativos', grupo: 'Fluxo', meta: 'backlog' },
+            { label: 'Em Configuração / Setup', grupo: 'Fluxo', meta: 'in_progress' },
+            { label: 'Homologação (Testes QA)', grupo: 'Fluxo', meta: 'review' },
+            { label: 'Publicado / Integrado', grupo: 'Fluxo', meta: 'done' }
+          ];
+          ideas = [
+            // Nível 1
+            { id_key: 'ecom_raiz', nome: 'Implantação Nova Marca: AtletaPro Fitness', tipo: 'Projeto Raiz', status: 'Em Configuração / Setup', descricao: 'Roadmap completo de ponta a ponta para lançamento do e-commerce da marca.' },
+            
+            // Nível 2
+            { id_key: 'fase0', parent_key: 'ecom_raiz', nome: 'Fase 0: Estratégia e Escolha de Plataforma', tipo: 'Fase de Implantação', status: 'Publicado / Integrado', descricao: 'Pesquisa de mercado, escolha do ecossistema e estruturação de custos.' },
+            { id_key: 'fase1', parent_key: 'ecom_raiz', nome: 'Fase 1: Infraestrutura e Tecnologia', tipo: 'Fase de Implantação', status: 'Em Configuração / Setup', descricao: 'Setup técnico da loja, domínios, ERP e Correios.' },
+            { id_key: 'fase2', parent_key: 'ecom_raiz', nome: 'Fase 2: Catálogo e Design', tipo: 'Fase de Implantação', status: 'Aguardando Ativos', descricao: 'Cadastro de produtos, shooting fotográfico e vitrine visual.' },
+            { id_key: 'fase3', parent_key: 'ecom_raiz', nome: 'Fase 3: Logística e Operação', tipo: 'Fase de Implantação', status: 'Planejamento / Briefing', descricao: 'Processos de expedição e integração fiscal.' },
+            { id_key: 'fase4', parent_key: 'ecom_raiz', nome: 'Fase 4: Go-to-Market (Lançamento)', tipo: 'Fase de Implantação', status: 'Planejamento / Briefing', descricao: 'Aquisição de clientes, Ads e CRM.' },
+
+            // Nível 3 (Fase 0)
+            { id_key: 'plataforma', parent_key: 'fase0', nome: 'Definição de Plataforma: Nuvemshop vs Shopify', tipo: 'Planejamento', status: 'Publicado / Integrado', descricao: 'Avaliando custos, integrações e escalabilidade.' },
+
+            // Nível 3 (Fase 1)
+            { id_key: 'setup_loja', parent_key: 'fase1', nome: 'Setup Inicial da Loja (Shopify)', tipo: 'Plataforma / Setup', status: 'Em Configuração / Setup', descricao: 'Configurações de backoffice, domínio e métodos de pagamento.' },
+            
+            // Nível 4 (Filhos do Setup)
+            { id_key: 'gateway', parent_key: 'setup_loja', nome: 'Integração de Gateway (Mercado Pago)', tipo: 'Integração (ERP/Logística)', status: 'Homologação (Testes QA)', descricao: 'Setup de cartão de crédito e PIX checkout transparente.' },
+
+            // Nível 3 (Fase 2)
+            { id_key: 'shooting', parent_key: 'fase2', nome: 'Sessão de Fotos "Verão 2026"', tipo: 'Sessão de Fotos (Mídia)', status: 'Publicado / Integrado', descricao: 'Fotos com modelos, still de produtos e vídeos para reels.' },
+            { id_key: 'cadastro_skus', parent_key: 'fase2', nome: 'Cadastro de 50 SKUs Iniciais', tipo: 'Produto / SKU', status: 'Aguardando Ativos', descricao: 'Importação via planilha ou ERP de todos os tamanhos e cores.' },
+            { id_key: 'ux_home', parent_key: 'fase2', nome: 'Design e Banners da Home', tipo: 'Design de Interface', status: 'Em Configuração / Setup', descricao: 'Layout focado em mobile, velocidade e conversão.' },
+
+            // Nível 4 e 5 (Filhos do Catálogo/SKUs)
+            { id_key: 'sku_dryfit', parent_key: 'cadastro_skus', nome: 'Camiseta Performance Dry-Fit (SKU: DRY01)', tipo: 'Produto / SKU', status: 'Aguardando Ativos', descricao: 'Cadastro unitário da peça campeã de vendas.' },
+            { id_key: 'copy_seo', parent_key: 'sku_dryfit', nome: 'Copy: Descrição Otimizada (SEO)', tipo: 'Copy Institucional', status: 'Planejamento / Briefing', descricao: 'Descrição detalhada focada em dor/solução e palavras-chave.' },
+            { id_key: 'tab_medidas', parent_key: 'sku_dryfit', nome: 'Tabela de Medidas Oficial', tipo: 'Design de Interface', status: 'Aguardando Ativos', descricao: 'Evita devoluções. Crucial para concluir o cadastro.' },
+
+            // Nível 3 (Fase 3)
+            { id_key: 'erp_bling', parent_key: 'fase3', nome: 'Integração ERP Bling', tipo: 'Integração (ERP/Logística)', status: 'Planejamento / Briefing', descricao: 'Emissão de notas fiscais automática e sincronização de estoque.' },
+            { id_key: 'log_melhorenvio', parent_key: 'fase3', nome: 'Integração Frete (MelhorEnvio/Correios)', tipo: 'Integração (ERP/Logística)', status: 'Em Configuração / Setup', descricao: 'Tabela de cálculo de frete dinâmico no carrinho.' },
+
+            // Nível 3 (Fase 4)
+            { id_key: 'crm_abandono', parent_key: 'fase4', nome: 'Fluxo Klaviyo: Carrinho Abandonado', tipo: 'Automação (CRM)', status: 'Planejamento / Briefing', descricao: 'Recuperação de vendas automática em 3 e-mails (1h, 12h, 24h).' },
+            { id_key: 'ads_lancamento', parent_key: 'fase4', nome: 'Campanha MetaAds: Abertura de Loja', tipo: 'Campanha de Tráfego', status: 'Planejamento / Briefing', descricao: 'Campanha de tráfego pago focado em branding e primeira compra.' }
+          ];
+
+          // Correlações ricas
+          ideas.push({ correlation: { from: 'plataforma', to: 'setup_loja', desc: 'A decisão da plataforma liberou o início do setup.' } });
+          ideas.push({ correlation: { from: 'shooting', to: 'cadastro_skus', desc: 'As fotos tratadas do shooting são obrigatórias para cadastrar os SKUs.' } });
+          ideas.push({ correlation: { from: 'tab_medidas', to: 'sku_dryfit', desc: 'O cadastro do SKU não pode ser publicado sem a tabela de medidas concluída.' } });
+          ideas.push({ correlation: { from: 'log_melhorenvio', to: 'gateway', desc: 'Testar compra (Gateway) requer cálculo de frete funcionando.' } });
+          ideas.push({ correlation: { from: 'cadastro_skus', to: 'erp_bling', desc: 'O Bling precisa dos SKUs da plataforma (ou vice-versa) para controle de estoque.' } });
+
+          // Relacionamentos específicos
+          relacionamentos = [
+            { label: 'Bloqueia', color: '#ef4444' },
+            { label: 'Pré-requisito de', color: '#f59e0b' },
+            { label: 'Integrado com', color: '#10b981' },
+            { label: 'Aprovado por', color: '#3b82f6' },
+            { label: 'Depende de', color: '#8b5cf6' },
+            { label: 'Relacionado', color: '#64748b' }
+          ];
         } else if (templateId === 'software') {
           name = 'Software & SaaS';
           color = '#6366f1';

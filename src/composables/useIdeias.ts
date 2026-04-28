@@ -7,31 +7,36 @@ const ideias = ref<Ideia[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
+const { currentWorkspaceId } = useWorkspaces();
+
+// ── Buscar todas as ideias ──────────────────────────────────────────────────
+async function fetchIdeias() {
+  if (!currentWorkspaceId.value) return; // Não carrega sem workspace ativo
+  
+  loading.value = true;
+  error.value = null;
+  try {
+    const raw: IdeiaRaw[] = await window.electronAPI.ideias.getAll(currentWorkspaceId.value);
+    ideias.value = raw.map(parseIdeia);
+  } catch (e) {
+    error.value = 'Erro ao carregar ideias.';
+    console.error('[useIdeias] fetchIdeias:', e);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Recarrega ideias sempre que o Workspace ativo for alterado
+watch(currentWorkspaceId, (newId) => {
+  if (newId) {
+    fetchIdeias();
+  } else {
+    ideias.value = [];
+  }
+}, { immediate: true });
+
 export function useIdeias() {
 
-  const { currentWorkspaceId } = useWorkspaces();
-
-  // Recarrega ideias sempre que o Workspace ativo for alterado
-  watch(currentWorkspaceId, (newId) => {
-    if (newId) fetchIdeias();
-  }, { immediate: true });
-
-  // ── Buscar todas as ideias ──────────────────────────────────────────────────
-  async function fetchIdeias() {
-    if (!currentWorkspaceId.value) return; // Não carrega sem workspace ativo
-    
-    loading.value = true;
-    error.value = null;
-    try {
-      const raw: IdeiaRaw[] = await window.electronAPI.ideias.getAll(currentWorkspaceId.value);
-      ideias.value = raw.map(parseIdeia);
-    } catch (e) {
-      error.value = 'Erro ao carregar ideias.';
-      console.error('[useIdeias] fetchIdeias:', e);
-    } finally {
-      loading.value = false;
-    }
-  }
 
   // ── Criar ideia ─────────────────────────────────────────────────────────────
   async function createIdeia(payload: CreateIdeiaPayload): Promise<Ideia | null> {
