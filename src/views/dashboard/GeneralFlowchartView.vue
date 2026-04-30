@@ -1,5 +1,5 @@
 <template>
-  <div class="nn-page">
+  <div class="nn-page" :class="{ 'nn-presentation': isFullscreen }">
 
     <!-- ═══════════════════════════════════════════════ TOPBAR DA PÁGINA -->
     <div class="nn-topbar">
@@ -53,6 +53,14 @@
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/>
+          </svg>
+        </button>
+        <button class="nn-ctrl-btn" @click="toggleFullscreen" :title="isFullscreen ? 'Sair da Apresentação' : 'Modo Apresentação'">
+          <svg v-if="!isFullscreen" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
+          </svg>
+          <svg v-else fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3" />
           </svg>
         </button>
         <div class="nn-zoom-badge">{{ Math.round(scale * 100) }}%</div>
@@ -128,6 +136,12 @@ const router = useRouter();
 const { ideias, loading, fetchIdeias } = useIdeias();
 const { on, off } = useBus();
 const { status: taxonomyStatus, getStatusColor, getStatusLabel } = useTaxonomy();
+
+const isFullscreen = ref(false);
+
+function toggleFullscreen() {
+  isFullscreen.value = !isFullscreen.value;
+}
 
 // ─── Estado de Colapso ────────────────────────────────────────────────────────
 const expandedNodes = reactive(new Set<string>());
@@ -740,6 +754,13 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
   border-radius: 0;
   overflow: hidden;
   z-index: 10;
+}
+
+/* Modo Apresentação */
+.nn-presentation {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
 }
 
 /* ══════════════════════════════════════════════════════════ TOPBAR */

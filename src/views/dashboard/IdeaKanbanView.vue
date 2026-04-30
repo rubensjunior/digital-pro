@@ -1,5 +1,5 @@
 <template>
-  <div class="bv-root">
+  <div class="bv-root" :class="{ 'bv-presentation': isFullscreen }">
     <!-- HEADER -->
     <div v-if="toast.visible" :class="['bv-toast', `bv-toast-${toast.type}`]">
       {{ toast.message }}
@@ -15,7 +15,16 @@
           Arraste e solte as ideias conectadas (derivadas) nos status correspondentes.
         </p>
       </div>
-      <div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button class="bv-btn-ghost" @click="toggleFullscreen" :title="isFullscreen ? 'Sair da Tela Cheia' : 'Modo Apresentação'">
+          <svg v-if="!isFullscreen" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+          </svg>
+          <svg v-else fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+          </svg>
+          {{ isFullscreen ? 'Sair' : 'Apresentação' }}
+        </button>
         <button class="bv-btn-ghost" @click="voltar">
           ← Voltar para Base de Ideias
         </button>
@@ -96,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
 import { useIdeias } from '../../composables/useIdeias';
 import { useRouter, useRoute } from 'vue-router';
 import { useTaxonomy } from '../../composables/useTaxonomy';
@@ -119,6 +128,25 @@ const parentId = route.params.id as string;
 const ideaDrawerRef = ref<InstanceType<typeof IdeaDetailDrawer> | null>(null);
 const ideaFormRef = ref<InstanceType<typeof IdeaFormModal> | null>(null);
 
+const isFullscreen = ref(false);
+
+function toggleFullscreen() {
+  const elem = document.documentElement;
+  if (!document.fullscreenElement) {
+    elem.requestFullscreen().catch(err => {
+      console.error(`Erro ao tentar entrar em modo tela cheia: ${err.message}`);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
+function handleFullscreenChange() {
+  isFullscreen.value = !!document.fullscreenElement;
+}
+
 function voltar() {
   router.push('/dashboard/ideas');
 }
@@ -133,6 +161,11 @@ function abrirEdicao(ideia: Ideia) {
 
 onMounted(async () => {
   await fetchIdeias();
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', handleFullscreenChange);
 });
 
 // ─── Toast ───────────────────────────────────────────────────────────────────
@@ -207,6 +240,16 @@ async function onDrop(event: DragEvent, novoStatus: IdeiaStatus) {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+/* Modo Apresentação */
+.bv-presentation {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  background: var(--bg) !important;
+  padding: 20px !important;
+  overflow: auto !important;
 }
 
 .bv-toast {
