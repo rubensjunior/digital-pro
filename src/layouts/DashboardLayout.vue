@@ -197,7 +197,7 @@ watch(currentWorkspaceId, (newId, oldId) => {
     isRouting.value = true;
     setTimeout(() => {
       isRouting.value = false;
-    }, 400);
+    }, 1500);
   }
 });
 
