@@ -276,7 +276,6 @@ onUnmounted(() => {
 });
 
 function onCreateDerivada(parentId: string) {
-  ideaDrawerRef.value?.fecharDrawer();
   ideaFormRef.value?.abrirModal(parentId);
 }
 
@@ -285,7 +284,6 @@ function abrirModal() {
 }
 
 function abrirEdicao(ideia: Ideia) {
-  ideaDrawerRef.value?.fecharDrawer();
   ideaFormRef.value?.abrirEdicao(ideia);
 }
 

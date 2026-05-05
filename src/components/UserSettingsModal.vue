@@ -97,9 +97,22 @@
             <div class="modal-divider"></div>
 
             <div class="danger-zone-section">
-              <h3 class="danger-title">Zona de Perigo</h3>
-              <p class="danger-desc">As ações abaixo são irreversíveis. Tenha certeza do que está fazendo.</p>
+              <h3 class="danger-title">Zona de Perigo e Manutenção</h3>
+              <p class="danger-desc">Ações avançadas para gerenciamento de dados locais e remotos.</p>
             
+              <!-- Sanitize Database -->
+              <div class="danger-card border-orange-200">
+                <div class="item-info">
+                  <h4>Sanitizar Banco de Dados Local (Garbage Collector)</h4>
+                  <p>Limpa resíduos, arquivos e elementos órfãos (ideias sem workspace) do banco de dados local. Útil caso haja bugs nos contadores.</p>
+                </div>
+                <div class="item-action">
+                  <button class="dp-btn dp-btn-ghost text-orange-500" @click="handleSanitizeDatabase" :disabled="isSanitizing">
+                    {{ isSanitizing ? 'Sanitizando...' : 'Executar Sanitização' }}
+                  </button>
+                </div>
+              </div>
+
               <!-- Clear Database -->
               <div class="danger-card">
                 <div class="item-info">
@@ -167,6 +180,8 @@ const isClearing = ref(false);
 const confirmingDelete = ref(false);
 const deleteText = ref('');
 const isDeleting = ref(false);
+
+const isSanitizing = ref(false);
 
 const userEmail = ref('');
 const subStatus = ref('');
@@ -338,6 +353,26 @@ async function handleClearDatabase() {
     bvAlert({ title: 'Erro', message: 'Ocorreu um erro ao limpar o banco.', type: 'danger' });
   } finally {
     isClearing.value = false;
+  }
+}
+
+async function handleSanitizeDatabase() {
+  isSanitizing.value = true;
+  try {
+    const res = await window.electronAPI.user.sanitizeDatabase();
+    if (res?.success) {
+      bvAlert({ title: 'Sanitização Concluída', message: 'Os dados órfãos foram limpos com sucesso.', type: 'success' });
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } else {
+      throw new Error(res?.error || 'Erro desconhecido');
+    }
+  } catch (error: any) {
+    console.error('Erro ao sanitizar banco:', error);
+    bvAlert({ title: 'Erro', message: error.message || 'Ocorreu um erro na sanitização.', type: 'danger' });
+  } finally {
+    isSanitizing.value = false;
   }
 }
 

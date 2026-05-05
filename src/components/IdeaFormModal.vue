@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="dp-modal-fade">
-      <div v-if="modalAberto" class="dp-modal-overlay" @click.self="fecharModal">
+      <div v-if="modalAberto" class="dp-modal-overlay" style="z-index: 16000;" @click.self="fecharModal">
         <div class="dp-modal-container idea-modal-width">
           <div class="dp-modal-header">
             <div class="idea-header-left">

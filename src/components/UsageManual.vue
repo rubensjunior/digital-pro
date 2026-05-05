@@ -1,12 +1,5 @@
 <template>
   <div class="wiki-base-container">
-    <div class="wiki-hero-banner">
-      <div class="hero-content">
-        <h1 class="hero-title">Guia Definitivo do Digital PRO</h1>
-        <p class="hero-subtitle">Mergulhe em nossa filosofia de gestão através de um caso real de Implantação de E-commerce. Você senta. Olha para a tela. E a produtividade acontece.</p>
-      </div>
-    </div>
-
     <div class="wiki-layout-grid">
       <!-- Sidebar / Sumário -->
       <aside class="wiki-sidebar">
@@ -227,43 +220,6 @@ const tabs = [
   padding: 10px 0 60px;
   max-width: 1600px;
   margin: 0 auto;
-}
-
-/* Hero Banner Solid Style */
-.wiki-hero-banner {
-  position: relative;
-  min-height: 250px;
-  border-radius: 16px;
-  margin-bottom: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 48px;
-  background-color: #3b82f6;
-  box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.3);
-}
-
-.hero-content {
-  position: relative;
-  z-index: 2;
-  max-width: 800px;
-}
-
-.hero-title {
-  color: #ffffff;
-  font-size: 40px;
-  font-weight: 800;
-  margin: 0 0 12px;
-  letter-spacing: -0.5px;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-
-.hero-subtitle {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 16.5px;
-  line-height: 1.6;
-  margin: 0;
-  text-shadow: 0 1px 8px rgba(0,0,0,0.3);
 }
 
 /* Grid Layout */

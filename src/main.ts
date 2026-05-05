@@ -376,7 +376,28 @@ function registerIdeiaHandlers() {
   });
   
   ipcMain.handle('workspaces:delete', (_, id: string) => {
-    db.prepare('DELETE FROM workspaces WHERE id = ?').run(id);
+    // Apaga arquivos físicos das ideias deste workspace
+    const ideas = db.prepare('SELECT id FROM ideias WHERE workspace_id = ?').all(id) as { id: string }[];
+    for (const idea of ideas) {
+       const arquivos = db.prepare('SELECT caminho FROM ideia_arquivos WHERE ideia_id = ?').all(idea.id) as { caminho: string }[];
+       for (const arq of arquivos) {
+         try { if (fs.existsSync(arq.caminho)) fs.unlinkSync(arq.caminho); } catch { /* ignore */ }
+       }
+    }
+    
+    // Apaga todas as dependências em cascata
+    db.exec(`
+      DELETE FROM workspace_tipos WHERE workspace_id = '${id}';
+      DELETE FROM workspace_status WHERE workspace_id = '${id}';
+      DELETE FROM workspace_relacionamentos WHERE workspace_id = '${id}';
+      DELETE FROM ideias_historico WHERE ideia_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}');
+      DELETE FROM ideia_notas WHERE ideia_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}');
+      DELETE FROM ideia_links WHERE ideia_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}');
+      DELETE FROM ideia_arquivos WHERE ideia_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}');
+      DELETE FROM ideia_correlacoes WHERE ideia_a_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}') OR ideia_b_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}');
+      DELETE FROM ideias WHERE workspace_id = '${id}';
+      DELETE FROM workspaces WHERE id = '${id}';
+    `);
     return true;
   });
 
@@ -1320,6 +1341,7 @@ app.on('ready', () => {
 
   registerIdeiaHandlers();
   registerUserHandlers();
+  registerDashboardHandlers();
   createWindow();
 });
 
@@ -1334,6 +1356,46 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+function registerDashboardHandlers() {
+  ipcMain.handle('dashboard:getStats', () => {
+    try {
+      if (!db) return null;
+      
+      const ideasCount = db.prepare('SELECT count(i.id) as count FROM ideias i INNER JOIN workspaces w ON i.workspace_id = w.id').get() as { count: number };
+      const workspacesCount = db.prepare('SELECT count(*) as count FROM workspaces').get() as { count: number };
+      
+      const ideasByStatus = db.prepare(`
+        SELECT ws.label as status_name, COUNT(i.id) as count
+        FROM ideias i
+        INNER JOIN workspace_status ws ON i.status = ws.id
+        INNER JOIN workspaces w ON i.workspace_id = w.id
+        GROUP BY i.status, ws.label
+        ORDER BY count DESC
+        LIMIT 5
+      `).all();
+
+      const ideasByWorkspace = db.prepare(`
+        SELECT w.name as workspace_name, COUNT(i.id) as count
+        FROM ideias i
+        INNER JOIN workspaces w ON i.workspace_id = w.id
+        GROUP BY i.workspace_id, w.name
+        ORDER BY count DESC
+        LIMIT 5
+      `).all();
+      
+      return {
+        ideasCount: ideasCount.count,
+        workspacesCount: workspacesCount.count,
+        ideasByStatus,
+        ideasByWorkspace
+      };
+    } catch (e) {
+      console.error('Erro ao buscar stats do dashboard:', e);
+      return null;
+    }
+  });
+}
 
 function registerUserHandlers() {
   // ─── Manutenção de Perfil do Usuário ──────────────────────────────────────────
@@ -1408,6 +1470,41 @@ function registerUserHandlers() {
       return { success: true };
     } catch (e) {
       console.error('Erro ao limpar o banco:', e);
+      return { success: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('database:sanitize', () => {
+    try {
+      // Find orphaned files and delete them
+      const arquivos = db.prepare(`SELECT caminho FROM ideia_arquivos WHERE ideia_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces))`).all() as { caminho: string }[];
+      for (const arq of arquivos) {
+        try { if (fs.existsSync(arq.caminho)) fs.unlinkSync(arq.caminho); } catch { /* ignore */ }
+      }
+      
+      db.exec(`
+        -- Limpa workspaces relacionados órfãos
+        DELETE FROM workspace_tipos WHERE workspace_id NOT IN (SELECT id FROM workspaces);
+        DELETE FROM workspace_status WHERE workspace_id NOT IN (SELECT id FROM workspaces);
+        DELETE FROM workspace_relacionamentos WHERE workspace_id NOT IN (SELECT id FROM workspaces);
+
+        -- Limpa dependências de ideias deletadas/órfãs
+        DELETE FROM ideias_historico WHERE ideia_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces));
+        DELETE FROM ideia_notas WHERE ideia_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces));
+        DELETE FROM ideia_links WHERE ideia_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces));
+        DELETE FROM ideia_arquivos WHERE ideia_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces));
+        
+        -- Limpa correlações de ideias que não existem mais
+        DELETE FROM ideia_correlacoes 
+        WHERE ideia_a_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces)) 
+           OR ideia_b_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces));
+
+        -- Limpa ideias de workspaces deletados
+        DELETE FROM ideias WHERE workspace_id NOT IN (SELECT id FROM workspaces);
+      `);
+      return { success: true };
+    } catch (e) {
+      console.error('Erro ao sanitizar o banco:', e);
       return { success: false, error: e.message };
     }
   });

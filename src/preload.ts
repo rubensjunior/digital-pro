@@ -95,11 +95,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updateProfile: (payload: Record<string, unknown>) => ipcRenderer.invoke('user:updateProfile', payload),
     selectAvatar: () => ipcRenderer.invoke('user:selectAvatar'),
     clearDatabase: () => ipcRenderer.invoke('user:clearDatabase'),
+    sanitizeDatabase: () => ipcRenderer.invoke('database:sanitize'),
   },
   // ─── Backups ───────────────────────────────────────────────
   backup: {
     export: (type: 'full' | 'partial') => ipcRenderer.invoke('backup:export', type),
     import: () => ipcRenderer.invoke('backup:import'),
+  },
+  
+  // ─── Dashboard ─────────────────────────────────────────────
+  dashboard: {
+    getStats: () => ipcRenderer.invoke('dashboard:getStats'),
   },
 });
 

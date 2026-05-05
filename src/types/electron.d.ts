@@ -84,10 +84,19 @@ export interface IElectronAPI {
     updateProfile: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
     selectAvatar: () => Promise<string | null>;
     clearDatabase: () => Promise<{ success: boolean; error?: string }>;
+    sanitizeDatabase: () => Promise<{ success: boolean; error?: string }>;
   };
   backup: {
     export: (type: 'full' | 'partial') => Promise<{ success: boolean; date?: string; canceled?: boolean; error?: string }>;
     import: () => Promise<{ success: boolean; canceled?: boolean; error?: string }>;
+  };
+  dashboard: {
+    getStats: () => Promise<{
+      ideasCount: number;
+      workspacesCount: number;
+      ideasByStatus: { status_name: string; count: number }[];
+      ideasByWorkspace: { workspace_name: string; count: number }[];
+    } | null>;
   };
 }
 
