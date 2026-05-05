@@ -96,5 +96,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     selectAvatar: () => ipcRenderer.invoke('user:selectAvatar'),
     clearDatabase: () => ipcRenderer.invoke('user:clearDatabase'),
   },
+  // ─── Backups ───────────────────────────────────────────────
+  backup: {
+    export: (type: 'full' | 'partial') => ipcRenderer.invoke('backup:export', type),
+    import: () => ipcRenderer.invoke('backup:import'),
+  },
 });
 

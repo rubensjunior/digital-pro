@@ -73,6 +73,8 @@
                 <div class="user-actions-row">
                   <button @click="handleOpenUserSettings" class="small-action-btn">Conta</button>
                   <span class="action-divider-small"></span>
+                  <button @click="handleOpenBackupSettings" class="small-action-btn">Backup</button>
+                  <span class="action-divider-small"></span>
                   <button @click="handleLogout" class="small-action-btn logout">Sair</button>
                 </div>
               </div>
@@ -153,6 +155,16 @@
       </div>
     </div>
 
+    <!-- Alerta de Backup Fixo no topo do conteúdo -->
+    <div v-if="daysSinceLastBackup !== null && daysSinceLastBackup > 7 && !isCanvasLayout" class="global-backup-alert">
+      <div class="alert-content">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span v-if="!lastBackupDate"><strong>Atenção:</strong> Você ainda não realizou um backup seguro. Faça seu primeiro backup agora para evitar perda de dados.</span>
+        <span v-else><strong>Atenção:</strong> Seu último backup foi há {{ daysSinceLastBackup }} dia(s). Faça um novo backup agora para evitar perda de dados.</span>
+      </div>
+      <button class="alert-action-btn" @click="handleOpenBackupSettings">Fazer Backup</button>
+    </div>
+
     <!-- Main Content Area -->
     <main class="page-content" :class="{ 'no-padding': isCanvasLayout }">
       <div v-if="!isCanvasLayout" class="page-container">
@@ -163,6 +175,7 @@
     
     <WorkspaceSettingsModal ref="workspaceSettingsModalRef" />
     <UserSettingsModal ref="userSettingsModalRef" />
+    <BackupModal ref="backupModalRef" />
   </div>
 </template>
 
@@ -177,6 +190,7 @@ import { useTaxonomy } from '../composables/useTaxonomy';
 import { useIdeias } from '../composables/useIdeias';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal.vue';
 import UserSettingsModal from '../components/UserSettingsModal.vue';
+import BackupModal from '../components/BackupModal.vue';
 import { useProfile } from '../composables/useProfile';
 import { isRouting } from '../router/index';
 
@@ -188,7 +202,18 @@ const { workspaces, currentWorkspaceId, fetchWorkspaces, createWorkspace } = use
 const { profile, loadProfile, syncProfile } = useProfile();
 const workspaceSettingsModalRef = ref<InstanceType<typeof WorkspaceSettingsModal> | null>(null);
 const userSettingsModalRef = ref<InstanceType<typeof UserSettingsModal> | null>(null);
+const backupModalRef = ref<InstanceType<typeof BackupModal> | null>(null);
 const appVersion = ref('');
+
+// Backup Logic
+const lastBackupDate = ref<string | null>(null);
+const daysSinceLastBackup = computed(() => {
+  if (!lastBackupDate.value) return 999; // Força aviso se nunca fez
+  const lastDate = new Date(lastBackupDate.value);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - lastDate.getTime());
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+});
 
 const currentWorkspace = computed(() => workspaces.value.find(w => w.id === currentWorkspaceId.value));
 
@@ -197,12 +222,16 @@ watch(currentWorkspaceId, (newId, oldId) => {
     isRouting.value = true;
     setTimeout(() => {
       isRouting.value = false;
-    }, 1500);
+    }, 1000);
   }
 });
 
 function handleOpenUserSettings() {
   userSettingsModalRef.value?.abrirModal();
+}
+
+function handleOpenBackupSettings() {
+  backupModalRef.value?.abrirModal();
 }
 
 function handleOpenWorkspaceSettings() {
@@ -293,6 +322,9 @@ async function checkSubscription(): Promise<void> {
 
 // ─── Lifecycle ────────────────────────────────────────────
 onMounted(async () => {
+  // Load Backup Date
+  lastBackupDate.value = localStorage.getItem('lastBackupDate');
+
   try {
     // 1. Obter a sessão ativa
     const { data: { session }, error: authError } = await supabase.auth.getSession();
@@ -798,6 +830,33 @@ function handleAction(action: string) {
 }
 
 .toggle-action-btn svg { width: 18px; height: 18px; }
+
+/* ─── Global Backup Alert ────────────────────────────────── */
+.global-backup-alert {
+  background: rgba(241, 65, 108, 0.1);
+  border-bottom: 1px solid rgba(241, 65, 108, 0.2);
+  color: #f1416c;
+  padding: 10px 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  font-size: 13.5px;
+}
+.alert-content { display: flex; align-items: center; gap: 8px; }
+.alert-content svg { width: 18px; height: 18px; }
+.alert-action-btn {
+  background: #f1416c;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.alert-action-btn:hover { opacity: 0.9; }
 
 .action-divider {
   width: 1px;

@@ -139,7 +139,7 @@ router.afterEach(() => {
   // Pequeno delay para a animação da barra e do overlay ser mais visível e suave
   setTimeout(() => {
     isRouting.value = false;
-  }, 1500);
+  }, 1000);
 });
 
 export default router;

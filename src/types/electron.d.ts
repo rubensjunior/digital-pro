@@ -85,6 +85,10 @@ export interface IElectronAPI {
     selectAvatar: () => Promise<string | null>;
     clearDatabase: () => Promise<{ success: boolean; error?: string }>;
   };
+  backup: {
+    export: (type: 'full' | 'partial') => Promise<{ success: boolean; date?: string; canceled?: boolean; error?: string }>;
+    import: () => Promise<{ success: boolean; canceled?: boolean; error?: string }>;
+  };
 }
 
 declare global {

@@ -6,6 +6,9 @@ import { createRequire } from 'node:module';
 import started from 'electron-squirrel-startup';
 import { updateElectronApp } from 'update-electron-app';
 import type Database from 'better-sqlite3';
+import { BackupService } from './lib/backupService';
+
+const backupService = new BackupService();
 
 updateElectronApp({
   repo: 'rubensjunior/digital-pro',
@@ -883,6 +886,7 @@ function registerIdeiaHandlers() {
 
   // GET ALL (Com Soft Boundary / Filtro)
   ipcMain.handle('ideias:getAll', (_, workspace_id?: string) => {
+    if (!db) return [];
     if (workspace_id) {
       return db.prepare('SELECT * FROM ideias WHERE workspace_id = ? ORDER BY created_at DESC').all(workspace_id);
     }
@@ -891,6 +895,7 @@ function registerIdeiaHandlers() {
 
   // GET HISTÓRICO
   ipcMain.handle('ideias:getHistorico', (_, ideia_id: string) => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM ideias_historico WHERE ideia_id = ? ORDER BY created_at DESC').all(ideia_id);
   });
 
@@ -1025,6 +1030,7 @@ function registerIdeiaHandlers() {
 
   // ── Notas ──────────────────────────────────────────────────────────────────
   ipcMain.handle('ideias:notas:getAll', (_, ideia_id: string) => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM ideia_notas WHERE ideia_id = ? ORDER BY created_at DESC').all(ideia_id);
   });
 
@@ -1068,6 +1074,7 @@ function registerIdeiaHandlers() {
 
   // ── Links ──────────────────────────────────────────────────────────────────
   ipcMain.handle('ideias:links:getAll', (_, ideia_id: string) => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM ideia_links WHERE ideia_id = ? ORDER BY created_at DESC').all(ideia_id);
   });
 
@@ -1095,6 +1102,7 @@ function registerIdeiaHandlers() {
 
   // ── Arquivos ───────────────────────────────────────────────────────────────
   ipcMain.handle('ideias:arquivos:getAll', (_, ideia_id: string) => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM ideia_arquivos WHERE ideia_id = ? ORDER BY created_at DESC').all(ideia_id);
   });
 
@@ -1152,6 +1160,7 @@ function registerIdeiaHandlers() {
 
   // ── Correlacoes (Ecossistema Geral) ───────────────────────────────────────
   ipcMain.handle('ideias:correlacoes:getAll', (_, ideia_id: string) => {
+    if (!db) return [];
     // Retorna as correlações onde a ideia aparece como a ou b
     return db.prepare(`
       SELECT 
@@ -1170,6 +1179,7 @@ function registerIdeiaHandlers() {
   });
 
   ipcMain.handle('ideias:correlacoes:getAllTodos', () => {
+    if (!db) return [];
     return db.prepare('SELECT * FROM ideia_correlacoes').all();
   });
 
@@ -1419,4 +1429,74 @@ function registerUserHandlers() {
       return { error: e.message };
     }
   });
+
+  // ─── Backups ──────────────────────────────────────────
+  ipcMain.handle('backup:export', async (_, type: 'full' | 'partial') => {
+    if (!db) throw new Error('Banco de dados não está inicializado.');
+    
+    const win = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showSaveDialog(win || undefined, {
+      title: 'Salvar Backup',
+      defaultPath: `digitalpro_backup_${new Date().toISOString().split('T')[0]}_${type}.zip`,
+      filters: [{ name: 'Arquivo ZIP', extensions: ['zip'] }]
+    });
+
+    if (result.canceled || !result.filePath) return { success: false, canceled: true };
+
+    try {
+      if (type === 'full') {
+        await backupService.backupFull(db, result.filePath);
+      } else {
+        await backupService.backupPartial(db, result.filePath);
+      }
+      return { success: true, date: new Date().toISOString() };
+    } catch (e) {
+      console.error('Erro ao exportar backup:', e);
+      return { success: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('backup:import', async () => {
+    if (!db) throw new Error('Banco de dados não está inicializado.');
+
+    const win = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showOpenDialog(win || undefined, {
+      title: 'Restaurar Backup',
+      properties: ['openFile'],
+      filters: [{ name: 'Arquivo ZIP', extensions: ['zip'] }]
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return { success: false, canceled: true };
+
+    const zipPath = result.filePaths[0];
+    const dbPath = db.name;
+    const userDataPath = path.dirname(dbPath);
+    const dbFileName = path.basename(dbPath);
+
+    try {
+      // É preciso fechar a conexão atual antes de substituir
+      db.close();
+      db = null;
+
+      await backupService.restoreBackup(zipPath, userDataPath, dbFileName);
+
+      // Reinicia a aplicação para carregar o novo banco
+      app.relaunch();
+      app.exit(0);
+      
+      return { success: true };
+    } catch (e) {
+      console.error('Erro ao importar backup:', e);
+      // Tenta reabrir o banco antigo se a restauração falhou
+      if (!db) {
+        // initDatabase não temos userId de fácil acesso aqui sem passar por parâmetro,
+        // mas como app.relaunch foi a nossa intenção primária de sucesso, no erro retornamos false.
+        // A melhor approach em falha crítica é também reiniciar para evitar estado quebrado.
+        app.relaunch();
+        app.exit(1);
+      }
+      return { success: false, error: e.message };
+    }
+  });
 }
+
