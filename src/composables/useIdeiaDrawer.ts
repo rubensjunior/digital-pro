@@ -1,5 +1,5 @@
 import { ref, reactive, computed, type Ref } from 'vue';
-import type { Ideia, IdeiaStatus, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao } from '../types/ideia';
+import type { Ideia, IdeiaStatus, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao, IdeiaHistorico, Framework } from '../types/ideia';
 import { useTaxonomy } from './useTaxonomy';
 import { useWorkspaces } from './useWorkspaces';
 
@@ -20,7 +20,7 @@ export interface DrawerCallbacks {
   onToggleArquivada: (ideia: Ideia) => Promise<void>;
   onDuplicate: (ideia: Ideia) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  getHistorico: (id: string) => Promise<any[]>;
+  getHistorico: (id: string) => Promise<IdeiaHistorico[]>;
   updateAcesso: (id: string) => Promise<void>;
   showToast: (msg: string, type?: 'success' | 'error') => void;
   onNavigate?: (path: string) => void;
@@ -35,7 +35,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   // ─── Estado do Drawer ───────────────────────────────────────────────────────
   const drawerIdeia = ref<Ideia | null>(null);
   const drawerTab = ref<'geral' | 'doc' | 'conexoes'>('geral');
-   const historicoIdeia = ref<any[]>([]);
+   const historicoIdeia = ref<IdeiaHistorico[]>([]);
  
    // ─── Modal de Confirmação ────────────────────────────────────────────────
    const confirmDialog = reactive({
@@ -88,7 +88,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
   async function carregarCorrelacoes(id: string) {
     try {
-      const api = (window as any).electronAPI;
+      const api = window.electronAPI;
       correlacoes.value = await api.correlacoes.getAll(id);
     } catch (e) {
       console.error('Erro ao buscar correlacoes:', e);
@@ -98,7 +98,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   async function criarCorrelacao() {
     if (!novaCorrelacaoForm.ideia_id || !drawerIdeia.value) return;
     try {
-      const api = (window as any).electronAPI;
+      const api = window.electronAPI;
       await api.correlacoes.create({
         ideia_a_id: drawerIdeia.value.id,
         ideia_b_id: novaCorrelacaoForm.ideia_id,
@@ -121,7 +121,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
   async function saveEditCorrelacao(id: string) {
     try {
-      const api = (window as any).electronAPI;
+      const api = window.electronAPI;
       await api.correlacoes.update({
         id,
         descricao: correlacaoEditForm.descricao,
@@ -139,7 +139,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const ok = await solicitarConfirmacao('Remover conexão?', 'Deseja realmente remover esta conexão? Ela desaparecerá do ecossistema geral.');
     if (!ok) return;
     try {
-      const api = (window as any).electronAPI;
+      const api = window.electronAPI;
       await api.correlacoes.delete(id);
       if (drawerIdeia.value) await carregarCorrelacoes(drawerIdeia.value.id);
       callbacks.showToast('Conexão removida.');
@@ -189,11 +189,12 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     return arr;
   });
 
-  // ─── Documentação ──────────────────────────────────────────────────────────
+  // ─── Documentação e Ferramentas ──────────────────────────────────────────
   const docTab = ref<'notas' | 'links' | 'arquivos'>('notas');
   const notas = ref<IdeiaNote[]>([]);
   const links = ref<IdeiaLink[]>([]);
   const arquivos = ref<IdeiaArquivo[]>([]);
+  const frameworks = ref<Framework[]>([]);
 
   // Notas
   const addingNote = ref(false);
@@ -214,15 +215,17 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   const uploadProgress = ref(0);
 
   async function carregarDocumentacao(ideia_id: string) {
-    const api = (window as any).electronAPI;
-    const [n, l, a]: [IdeiaNote[], IdeiaLink[], IdeiaArquivo[]] = await Promise.all([
+    const api = window.electronAPI;
+    const [n, l, a, f] = await Promise.all([
       api.notas.getAll(ideia_id),
       api.links.getAll(ideia_id),
       api.arquivos.getAll(ideia_id),
+      api.frameworks.getAll({ workspace_id: drawerIdeia.value?.workspace_id, ideia_id }),
     ]);
     notas.value = n ?? [];
     links.value = l ?? [];
     arquivos.value = a ?? [];
+    frameworks.value = f ?? [];
   }
 
   // ── Notas ───────────────────────────────────────────────────────────────────
@@ -233,7 +236,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
 
   async function saveNewNote() {
     if (!newNoteForm.conteudo.trim() || !drawerIdeia.value) return;
-    const api = (window as any).electronAPI;
+    const api = window.electronAPI;
     const nota = await api.notas.create({
       ideia_id: drawerIdeia.value.id,
       titulo: newNoteForm.titulo.trim() || null,
@@ -251,7 +254,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   }
 
   async function saveEditNote(id: string) {
-    const api = (window as any).electronAPI;
+    const api = window.electronAPI;
     const updated = await api.notas.update({
       id,
       titulo: noteEditForm.titulo.trim() || null,
@@ -268,7 +271,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const ok = await solicitarConfirmacao('Excluir nota?', 'Esta ação não pode ser desfeita e o conteúdo será permanentemente removido.');
     if (!ok) return;
     try {
-      const api = (window as any).electronAPI;
+      const api = window.electronAPI;
       await api.notas.delete(id);
       notas.value = notas.value.filter((n: IdeiaNote) => n.id !== id);
       callbacks.showToast('Nota removida.');
@@ -283,7 +286,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     if (!newLinkForm.url.trim()) { linkErro.value = 'URL é obrigatória.'; return; }
     try { new URL(newLinkForm.url.trim()); } catch { linkErro.value = 'URL inválida.'; return; }
     if (!drawerIdeia.value) return;
-    const api = (window as any).electronAPI;
+    const api = window.electronAPI;
     const link = await api.links.create({
       ideia_id: drawerIdeia.value.id,
       url: newLinkForm.url.trim(),
@@ -300,7 +303,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const ok = await solicitarConfirmacao('Excluir link?', 'Deseja remover este link da documentação?');
     if (!ok) return;
     try {
-      const api = (window as any).electronAPI;
+      const api = window.electronAPI;
       await api.links.delete(id);
       links.value = links.value.filter((l: IdeiaLink) => l.id !== id);
       callbacks.showToast('Link removido.');
@@ -326,7 +329,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   async function onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0 || !drawerIdeia.value) return;
-    const api = (window as any).electronAPI;
+    const api = window.electronAPI;
     uploadando.value = true;
     uploadProgress.value = 0;
     const files = Array.from(input.files);
@@ -349,7 +352,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
   }
 
   async function openArquivo(id: string) {
-    const api = (window as any).electronAPI;
+    const api = window.electronAPI;
     await api.arquivos.open(id);
   }
 
@@ -357,12 +360,49 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     const ok = await solicitarConfirmacao('Excluir arquivo?', 'O arquivo será removido permanentemente do seu computador.');
     if (!ok) return;
     try {
-      const api = (window as any).electronAPI;
+      const api = window.electronAPI;
       await api.arquivos.delete(id);
       arquivos.value = arquivos.value.filter((a: IdeiaArquivo) => a.id !== id);
       callbacks.showToast('Arquivo removido.');
     } catch (e) {
       console.error('Erro ao deletar arquivo:', e);
+    }
+  }
+
+  // ── Ferramentas / Frameworks ────────────────────────────────────────────────
+  async function saveFramework(framework: string, dados: string) {
+    if (!drawerIdeia.value) return;
+    try {
+      const api = window.electronAPI;
+      const saved = await api.frameworks.save({
+        workspace_id: drawerIdeia.value.workspace_id,
+        ideia_id: drawerIdeia.value.id,
+        framework,
+        dados
+      });
+      const idx = frameworks.value.findIndex(f => f.id === saved.id);
+      if (idx !== -1) {
+        frameworks.value[idx] = saved;
+      } else {
+        frameworks.value.push(saved);
+      }
+      callbacks.showToast(`Framework salvo com sucesso!`);
+    } catch (e) {
+      console.error('Erro ao salvar framework:', e);
+      callbacks.showToast('Erro ao salvar ferramenta.', 'error');
+    }
+  }
+
+  async function deleteFramework(id: string) {
+    const ok = await solicitarConfirmacao('Remover ferramenta?', 'Deseja realmente remover os dados desta ferramenta?');
+    if (!ok) return;
+    try {
+      const api = window.electronAPI;
+      await api.frameworks.delete(id);
+      frameworks.value = frameworks.value.filter(f => f.id !== id);
+      callbacks.showToast('Ferramenta removida.');
+    } catch (e) {
+      console.error('Erro ao remover framework:', e);
     }
   }
 
@@ -434,6 +474,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     notas.value = [];
     links.value = [];
     arquivos.value = [];
+    frameworks.value = [];
     correlacoes.value = [];
     addingNote.value = false;
     addingLink.value = false;
@@ -509,6 +550,7 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     notas,
     links,
     arquivos,
+    frameworks,
     addingNote,
     editingNoteId,
     newNoteForm,
@@ -550,6 +592,8 @@ export function useIdeiaDrawer(ideias: Ref<Ideia[]>, callbacks: DrawerCallbacks)
     deleteArquivo,
     carregarCorrelacoes,
     handleConfirmResult,
+    saveFramework,
+    deleteFramework,
 
     // Helpers
     fileIcon,

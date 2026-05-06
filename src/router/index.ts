@@ -125,6 +125,8 @@ const router = createRouter({
         { path: 'ideas/flowchart/:rootId', component: IdeaFlowchartView },
         { path: 'ideas/general-flowchart', component: GeneralFlowchartView },
         { path: 'ideas/kanban/:id', component: IdeaKanbanView },
+        { path: 'frameworks', component: () => import('../views/dashboard/Frameworks.vue') },
+        { path: 'frameworks/:type/:id', component: () => import('../views/dashboard/FrameworkEditor.vue') },
       ],
     },
   ],

@@ -93,6 +93,9 @@
             <router-link to="/dashboard/ideas" class="nav-tab" active-class="tab-active">
               Base de Ideias
             </router-link>
+            <router-link to="/dashboard/frameworks" class="nav-tab" active-class="tab-active">
+              Ferramentas
+            </router-link>
           </div>
 
           <!-- Ações movidas para cá no Canvas -->
@@ -132,10 +135,8 @@
 
           <div class="subheader-right">
             <!-- Ações dinâmicas injetadas se estiver na Base de Ideias -->
-            <template v-if="route.path.includes('/ideas')">
+            <template v-if="route.path.includes('/ideas') && !route.path.includes('/network') && !route.path.includes('/flowchart') && !route.path.includes('/kanban')">
               <div class="subheader-actions">
-                <!-- Botões secundários -->
-
                 <button class="action-btn-secondary" @click="handleAction('abrirFluxogramaGeral')" title="Ver como Fluxograma">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM9 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM9 8v4h6V8" /></svg>
                   Fluxograma
@@ -147,6 +148,15 @@
                 <button class="action-btn-primary" @click="handleAction('abrirModalNovaIdeia')">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                   Nova Ideia
+                </button>
+              </div>
+            </template>
+            <!-- Ações da página de Ferramentas -->
+            <template v-if="route.path.includes('/frameworks')">
+              <div class="subheader-actions">
+                <button class="action-btn-primary" @click="emit('abrirNovaFerramenta')">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Nova Ferramenta
                 </button>
               </div>
             </template>
@@ -258,17 +268,25 @@ const isCanvasLayout = computed(() =>
 // ─── Breadcrumbs & Titles ──────────────────────────────────
 const breadcrumbs = computed(() => {
   const crumbs = [{ label: 'Home', path: '/dashboard' }];
-  
   if (route.path.includes('/ideas')) {
     crumbs.push({ label: 'Base de Ideias', path: '/dashboard/ideas' });
   }
-  
+  if (route.path.includes('/frameworks')) {
+    crumbs.push({ label: 'Ferramentas', path: '/dashboard/frameworks' });
+    if (route.params.type) {
+      const label = route.params.type === 'swot' ? 'Matriz SWOT' : 'Canvas BMC';
+      crumbs.push({ label, path: route.path });
+    }
+  }
   return crumbs;
 });
 
 const pageTitle = computed(() => {
   if (route.path === '/dashboard') return 'Dashboard';
   if (route.path.includes('/ideas')) return 'Base de Ideias';
+  if (route.params.type === 'swot') return '📊 Matriz SWOT';
+  if (route.params.type === 'bmc') return '🧩 Canvas BMC';
+  if (route.path.includes('/frameworks')) return 'Ferramentas';
   return 'Dashboard';
 });
 

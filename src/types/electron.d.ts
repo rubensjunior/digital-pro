@@ -1,3 +1,5 @@
+import { Ideia, IdeiaHistorico, IdeiaNote, IdeiaLink, IdeiaArquivo, IdeiaCorrelacao, Framework } from './ideia';
+
 export interface IElectronAPI {
   appVersion: () => Promise<string>;
   ping: () => Promise<string>;
@@ -12,9 +14,9 @@ export interface IElectronAPI {
 
   ideias: {
     getAll: (workspace_id?: string) => Promise<Record<string, unknown>[]>;
-    getHistorico: (id: string) => Promise<Record<string, unknown>[]>;
-    create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
-    update: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    getHistorico: (id: string) => Promise<IdeiaHistorico[]>;
+    create: (payload: Record<string, unknown>) => Promise<Ideia>;
+    update: (payload: Record<string, unknown>) => Promise<Ideia>;
     delete: (id: string) => Promise<boolean>;
     updateStatus: (id: string, status: string) => Promise<boolean>;
     updateAcesso: (id: string) => Promise<boolean>;
@@ -52,30 +54,36 @@ export interface IElectronAPI {
   };
 
   notas: {
-    getAll: (ideia_id: string) => Promise<Record<string, unknown>[]>;
-    create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
-    update: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    getAll: (ideia_id: string) => Promise<IdeiaNote[]>;
+    create: (payload: Record<string, unknown>) => Promise<IdeiaNote>;
+    update: (payload: Record<string, unknown>) => Promise<IdeiaNote>;
     delete: (id: string) => Promise<boolean>;
   };
 
   links: {
-    getAll: (ideia_id: string) => Promise<Record<string, unknown>[]>;
-    create: (payload: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    getAll: (ideia_id: string) => Promise<IdeiaLink[]>;
+    create: (payload: Record<string, unknown>) => Promise<IdeiaLink>;
     delete: (id: string) => Promise<boolean>;
   };
 
   arquivos: {
-    getAll: (ideia_id: string) => Promise<Record<string, unknown>[]>;
-    save: (ideia_id: string, nome: string, base64: string, tipo: string, tamanho: number) => Promise<Record<string, unknown>>;
+    getAll: (ideia_id: string) => Promise<IdeiaArquivo[]>;
+    save: (ideia_id: string, nome: string, base64: string, tipo: string, tamanho: number) => Promise<IdeiaArquivo>;
     delete: (id: string) => Promise<boolean>;
     open: (id: string) => Promise<boolean>;
   };
 
   correlacoes: {
-    getAll: (ideia_id: string) => Promise<Record<string, unknown>[]>;
-    getAllTodos: () => Promise<Record<string, unknown>[]>;
+    getAll: (ideia_id: string) => Promise<IdeiaCorrelacao[]>;
+    getAllTodos: () => Promise<IdeiaCorrelacao[]>;
     create: (payload: Record<string, unknown>) => Promise<boolean>;
     update: (payload: Record<string, unknown>) => Promise<boolean>;
+    delete: (id: string) => Promise<boolean>;
+  };
+
+  frameworks: {
+    getAll: (payload: { workspace_id: string; ideia_id?: string }) => Promise<Framework[]>;
+    save: (payload: { workspace_id: string; ideia_id?: string; framework: string; nome?: string; dados: string }) => Promise<Framework>;
     delete: (id: string) => Promise<boolean>;
   };
   user: {

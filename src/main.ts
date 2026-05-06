@@ -278,9 +278,25 @@ function initDatabase(userId: string) {
       avatar_path TEXT,
       updated_at  TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS frameworks (
+      id           TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL,
+      ideia_id     TEXT,
+      nome         TEXT,
+      framework    TEXT NOT NULL,
+      dados        TEXT NOT NULL DEFAULT '{}',
+      created_at   TEXT DEFAULT (datetime('now')),
+      updated_at   TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   // Garantir usuário padrão
+  // Migration: adicionar coluna nome em frameworks se não existir
+  try {
+    db.prepare('ALTER TABLE frameworks ADD COLUMN nome TEXT').run();
+  } catch { /* coluna já existe */ }
+
   try {
     const user = db.prepare('SELECT id FROM user_profile WHERE id = ?').get('default');
     if (!user) {
@@ -395,6 +411,7 @@ function registerIdeiaHandlers() {
       DELETE FROM ideia_links WHERE ideia_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}');
       DELETE FROM ideia_arquivos WHERE ideia_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}');
       DELETE FROM ideia_correlacoes WHERE ideia_a_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}') OR ideia_b_id IN (SELECT id FROM ideias WHERE workspace_id = '${id}');
+      DELETE FROM frameworks WHERE workspace_id = '${id}';
       DELETE FROM ideias WHERE workspace_id = '${id}';
       DELETE FROM workspaces WHERE id = '${id}';
     `);
@@ -1015,6 +1032,7 @@ function registerIdeiaHandlers() {
     db.prepare('DELETE FROM ideia_notas WHERE ideia_id = ?').run(id);
     db.prepare('DELETE FROM ideia_links WHERE ideia_id = ?').run(id);
     db.prepare('DELETE FROM ideia_arquivos WHERE ideia_id = ?').run(id);
+    db.prepare('DELETE FROM frameworks WHERE ideia_id = ?').run(id);
     db.prepare('DELETE FROM ideia_correlacoes WHERE ideia_a_id = ? OR ideia_b_id = ?').run(id, id);
     
     // Desvincular ideias filhas (torná-las raízes) ao invés de apagá-las
@@ -1176,6 +1194,53 @@ function registerIdeiaHandlers() {
   ipcMain.handle('ideias:toggleArquivada', (_, { id, is_arquivada }: { id: string; is_arquivada: number }) => {
     db.prepare(`UPDATE ideias SET is_arquivada = ? WHERE id = ?`).run(is_arquivada, id);
     logHistorico(id, is_arquivada ? 'Arquivou a ideia' : 'Desarquivou a ideia');
+    return true;
+  });
+
+  // ── Frameworks ─────────────────────────────────────────────────────────────
+  ipcMain.handle('frameworks:getAll', (_, payload: { workspace_id: string; ideia_id?: string }) => {
+    if (!db) return [];
+    if (payload.ideia_id) {
+      return db.prepare('SELECT * FROM frameworks WHERE workspace_id = ? AND ideia_id = ? ORDER BY created_at DESC').all(payload.workspace_id, payload.ideia_id);
+    } else {
+      return db.prepare('SELECT * FROM frameworks WHERE workspace_id = ? AND ideia_id IS NULL ORDER BY created_at DESC').all(payload.workspace_id);
+    }
+  });
+
+  ipcMain.handle('frameworks:save', (_, payload: { workspace_id: string; ideia_id?: string; framework: string; nome?: string; dados: string }) => {
+    let existing;
+    if (payload.ideia_id) {
+      existing = db.prepare('SELECT id FROM frameworks WHERE workspace_id = ? AND ideia_id = ? AND framework = ?').get(payload.workspace_id, payload.ideia_id, payload.framework) as { id: string } | undefined;
+    } else {
+      existing = db.prepare('SELECT id FROM frameworks WHERE workspace_id = ? AND ideia_id IS NULL AND framework = ?').get(payload.workspace_id, payload.framework) as { id: string } | undefined;
+    }
+    
+    const now = new Date().toISOString();
+    
+    if (existing) {
+      db.prepare('UPDATE frameworks SET nome = ?, dados = ?, updated_at = ? WHERE id = ?').run(payload.nome ?? null, payload.dados, now, existing.id);
+      return db.prepare('SELECT * FROM frameworks WHERE id = ?').get(existing.id);
+    } else {
+      const id = crypto.randomUUID();
+      db.prepare(`
+        INSERT INTO frameworks (id, workspace_id, ideia_id, nome, framework, dados, created_at, updated_at)
+        VALUES (@id, @workspace_id, @ideia_id, @nome, @framework, @dados, @created_at, @updated_at)
+      `).run({
+        id,
+        workspace_id: payload.workspace_id,
+        ideia_id: payload.ideia_id || null,
+        nome: payload.nome || null,
+        framework: payload.framework,
+        dados: payload.dados,
+        created_at: now,
+        updated_at: now
+      });
+      return db.prepare('SELECT * FROM frameworks WHERE id = ?').get(id);
+    }
+  });
+
+  ipcMain.handle('frameworks:delete', (_, id: string) => {
+    db.prepare('DELETE FROM frameworks WHERE id = ?').run(id);
     return true;
   });
 
@@ -1459,6 +1524,7 @@ function registerUserHandlers() {
         DELETE FROM ideia_arquivos;
         DELETE FROM ideia_links;
         DELETE FROM ideia_notas;
+        DELETE FROM frameworks;
         DELETE FROM ideia_correlacoes;
         DELETE FROM ideias_historico;
         DELETE FROM ideias;
@@ -1493,6 +1559,7 @@ function registerUserHandlers() {
         DELETE FROM ideia_notas WHERE ideia_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces));
         DELETE FROM ideia_links WHERE ideia_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces));
         DELETE FROM ideia_arquivos WHERE ideia_id NOT IN (SELECT id FROM ideias WHERE workspace_id IN (SELECT id FROM workspaces));
+        DELETE FROM frameworks WHERE workspace_id NOT IN (SELECT id FROM workspaces);
         
         -- Limpa correlações de ideias que não existem mais
         DELETE FROM ideia_correlacoes 

@@ -77,6 +77,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import type { ApexOptions } from 'apexcharts';
 
 // Registra o componente globalmente para este escopo
 const apexchart = VueApexCharts;
@@ -95,11 +96,11 @@ const stats = ref<StatsData | null>(null);
 const colors = ['#3E97FF', '#F1416C', '#50CD89', '#FFC700', '#7239EA', '#009EF7'];
 
 // Opções para o gráfico de Donut (Status)
-const statusChartOptions = computed(() => {
+const statusChartOptions = computed<ApexOptions | null>(() => {
   if (!stats.value || !stats.value.ideasByStatus.length) return null;
   return {
     chart: {
-      type: 'donut',
+      type: 'donut' as const,
       fontFamily: 'Inter, sans-serif',
     },
     labels: stats.value.ideasByStatus.map(item => item.status_name),
@@ -158,11 +159,11 @@ const statusChartSeries = computed(() => {
 });
 
 // Opções para o gráfico de Barras (Workspaces)
-const wsChartOptions = computed(() => {
+const wsChartOptions = computed<ApexOptions | null>(() => {
   if (!stats.value || !stats.value.ideasByWorkspace.length) return null;
   return {
     chart: {
-      type: 'bar',
+      type: 'bar' as const,
       fontFamily: 'Inter, sans-serif',
       toolbar: { show: false }
     },

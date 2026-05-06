@@ -30,6 +30,7 @@
               <button :class="['dp-tab', { active: drawerTab === 'geral' }]" @click="drawerTab = 'geral'">Informações</button>
               <button :class="['dp-tab', { active: drawerTab === 'doc' }]" @click="drawerTab = 'doc'">Documentação</button>
               <button :class="['dp-tab', { active: drawerTab === 'conexoes' }]" @click="drawerTab = 'conexoes'">Conexões</button>
+              <button :class="['dp-tab', { active: drawerTab === 'ferramentas' }]" @click="drawerTab = 'ferramentas'">Ferramentas</button>
             </div>
             <div class="dp-tabs-actions">
               <button class="tab-action-btn" @click="$emit('navigate', `/dashboard/ideas/flowchart/${drawerIdeia!.id}`)" title="Ver Fluxograma">
@@ -286,6 +287,49 @@
               </div>
             </div>
           </div>
+
+          <!-- ABA: FERRAMENTAS -->
+          <div v-show="drawerTab === 'ferramentas'" class="drawer-tab-pane">
+            <div class="drawer-section-card">
+              <div class="section-title">Ferramentas Estratégicas</div>
+              <p class="section-subtitle">Adicione e gerencie frameworks de negócios, como Matriz SWOT e Canvas BMC, anexados a esta ideia.</p>
+              
+              <div v-if="frameworks.length === 0" class="empty-state">
+                <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <p>Nenhuma ferramenta anexada a esta ideia ainda.</p>
+              </div>
+
+              <div class="frameworks-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div v-for="fw in frameworks" :key="fw.id" class="framework-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="font-weight: 600; margin: 0; color: var(--text-color);">
+                      {{ fw.framework === 'swot' ? 'Matriz SWOT' : fw.framework === 'bmc' ? 'Business Model Canvas' : fw.framework }}
+                    </h3>
+                    <div style="display: flex; gap: 0.5rem;">
+                      <button class="dp-btn dp-btn-primary dp-btn-sm" @click="openFrameworkEditor(fw)">Editar</button>
+                      <button class="btn-del" @click="deleteFramework(fw.id)" title="Remover Ferramenta" style="background: none; border: none; cursor: pointer; color: var(--danger-color);"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                  </div>
+                  
+                  <div class="framework-preview" style="font-size: 0.85rem; color: var(--text-muted);">
+                    Atualizado em: {{ formatDate(fw.updated_at) }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="add-framework-box" style="margin-top: 1.5rem;">
+                <label class="dp-label">Adicionar Ferramenta</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <select v-model="novoFramework" class="dp-input select-custom" style="flex: 1">
+                    <option value="">Selecione o framework...</option>
+                    <option value="swot" :disabled="frameworks.some(f => f.framework === 'swot')">Matriz SWOT</option>
+                    <option value="bmc" :disabled="frameworks.some(f => f.framework === 'bmc')">Business Model Canvas</option>
+                  </select>
+                  <button class="dp-btn dp-btn-primary" @click="addFramework" :disabled="!novoFramework">Adicionar</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="dp-modal-footer" style="justify-content: flex-start;">
@@ -312,6 +356,28 @@
       :note="viewingNote"
       @close="viewingNote = null"
     />
+
+    <!-- MODAL DE FRAMEWORK ESTRATÉGICO -->
+    <div v-if="editingFramework" class="dp-modal-overlay framework-modal" style="z-index: 10000;">
+      <div class="dp-modal-content" style="max-width: 1000px; width: 95vw; height: 90vh; display: flex; flex-direction: column;">
+        <div class="dp-modal-header">
+          <h3>Editando Ferramenta</h3>
+          <button class="close-btn" @click="editingFramework = null">×</button>
+        </div>
+        <div class="dp-modal-body" style="flex: 1; padding: 1rem; overflow-y: auto;">
+          <SwotMatrix 
+            v-if="editingFramework.framework === 'swot'" 
+            :initial-data="editingFramework.dados"
+            @save="handleFrameworkSave"
+          />
+          <BmcCanvas 
+            v-else-if="editingFramework.framework === 'bmc'" 
+            :initial-data="editingFramework.dados"
+            @save="handleFrameworkSave"
+          />
+        </div>
+      </div>
+    </div>
   </Teleport>
 </template>
 
@@ -324,6 +390,8 @@ import RichTextEditor from './RichTextEditor.vue';
 import ConfirmModal from './ConfirmModal.vue';
 import NoteViewModal from './NoteViewModal.vue';
 import { useTaxonomy } from '../composables/useTaxonomy';
+import SwotMatrix from './frameworks/SwotMatrix.vue';
+import BmcCanvas from './frameworks/BmcCanvas.vue';
 
 const props = defineProps<{
   ideias: Ideia[];
@@ -380,7 +448,7 @@ const drawerCallbacks: DrawerCallbacks = {
 
 const drawer = useIdeiaDrawer(toRef(props, 'ideias'), drawerCallbacks);
 const { 
-  drawerIdeia, drawerTab, docTab, notas, links, arquivos, 
+  drawerIdeia, drawerTab, docTab, notas, links, arquivos, frameworks,
   correlacoes, ecosistemaArvore, ideiasFilhas, historicoIdeia,
   statusOptions, addingNote, addingLink, editingNoteId,
   editingCorrelacaoId, uploadando, uploadProgress,
@@ -394,8 +462,30 @@ const {
   saveEditCorrelacao, deleteCorrelacao, criarCorrelacao,
   getWorkspaceName, allTags, formatDate, fileIcon, formatBytes,
   openExternalLink, cadastrarDerivada, filtroConexao,
-  correlacaoEditForm, ideiasParaConectar
+  correlacaoEditForm, ideiasParaConectar, saveFramework, deleteFramework
 } = drawer;
+
+const novoFramework = ref('');
+const editingFramework = ref<any | null>(null);
+
+function addFramework() {
+  if (!novoFramework.value || frameworks.value.some(f => f.framework === novoFramework.value)) return;
+  saveFramework(novoFramework.value, '{}').then(() => {
+    novoFramework.value = '';
+  });
+}
+
+function openFrameworkEditor(fw: any) {
+  editingFramework.value = fw;
+}
+
+function handleFrameworkSave(dados: string) {
+  if (editingFramework.value) {
+    saveFramework(editingFramework.value.framework, dados).then(() => {
+      editingFramework.value = null;
+    });
+  }
+}
 
 let mouseIsDownOnOverlay = false;
 function onOverlayMouseDown() { mouseIsDownOnOverlay = true; }

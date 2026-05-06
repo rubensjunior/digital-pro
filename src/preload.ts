@@ -88,6 +88,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     update: (payload: Record<string, unknown>) => ipcRenderer.invoke('ideias:correlacoes:update', payload),
     delete: (id: string) => ipcRenderer.invoke('ideias:correlacoes:delete', id),
   },
+
+  // ─── Brain Vault — Frameworks Corporativos ────────────────────────────────
+  frameworks: {
+    getAll: (payload: { workspace_id: string; ideia_id?: string }) => ipcRenderer.invoke('frameworks:getAll', payload),
+    save: (payload: Record<string, unknown>) => ipcRenderer.invoke('frameworks:save', payload),
+    delete: (id: string) => ipcRenderer.invoke('frameworks:delete', id),
+  },
   // ─── Brain Vault — Usuário ───────────────────────────────────────────────
   user: {
     initDb: (userId: string) => ipcRenderer.invoke('database:init', userId),

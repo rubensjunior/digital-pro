@@ -169,3 +169,14 @@ export interface IdeiaCorrelacao {
   correlata_status?: string;
   correlata_workspace_id?: string;
 }
+
+export interface Framework {
+  id: string;
+  workspace_id: string;
+  ideia_id?: string | null;
+  nome?: string | null;
+  framework: string;
+  dados: string;
+  created_at: string;
+  updated_at: string;
+}
